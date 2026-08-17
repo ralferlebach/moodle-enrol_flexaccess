@@ -61,9 +61,25 @@ final class api {
      * @return policy
      */
     public static function get_effective_policy(int $courseid, ?int $userid = null): policy {
-        // Identity-dependent restriction application is a later slice; the signature is stable.
-        unset($userid);
-        return policy_assembler::assemble($courseid);
+        $policy = policy_assembler::assemble($courseid);
+        if ($userid !== null && !local\restriction_service::permits($courseid, $userid)) {
+            // The user is restricted: withdraw FlexAccess methods; normal login is unaffected.
+            $policy->allowtemporary = false;
+            $policy->allowquick = false;
+            $policy->allowguest = false;
+        }
+        return $policy;
+    }
+
+    /**
+     * Whether a known user is permitted by course restrictions to use FlexAccess.
+     *
+     * @param int $courseid Course id.
+     * @param int $userid User id.
+     * @return bool
+     */
+    public static function is_user_permitted(int $courseid, int $userid): bool {
+        return local\restriction_service::permits($courseid, $userid);
     }
 
     /**

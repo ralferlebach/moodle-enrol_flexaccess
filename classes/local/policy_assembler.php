@@ -130,7 +130,8 @@ final class policy_assembler {
         $p->allowtemporary = policy_resolver::merge_permission($p->allowtemporary, (bool) $flex->allowtemporary, $allowwidening);
         $p->allowquick = policy_resolver::merge_permission($p->allowquick, (bool) $flex->allowquick, $allowwidening);
         $p->allowguest = policy_resolver::merge_permission($p->allowguest, (bool) $flex->allowguest, $allowwidening);
-        $p->allownormallogin = policy_resolver::merge_permission($p->allownormallogin, (bool) $flex->allownormallogin, $allowwidening);
+        $p->allownormallogin = policy_resolver::merge_permission(
+            $p->allownormallogin, (bool) $flex->allownormallogin, $allowwidening);
         $p->temporarylifetime = (int) $flex->temporarylifetime;
         $p->provisionallifetime = (int) $flex->provisionallifetime;
         $p->availablefrom = (int) $flex->availablefrom;

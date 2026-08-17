@@ -49,8 +49,13 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         return false;
     }
 
+    /** @param stdClass $instance Enrolment instance. @return bool */
+    public function allow_unenrol(stdClass $instance): bool {
+        return has_capability('enrol/flexaccess:unenrol', context_course::instance($instance->courseid));
+    }
+
     /** @param stdClass $instance Enrolment instance. @param stdClass $ue User enrolment. @return bool */
-    public function allow_unenrol(stdClass $instance, stdClass $ue): bool {
+    public function allow_unenrol_user(stdClass $instance, stdClass $ue): bool {
         return has_capability('enrol/flexaccess:unenrol', context_course::instance($instance->courseid));
     }
 

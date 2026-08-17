@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.1.16 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.16 (keine funktionale Änderung).
+
+## 0.1.15 — 2026-08-17
+- **Zugangs-Controller (End-to-End):** `local\access_controller::grant_temporary_access()` komponiert die getesteten Bausteine — effektive Policy + Access Window prüfen, Kapazität, temporären Nutzer via `auth_flexaccess\api` anlegen, kapazitätsgesichert einschreiben, Follow-up planen. Rückgabe granted/closed/notallowed/notenabled/full. PHPUnit `access_controller_test` (Grant, geschlossenes Fenster ohne Nebenwirkung, Vollbelegung). Kein Schema-Change.
+
+## 0.1.14 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.14 (keine funktionale Änderung).
+
+## 0.1.13 — 2026-08-17
+- **Kapazitätsgesicherte Laufzeit-Einschreibung:** neuer `local\enrol_service::enrol_with_capacity()` führt "aktive zählen + einschreiben" atomar im Instanz-Lock aus (Race-frei), lehnt bei Vollbelegung ab (`full`), respektiert deaktivierte Instanzen (`notenabled`) und leitet `timeend` aus der Einschreibedauer ab. PHPUnit `enrol_service_test` (Limit erzwungen, unbegrenzt, deaktiviert, Enrolment-Periode). Kein Schema-Change.
+
+## 0.1.12 — 2026-08-17
+- **Identitätsabhängige Restriktionen** (Rollen/Cohorts) in `get_effective_policy(..., $userid)`: neuer reiner `local\restriction_evaluator` (deny gewinnt, Allow-Liste) + `local\restriction_service` (System-/Kategorie-/Kurs-Scope, Rollen im Kurskontext, Cohort-Mitgliedschaft). Restringierte Nutzer verlieren die Flex-Methoden (normaler Login unberührt). Neue Facade `api::is_user_permitted()`. PHPUnit `restriction_evaluator_test`, `restriction_service_test`. Kein Schema-Change.
+
+## 0.1.11 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.11 (keine funktionale Änderung).
+
+## 0.1.10 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.10 (keine funktionale Änderung).
+
+## 0.1.9 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.9 (keine funktionale Änderung).
+
+## 0.1.8 — 2026-08-17
+- Lockstep-Versionsschub auf 0.1.8 (keine funktionale Änderung).
+
+## 0.1.7 — 2026-08-17
+- **CI-Fix:** `allow_unenrol()` auf die Parent-Signatur (`stdClass $instance`) korrigiert (war ein Install-Fatal); per-User-Variante als `allow_unenrol_user()` ergänzt.
+- **CI-Fix:** pgsql-Workflow: vorab-`createdb`-Zeile entfernt (verursachte "database moodle already exists"); moodle-plugin-ci legt die DB selbst an.
+- phpcs: eine zu lange Zeile in `policy_assembler` umgebrochen.
+
 ## 0.1.6 — 2026-08-17
 - Lockstep-Versionsschub auf 0.1.6 (keine funktionale Änderung).
 
