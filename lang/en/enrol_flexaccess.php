@@ -42,3 +42,16 @@ $string['temporaryaccesskey_desc'] = 'Enter a new shared access key. Only a secu
 $string['accesskeymode:inherit'] = 'Inherit system setting';
 $string['accesskeymode:course'] = 'Use a course-specific access key';
 $string['accesskeyinvalid'] = 'The access key is not valid.';
+
+$string['settings:access'] = 'Access window and capacity';
+$string['availablefrom'] = 'Available from';
+$string['availablefrom_help'] = 'Earliest time FlexAccess access is offered by this instance. Empty/disabled means no lower bound. This is separate from account lifetime and enrolment lifetime, and is combinable with the access key.';
+$string['availableuntil'] = 'Available until';
+$string['availableuntil_help'] = 'Latest time FlexAccess access is offered by this instance (exclusive). Empty/disabled means no upper bound.';
+$string['maxparticipants'] = 'Maximum participants';
+$string['maxparticipants_help'] = 'Maximum number of active FlexAccess enrolments for this instance. 0 means unlimited. Expired access frees capacity. There is no waitlist.';
+$string['error:windowrange'] = 'The "available until" time must be after the "available from" time.';
+$string['error:maxparticipants'] = 'The maximum number of participants must be 0 (unlimited) or a positive number.';
+$string['accessnotopen'] = 'FlexAccess access is not available at this time.';
+$string['coursefull'] = 'The maximum number of participants for this access method has been reached.';
+$string['error:capacitylock'] = 'Could not acquire the capacity lock. Please try again.';

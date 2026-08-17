@@ -42,3 +42,16 @@ $string['temporaryaccesskey_desc'] = 'Neuen gemeinsamen Zugangsschlüssel eingeb
 $string['accesskeymode:inherit'] = 'Systemeinstellung erben';
 $string['accesskeymode:course'] = 'Eigenen Kurs-Zugangsschlüssel verwenden';
 $string['accesskeyinvalid'] = 'Der Zugangsschlüssel ist nicht gültig.';
+
+$string['settings:access'] = 'Zugangszeitraum und Kapazität';
+$string['availablefrom'] = 'Verfügbar ab';
+$string['availablefrom_help'] = 'Frühester Zeitpunkt, zu dem diese Instanz FlexAccess-Zugang anbietet. Leer/deaktiviert bedeutet keine Untergrenze. Unabhängig von Account- und Einschreibelaufzeit und mit dem Zugangsschlüssel kombinierbar.';
+$string['availableuntil'] = 'Verfügbar bis';
+$string['availableuntil_help'] = 'Spätester Zeitpunkt, zu dem diese Instanz FlexAccess-Zugang anbietet (exklusiv). Leer/deaktiviert bedeutet keine Obergrenze.';
+$string['maxparticipants'] = 'Maximale Teilnehmerzahl';
+$string['maxparticipants_help'] = 'Maximale Anzahl aktiver FlexAccess-Einschreibungen dieser Instanz. 0 bedeutet unbegrenzt. Abgelaufene Zugänge geben Plätze frei. Keine Warteliste.';
+$string['error:windowrange'] = 'Der Zeitpunkt „Verfügbar bis" muss nach „Verfügbar ab" liegen.';
+$string['error:maxparticipants'] = 'Die maximale Teilnehmerzahl muss 0 (unbegrenzt) oder eine positive Zahl sein.';
+$string['accessnotopen'] = 'FlexAccess-Zugang ist derzeit nicht verfügbar.';
+$string['coursefull'] = 'Die maximale Teilnehmerzahl für diese Zugangsart ist erreicht.';
+$string['error:capacitylock'] = 'Die Kapazitätssperre konnte nicht gesetzt werden. Bitte erneut versuchen.';

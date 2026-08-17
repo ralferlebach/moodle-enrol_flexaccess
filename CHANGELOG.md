@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.3 — 2026-08-17
+- **E-1 Access Window + E-2 Kapazität (Domänenlogik, Schema, Tests).**
+  - Neue Instanzfelder `availablefrom`, `availableuntil`, `maxparticipants` (install.xml + `db/upgrade.php`, Savepoint 2026081730).
+  - `policy`-Wertobjekt um Fenster-/Kapazitätsfelder + `is_within_window()`/`is_capacity_unlimited()` erweitert.
+  - Neue Klassen `local\access_window` (reine Fensterlogik, untere Grenze inklusiv, obere exklusiv, 0 = unbegrenzt) und `local\capacity_service` (Zählung **aktiver** `user_enrolments`, Prädikat, `is_full`, lock-gesicherter `run_with_lock`).
+  - PHPUnit: `access_window_test`, `capacity_service_test` (inkl. Generator-Test: aktiv/suspendiert/abgelaufen).
+  - EN/DE-Strings ergänzt. Instanz-Formular-Anbindung folgt als nächste Mikro-Iteration.
+
 ## 0.1.2 — 2026-08-17
 - Scope-Erweiterung (Planung/Doku): **Kapazitätslimit** (aktive Einschreibungen, ADR-011) und **Access Window** (available from/until, kombinierbar mit Zugangsschlüssel, ADR-012) verbindlich aufgenommen. Siehe `../../docs/Arbeitsplanung.md`.
 
