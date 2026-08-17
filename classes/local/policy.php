@@ -34,4 +34,29 @@ final class policy {
     /** @var string */ public string $participantvisibility = 'show';
     /** @var bool */ public bool $temporaryaccesskeyrequired = false;
     /** @var string */ public string $temporaryaccesskeyscope = 'none';
+    /** @var int Access window start; 0 = no lower bound. */ public int $availablefrom = 0;
+    /** @var int Access window end; 0 = no upper bound. */ public int $availableuntil = 0;
+    /** @var int Maximum active FlexAccess enrolments; 0 = unlimited. */ public int $maxparticipants = 0;
+
+    /**
+     * Whether the configured access window is open at the given time.
+     *
+     * The access window is independent of and combinable with the access key, and is
+     * distinct from account lifetime and enrolment lifetime.
+     *
+     * @param int $now Unix timestamp to evaluate against.
+     * @return bool
+     */
+    public function is_within_window(int $now): bool {
+        return access_window::is_open($this->availablefrom, $this->availableuntil, $now);
+    }
+
+    /**
+     * Whether this instance has an unlimited participant capacity.
+     *
+     * @return bool
+     */
+    public function is_capacity_unlimited(): bool {
+        return $this->maxparticipants <= 0;
+    }
 }
