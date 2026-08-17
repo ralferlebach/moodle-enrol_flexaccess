@@ -127,3 +127,10 @@ Das Tool besitzt **keine eigene Account-, Token-, Mailqueue- oder Policy-Datenha
 `enrol_flexaccess` ist Owner der Zugangsschlüssel-Policy. Systemweit kann die Pflicht aktiviert werden; pro Enrolment-Instanz gilt `inherit` oder `course`. `course` verwendet einen eigenen Kurs-Zugangsschlüssel und ersetzt damit einen etwaigen Systemschlüssel. Ein verpflichtender Systemschlüssel kann nicht ersatzlos abgeschaltet werden. Ohne Systempflicht bedeutet `inherit`, dass kein Schlüssel erforderlich ist.
 
 Der Schlüssel schützt ausschließlich FlexAccess-Zugänge, die einen `temporary user` erzeugen bzw. als solchen anmelden. Normaler Moodle-Login, normaler Moodle-Gastzugang und `mod_flexaccess` sind nicht betroffen. System- und Kurswerte werden nur gehasht gespeichert. Öffentliche APIs bieten `required/scope` und eine boolesche Verifikationsoperation, aber keinen Hashzugriff. Fehlversuche müssen gedrosselt werden.
+
+## Scope-Erweiterung 0.1.2 (verbindlich)
+
+Zwei neue P0-Zugangsdimensionen je Einschreibeinstanz (Details: `../../docs/Arbeitsplanung.md`, `../../docs/Pflichtenheft.md` S15/S16, ADR-011/012):
+
+- **Kapazitätslimit** `unlimited | n` — maßgeblich sind **aktive** FlexAccess-Einschreibungen der Instanz (nicht jemals erzeugte Accounts); atomare Prüfung per Lock; keine Warteliste.
+- **Access Window** `available from`/`until` — unabhängige, mit dem Zugangsschlüssel **kombinierbare** Bedingung; strikt getrennt von Account- und Einschreibungslaufzeit.
