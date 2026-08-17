@@ -25,18 +25,35 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading('enrol_flexaccess/defaults', get_string('settings:defaults', 'enrol_flexaccess'), ''));
-    $settings->add(new admin_setting_configselect('enrol_flexaccess/participantvisibilitydefault',
+    $settings->add(new admin_setting_configselect(
+        'enrol_flexaccess/participantvisibilitydefault',
         get_string('participantvisibilitydefault', 'enrol_flexaccess'),
-        get_string('participantvisibilitydefault_desc', 'enrol_flexaccess'), 'show',
-        ['show' => get_string('show', 'enrol_flexaccess'), 'hide' => get_string('hide', 'enrol_flexaccess')]));
-    $settings->add(new admin_setting_configcheckbox('enrol_flexaccess/allowwidening',
-        get_string('allowwidening', 'enrol_flexaccess'), get_string('allowwidening_desc', 'enrol_flexaccess'), 0));
-    $settings->add(new admin_setting_heading('enrol_flexaccess/accesskey',
-        get_string('settings:accesskey', 'enrol_flexaccess'), ''));
-    $settings->add(new admin_setting_configcheckbox('enrol_flexaccess/temporaryaccesskeyrequired',
+        get_string('participantvisibilitydefault_desc', 'enrol_flexaccess'),
+        'show',
+        ['show' => get_string('show', 'enrol_flexaccess'), 'hide' => get_string('hide', 'enrol_flexaccess')]
+    ));
+    $settings->add(new admin_setting_configcheckbox(
+        'enrol_flexaccess/allowwidening',
+        get_string('allowwidening', 'enrol_flexaccess'),
+        get_string('allowwidening_desc', 'enrol_flexaccess'),
+        0
+    ));
+    $settings->add(new admin_setting_heading(
+        'enrol_flexaccess/accesskey',
+        get_string('settings:accesskey', 'enrol_flexaccess'),
+        ''
+    ));
+    $settings->add(new admin_setting_configcheckbox(
+        'enrol_flexaccess/temporaryaccesskeyrequired',
         get_string('temporaryaccesskeyrequired', 'enrol_flexaccess'),
-        get_string('temporaryaccesskeyrequired_desc', 'enrol_flexaccess'), 0));
-    $settings->add(new \enrol_flexaccess\admin\setting_access_key('enrol_flexaccess/temporaryaccesskeyhash',
-        get_string('temporaryaccesskey', 'enrol_flexaccess'), get_string('temporaryaccesskey_desc', 'enrol_flexaccess'),
-        '', PARAM_RAW_TRIMMED));
+        get_string('temporaryaccesskeyrequired_desc', 'enrol_flexaccess'),
+        0
+    ));
+    $settings->add(new \enrol_flexaccess\admin\setting_access_key(
+        'enrol_flexaccess/temporaryaccesskeyhash',
+        get_string('temporaryaccesskey', 'enrol_flexaccess'),
+        get_string('temporaryaccesskey_desc', 'enrol_flexaccess'),
+        '',
+        PARAM_RAW_TRIMMED
+    ));
 }

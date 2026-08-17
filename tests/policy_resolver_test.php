@@ -23,15 +23,21 @@
 
 namespace enrol_flexaccess;
 
-/** Policy resolver tests. */
+/**
+ * Policy resolver tests.
+ */
 final class policy_resolver_test extends \advanced_testcase {
-    /** Test that child scope cannot widen a prohibition by default. */
+    /**
+     * Test that child scope cannot widen a prohibition by default.
+     */
     public function test_prohibition_is_not_widened_by_default(): void {
         $this->assertFalse(\enrol_flexaccess\local\policy_resolver::merge_permission(false, true));
         $this->assertTrue(\enrol_flexaccess\local\policy_resolver::merge_permission(false, true, true));
     }
 
-    /** Test temporary access-key scope inheritance. */
+    /**
+     * Test temporary access-key scope inheritance.
+     */
     public function test_temporary_access_key_scope(): void {
         $resolver = \enrol_flexaccess\local\policy_resolver::class;
         $this->assertSame('none', $resolver::temporary_access_key_scope(false, 'inherit'));
@@ -40,7 +46,9 @@ final class policy_resolver_test extends \advanced_testcase {
         $this->assertSame('course', $resolver::temporary_access_key_scope(true, 'course'));
     }
 
-    /** Test participant visibility inheritance. */
+    /**
+     * Test participant visibility inheritance.
+     */
     public function test_participant_visibility_inheritance(): void {
         $this->assertSame('hide', \enrol_flexaccess\local\policy_resolver::participant_visibility('hide', 'inherit'));
         $this->assertSame('show', \enrol_flexaccess\local\policy_resolver::participant_visibility('hide', 'show'));

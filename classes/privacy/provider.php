@@ -23,8 +23,16 @@
 
 namespace enrol_flexaccess\privacy;
 
-/** Policy/configuration tables do not themselves store personal user data. */
+/**
+ * Policy/configuration tables do not themselves store personal user data.
+ */
 final class provider implements \core_privacy\local\metadata\null_provider {
-    /** @return string */
-    public static function get_reason(): string { return 'privacy:metadata'; }
+    /**
+     * Get the reason there is no personal data.
+     *
+     * @return string
+     */
+    public static function get_reason(): string {
+        return 'privacy:metadata';
+    }
 }

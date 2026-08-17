@@ -23,11 +23,21 @@
 
 namespace enrol_flexaccess\task;
 
-/** Expire course enrolments independently from account lifetime. */
+/**
+ * Expire course enrolments independently from account lifetime.
+ */
 final class expire_enrolments extends \core\task\scheduled_task {
-    /** @return string */
-    public function get_name(): string { return get_string('task:expireenrolments', 'enrol_flexaccess'); }
-    /** Execute task. */
+    /**
+     * Get the task name.
+     *
+     * @return string
+     */
+    public function get_name(): string {
+        return get_string('task:expireenrolments', 'enrol_flexaccess');
+    }
+    /**
+     * Execute task.
+     */
     public function execute(): void {
         // Phase 2: suspend or unenrol due user_enrolments according to instance policy.
     }

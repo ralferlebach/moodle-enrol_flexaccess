@@ -23,7 +23,9 @@
 
 namespace enrol_flexaccess\local;
 
-/** Resolves policy layers without widening higher-level prohibitions by default. */
+/**
+ * Resolves policy layers without widening higher-level prohibitions by default.
+ */
 final class policy_resolver {
     /**
      * Merge boolean access-method layers.
@@ -80,5 +82,4 @@ final class policy_resolver {
         }
         return $systemrequired ? 'system' : 'none';
     }
-
 }
