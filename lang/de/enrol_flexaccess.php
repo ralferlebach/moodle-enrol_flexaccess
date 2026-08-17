@@ -55,3 +55,4 @@ $string['error:maxparticipants'] = 'Die maximale Teilnehmerzahl muss 0 (unbegren
 $string['accessnotopen'] = 'FlexAccess-Zugang ist derzeit nicht verfügbar.';
 $string['coursefull'] = 'Die maximale Teilnehmerzahl für diese Zugangsart ist erreicht.';
 $string['error:capacitylock'] = 'Die Kapazitätssperre konnte nicht gesetzt werden. Bitte erneut versuchen.';
+$string['status'] = 'FlexAccess-Einschreibung aktivieren';

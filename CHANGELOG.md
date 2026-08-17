@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.4 — 2026-08-17
+- **E-1b/E-2b: Instanzformular + Persistenz.** Standard-Editing-UI (`use_standard_editing_ui`), Formularfelder für Access Window (`availablefrom`/`availableuntil`, optionale date_time_selector) und `maxparticipants`, Validierung (Fenster-Range über `access_window::is_valid_range`, Kapazität ≥ 0). Persistenz der erweiterten Instanzkonfiguration über neue Klasse `local\instance_config` (add/update/delete). PHPUnit `instance_config_test` (Round-Trip add→update→delete). Behat `instance_access.feature`. Kein Schema-Change.
+
 ## 0.1.3 — 2026-08-17
 - **E-1 Access Window + E-2 Kapazität (Domänenlogik, Schema, Tests).**
   - Neue Instanzfelder `availablefrom`, `availableuntil`, `maxparticipants` (install.xml + `db/upgrade.php`, Savepoint 2026081730).
