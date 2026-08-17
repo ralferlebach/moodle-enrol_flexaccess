@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.5 — 2026-08-17
+- **M-E1: öffentliche Facade `enrol_flexaccess\api`** (`is_target_enabled`, `get_effective_policy`, `get_active_enrolment_count`) — der stabile Vertrag für auth/tool/mod (runtime-lazy, ADR-010).
+  - `local\policy_assembler`: effektive Policy aus System → Kategorie-Ahnenkette → Kursinstanz; Verbote restriktiv vererbt (`allowwidening`), Default-Werte (Laufzeiten/Fenster/Kapazität) überschreibbar.
+  - `local\access_gate`: kombiniert Fenster + Kapazität zu anbietbaren Methoden (Fenster sperrt Flex-Methoden, nicht den normalen Login; Kapazität sperrt nur einschreibende Methoden).
+  - PHPUnit: `access_gate_test`, `policy_assembler_test` (System-Config, Instanz-Anwendung, Ziel-nicht-aktiv, aktive Zählung). Kein Schema-Change.
+
 ## 0.1.4 — 2026-08-17
 - **E-1b/E-2b: Instanzformular + Persistenz.** Standard-Editing-UI (`use_standard_editing_ui`), Formularfelder für Access Window (`availablefrom`/`availableuntil`, optionale date_time_selector) und `maxparticipants`, Validierung (Fenster-Range über `access_window::is_valid_range`, Kapazität ≥ 0). Persistenz der erweiterten Instanzkonfiguration über neue Klasse `local\instance_config` (add/update/delete). PHPUnit `instance_config_test` (Round-Trip add→update→delete). Behat `instance_access.feature`. Kein Schema-Change.
 
