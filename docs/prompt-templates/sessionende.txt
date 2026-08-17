@@ -1,0 +1,22 @@
+# Session end — enrol_flexaccess
+
+Before finishing the session:
+1. Create a new `docs/sessions/session-NNN.md`; never overwrite an earlier report.
+2. Record changed files, decisions, unresolved risks, and exact test results.
+3. Update Blueprint/roadmap/backlog when implementation changed an architectural assumption.
+4. Run at least `make check`; run relevant PHPUnit/Behat tests and record skips honestly.
+5. Verify no credentials, raw tokens, private data, generated logs, or local environment files are included.
+6. Verify version/change log consistency if a version bump was made.
+7. Build the work ZIP and verify the new session report is included.
+
+Session report template:
+- What was completed
+- Decisions made
+- Open items
+- Security/privacy impact
+- Database/performance impact
+- Test results
+- Changed files
+- Next implementation slice
+
+Access-key rule: enrol owns system/course shared-key policy and hashes. Scope is none|system|course; never expose hash/cleartext in DTOs, diagnostics, URLs, logs or events. A course may inherit or replace a system key, not remove a system-wide requirement.
