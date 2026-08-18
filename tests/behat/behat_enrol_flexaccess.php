@@ -99,6 +99,53 @@ class behat_enrol_flexaccess extends behat_base {
     }
 
     /**
+     * Configures a course with a FlexAccess method offering quick registration, and enables the
+     * FlexAccess authentication method so registered accounts can log in again.
+     *
+     * @Given a FlexAccess enrolment method allowing quick registration exists in course :coursefullname
+     * @param string $coursefullname Full name of an existing course.
+     * @return void
+     */
+    public function a_flexaccess_method_allowing_quick_registration_exists_in_course(string $coursefullname): void {
+        global $DB;
+        $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
+        set_config('allowwidening', 1, 'enrol_flexaccess');
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance(get_course($courseid), ['status' => ENROL_INSTANCE_ENABLED]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, ['allowquick' => 1]);
+
+        $enabled = get_enabled_auth_plugins();
+        if (!in_array('flexaccess', $enabled, true)) {
+            $enabled[] = 'flexaccess';
+            set_config('auth', implode(',', $enabled));
+        }
+    }
+
+    /**
+     * Opens the site login page directly.
+     *
+     * @When I open the site login page
+     * @return void
+     */
+    public function i_open_the_site_login_page(): void {
+        $this->execute('behat_general::i_visit', [new \moodle_url('/login/index.php')]);
+    }
+
+    /**
+     * Opens the anonymous FlexAccess quick-registration page for a course.
+     *
+     * @When I open the FlexAccess quick registration page for course :coursefullname
+     * @param string $coursefullname Full name of an existing course.
+     * @return void
+     */
+    public function i_open_the_flexaccess_quick_registration_page_for_course(string $coursefullname): void {
+        global $DB;
+        $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
+        $url = new \moodle_url('/auth/flexaccess/register.php', ['courseid' => $courseid]);
+        $this->execute('behat_general::i_visit', [$url]);
+    }
+
+    /**
      * Configures a course whose temporary access is gated by a course access key.
      *
      * @Given a FlexAccess enrolment method requiring access key :key exists in course :coursefullname

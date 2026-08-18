@@ -78,6 +78,25 @@ final class api {
     }
 
     /**
+     * Whether the course currently offers quick registration.
+     *
+     * @param int $courseid Course id.
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function offers_quick_registration(int $courseid, ?int $now = null): bool {
+        $now = $now ?? time();
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        $policy = self::get_effective_policy($courseid);
+        if (!local\access_gate::is_flexaccess_open($policy, $now)) {
+            return false;
+        }
+        return $policy->allowquick;
+    }
+
+    /**
      * Whether temporary access for the course is gated by a shared access key.
      *
      * @param int $courseid Course id.

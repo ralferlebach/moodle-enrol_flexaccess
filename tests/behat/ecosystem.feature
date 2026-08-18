@@ -31,3 +31,20 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     And I set the field "Access key" to "OPEN-SESAME"
     And I press "Continue"
     Then I should see "Course 1"
+
+  Scenario: Quick registration creates a persistent account that can log in again
+    Given a FlexAccess enrolment method allowing quick registration exists in course "Course 1"
+    When I open the FlexAccess quick registration page for course "Course 1"
+    And I set the following fields to these values:
+      | Email address | learner@example.com |
+      | First name    | Test                |
+      | Last name     | Learner             |
+      | Password      | Str0ng-Pass!23      |
+    And I press "Create account and enter"
+    Then I should see "Course 1"
+    And I log out
+    And I open the site login page
+    And I set the field "Username" to "learner@example.com"
+    And I set the field "Password" to "Str0ng-Pass!23"
+    And I press "Log in"
+    Then I should see "Test Learner"

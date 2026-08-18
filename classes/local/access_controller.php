@@ -91,6 +91,52 @@ final class access_controller {
     }
 
     /**
+     * Grant access by quick registration: create a persistent account and enrol it.
+     *
+     * The created account has the person's own email and password, so unlike temporary access it
+     * survives logout and can be used to log in again later.
+     *
+     * @param int $courseid Course id.
+     * @param \stdClass $userdata Object with email, firstname, lastname and password.
+     * @param int|null $now Current time.
+     * @return \stdClass Result with ->status and, on success, ->userid and ->enrolid.
+     */
+    public static function grant_quick_registration(int $courseid, \stdClass $userdata, ?int $now = null): \stdClass {
+        $now = $now ?? time();
+        $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
+
+        if (!access_gate::is_flexaccess_open($policy, $now)) {
+            return self::result('closed');
+        }
+        if (!$policy->allowquick) {
+            return self::result('notallowed');
+        }
+        $enrolid = self::enabled_instance($courseid);
+        if ($enrolid === 0) {
+            return self::result('notenabled');
+        }
+        $active = \enrol_flexaccess\api::get_active_enrolment_count($courseid, $now);
+        if (!capacity_service::has_free_capacity($active, $policy->maxparticipants)) {
+            return self::result('full');
+        }
+
+        $userid = \auth_flexaccess\api::create_quick_registered_user(
+            (string) $userdata->email,
+            (string) $userdata->firstname,
+            (string) $userdata->lastname,
+            (string) $userdata->password,
+            $now
+        );
+
+        $enrolstatus = enrol_service::enrol_with_capacity($enrolid, $userid, $now);
+        if ($enrolstatus !== 'enrolled') {
+            return self::result($enrolstatus, $userid, $enrolid);
+        }
+
+        return self::result('granted', $userid, $enrolid);
+    }
+
+    /**
      * Find the first enabled FlexAccess enrol instance of a course.
      *
      * @param int $courseid Course id.

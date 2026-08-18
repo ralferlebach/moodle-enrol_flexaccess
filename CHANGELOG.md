@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.26 — 2026-08-18 — Paket A: Quick-Registration (allowquick)
+- **Grant-Pfad fuer Schnellregistrierung**: `access_controller::grant_quick_registration()` prueft Fenster/allowquick/Instanz/Kapazitaet, erzeugt das persistente Konto und schreibt es ein. Neuer Facade `api::offers_quick_registration()`. Test `quick_registration_test` beweist: erzeugtes Konto ist eingeschrieben UND kann sich mit E-Mail+Passwort erneut anmelden (`user_login`).
+
 ## 0.1.25 — 2026-08-18 — CI-Fix (veraltete Behat-Datei)
 - **`tests/behat/temporary_access_key.feature` als funktionierender Test neu angelegt** (statt der in 0.1.20 geloeschten Version mit undefinierten Steps). Grund: Beim Entpacken eines Zips ueber ein bestehendes Repo werden geloeschte Dateien nicht entfernt, sodass die Altdatei in der CI weiter lief. Die neue Datei nutzt die vorhandenen Steps und prueft die Access-Key-Challenge (falscher Schluessel abgewiesen, korrekter gewaehrt Zugang). Lokal verifiziert: 1 Szenario, 10 Steps gruen.
 
