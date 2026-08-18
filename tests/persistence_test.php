@@ -104,4 +104,86 @@ final class persistence_test extends \advanced_testcase {
         );
         $this->assertSame('nottemporary', $status);
     }
+
+    /**
+     * Create a course allowing temporary access and grant a temporary, enrolled account.
+     *
+     * @return array{0: int, 1: \context_course}
+     */
+    private function granted_temporary_user(): array {
+        set_config('allowwidening', 1, 'enrol_flexaccess');
+        $course = $this->getDataGenerator()->create_course();
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
+        instance_config::save($enrolid, ['allowtemporary' => 1]);
+        $granted = access_controller::grant_temporary_access((int) $course->id);
+        $this->assertSame('granted', $granted->status);
+        return [(int) $granted->userid, \context_course::instance((int) $course->id)];
+    }
+
+    /**
+     * With verification enabled (the default), a link is emailed and the account only converts on confirm.
+     *
+     * @return void
+     */
+    public function test_persistence_with_verification_sends_link_and_converts_on_confirm(): void {
+        $this->resetAfterTest();
+        set_config('requireemailverification', 1, 'auth_flexaccess');
+        [$userid, $context] = $this->granted_temporary_user();
+
+        $sink = $this->redirectEmails();
+        $status = \auth_flexaccess\api::request_persistence(
+            $userid,
+            'verify@example.com',
+            'Ver',
+            'Ified',
+            'Str0ng-Pass!23'
+        );
+        $messages = $sink->get_messages();
+        $sink->close();
+
+        $this->assertSame('verificationsent', $status);
+        // Still temporary and not yet loginnable until the email is confirmed.
+        $this->assertTrue(\auth_flexaccess\local\account_service::is_temporary($userid));
+        $this->assertFalse(get_auth_plugin('flexaccess')->user_login('verify@example.com', 'Str0ng-Pass!23'));
+
+        $this->assertCount(1, $messages);
+        $this->assertSame('verify@example.com', $messages[0]->to);
+        // The captured message is a quoted-printable MIME body; decode it to read the link.
+        $decoded = quoted_printable_decode($messages[0]->body);
+        $this->assertMatchesRegularExpression('/token=[A-Za-z0-9]{64}/', $decoded);
+        preg_match('/token=([A-Za-z0-9]+)/', $decoded, $m);
+
+        // Confirm: now permanent, still enrolled (same id), and loginnable.
+        $this->assertSame('converted', \auth_flexaccess\api::confirm_persistence($m[1]));
+        $this->assertFalse(\auth_flexaccess\local\account_service::is_temporary($userid));
+        $this->assertTrue(is_enrolled($context, \core_user::get_user($userid)));
+        $this->assertTrue(get_auth_plugin('flexaccess')->user_login('verify@example.com', 'Str0ng-Pass!23'));
+
+        // The single-use link cannot be replayed.
+        $this->assertSame('invalid', \auth_flexaccess\api::confirm_persistence($m[1]));
+    }
+
+    /**
+     * With verification disabled, request_persistence converts immediately.
+     *
+     * @return void
+     */
+    public function test_persistence_without_verification_converts_immediately(): void {
+        $this->resetAfterTest();
+        set_config('requireemailverification', 0, 'auth_flexaccess');
+        [$userid, $context] = $this->granted_temporary_user();
+
+        $status = \auth_flexaccess\api::request_persistence(
+            $userid,
+            'now@example.com',
+            'Now',
+            'User',
+            'Str0ng-Pass!23'
+        );
+        $this->assertSame('converted', $status);
+        $this->assertFalse(\auth_flexaccess\local\account_service::is_temporary($userid));
+        $this->assertTrue(is_enrolled($context, \core_user::get_user($userid)));
+        $this->assertTrue(get_auth_plugin('flexaccess')->user_login('now@example.com', 'Str0ng-Pass!23'));
+    }
 }

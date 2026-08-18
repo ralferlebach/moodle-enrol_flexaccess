@@ -60,6 +60,8 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
   Scenario: A temporary user makes the account permanent and keeps enrolment on re-login
     Given a FlexAccess enrolment method allowing temporary access exists in course "Course 1"
     And the FlexAccess authentication method is enabled
+    And the following config values are set as admin:
+      | requireemailverification | 0 | auth_flexaccess |
     When I open the FlexAccess entry page for course "Course 1"
     And I press "Continue"
     Then I should see "Course 1"
@@ -79,3 +81,18 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     Then I should see "Kept Learner"
     And I am on "Course 1" course homepage
     Then I should see "Course 1"
+
+  Scenario: Persisting with email verification enabled sends a confirmation link
+    Given a FlexAccess enrolment method allowing temporary access exists in course "Course 1"
+    And the FlexAccess authentication method is enabled
+    When I open the FlexAccess entry page for course "Course 1"
+    And I press "Continue"
+    Then I should see "Course 1"
+    When I open the FlexAccess persistence page
+    And I set the following fields to these values:
+      | Email address | verify@example.com |
+      | First name    | Ver                |
+      | Last name     | Ified              |
+      | Password      | Str0ng-Pass!23     |
+    And I press "Make my account permanent"
+    Then I should see "verification link"
