@@ -87,6 +87,44 @@ final class quick_registration_test extends \advanced_testcase {
     }
 
     /**
+     * Quick registration is rate limited per client address once the cap is reached.
+     *
+     * @return void
+     */
+    public function test_quick_registration_rate_limited_per_ip(): void {
+        $this->resetAfterTest();
+        $course = $this->course_allowing_quick();
+        $ip = '198.51.100.7';
+
+        // Fill the per-IP window (30 by default), then the next attempt is refused.
+        for ($i = 0; $i < 30; $i++) {
+            $result = access_controller::grant_quick_registration((int) $course->id, (object) [
+                'email' => "rl{$i}@example.com",
+                'firstname' => 'Rate',
+                'lastname' => 'Limited',
+                'password' => 'Str0ng-Pass!23',
+            ], $ip);
+            $this->assertSame('granted', $result->status);
+        }
+        $blocked = access_controller::grant_quick_registration((int) $course->id, (object) [
+            'email' => 'blocked@example.com',
+            'firstname' => 'Rate',
+            'lastname' => 'Limited',
+            'password' => 'Str0ng-Pass!23',
+        ], $ip);
+        $this->assertSame('ratelimited', $blocked->status);
+
+        // A different client address is unaffected.
+        $other = access_controller::grant_quick_registration((int) $course->id, (object) [
+            'email' => 'otherip@example.com',
+            'firstname' => 'Other',
+            'lastname' => 'Network',
+            'password' => 'Str0ng-Pass!23',
+        ], '203.0.113.50');
+        $this->assertSame('granted', $other->status);
+    }
+
+    /**
      * Quick registration is refused when the policy does not allow it.
      *
      * @return void

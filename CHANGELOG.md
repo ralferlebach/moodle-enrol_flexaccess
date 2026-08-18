@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.34 — 2026-08-19 — Rate-Limiting der oeffentlichen Schreib-Endpoints (§5)
+- **Quick-Registration rate-limitiert** pro Client-Adresse (NAT-freundlich: 30/10min, damit eine ganze Klasse hinter einer IP nicht blockiert wird, Skript-Massenanlage aber gebremst). `grant_quick_registration()` nimmt die Client-Adresse und liefert `ratelimited`; `register.php` reicht `getremoteaddr()` durch. Neuer String `access:ratelimited`.
+- Tests: `rate_limiter_test` (Sliding-Window + Magic-pro-E-Mail), Quick-Reg-IP-Limit-Integrationstest.
+
 ## 0.1.33 — 2026-08-19 — Enrolment-Expiry (§32/§33) + echte jmeter/playwright-Plaene (§26/§27)
 - **Enrolment-Expiry umgesetzt** (Review §33): neuer Service `local\enrol_expiry::process()`, den der Task `expire_enrolments` nun aufruft (war leer). Aktive FlexAccess-Enrolments mit abgelaufenem `timeend` werden je nach Instanz-Policy **suspendiert oder ausgetragen**. Getestet: suspend, unenrol, aktive/unbefristete bleiben unberuehrt.
 - **Einschreibungsdauer konfigurierbar** (Review §32): `enrolperiod` wird jetzt im Instanzformular angeboten (Dauer, optional) und in `instance_config::save()` persistiert; `enrol_with_capacity()` setzt daraus das `timeend`. Test: gespeichert + angewandt.

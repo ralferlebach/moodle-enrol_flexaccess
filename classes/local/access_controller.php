@@ -36,6 +36,16 @@ namespace enrol_flexaccess\local;
  */
 final class access_controller {
     /**
+     * Sliding window for quick-registration rate limiting, in seconds.
+     */
+    private const QUICKREG_RATE_WINDOW = 600;
+
+    /**
+     * Maximum quick registrations per client address within the window (NAT-friendly).
+     */
+    private const QUICKREG_MAX_PER_IP = 30;
+
+    /**
      * Grant temporary access to a course for a new anonymous visitor.
      *
      * @param int $courseid Course id.
@@ -95,7 +105,12 @@ final class access_controller {
      * @param int|null $now Current time.
      * @return \stdClass Result with ->status and, on success, ->userid and ->enrolid.
      */
-    public static function grant_quick_registration(int $courseid, \stdClass $userdata, ?int $now = null): \stdClass {
+    public static function grant_quick_registration(
+        int $courseid,
+        \stdClass $userdata,
+        ?string $clientip = null,
+        ?int $now = null
+    ): \stdClass {
         $now = $now ?? time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
 
@@ -105,6 +120,19 @@ final class access_controller {
         if (!$policy->allowquick) {
             return self::result('notallowed');
         }
+        // Throttle anonymous account creation per client address. The limit is generous so a whole
+        // class behind one NAT address is not blocked, but scripted mass-creation is slowed.
+        if (
+            $clientip !== null && \auth_flexaccess\local\rate_limiter::too_many(
+                'quickreg',
+                $clientip,
+                self::QUICKREG_MAX_PER_IP,
+                self::QUICKREG_RATE_WINDOW,
+                $now
+            )
+        ) {
+            return self::result('ratelimited');
+        }
         $enrolid = self::enabled_instance($courseid);
         if ($enrolid === 0) {
             return self::result('notenabled');
@@ -112,6 +140,10 @@ final class access_controller {
         $active = \enrol_flexaccess\api::get_active_enrolment_count($courseid, $now);
         if (!capacity_service::has_free_capacity($active, $policy->maxparticipants)) {
             return self::result('full');
+        }
+
+        if ($clientip !== null) {
+            \auth_flexaccess\local\rate_limiter::record('quickreg', $clientip, self::QUICKREG_RATE_WINDOW, $now);
         }
 
         $userid = \auth_flexaccess\api::create_quick_registered_user(
