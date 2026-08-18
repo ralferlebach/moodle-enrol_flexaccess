@@ -18,6 +18,7 @@ namespace enrol_flexaccess;
 
 use enrol_flexaccess\local\access_controller;
 use enrol_flexaccess\local\instance_config;
+use auth_flexaccess\local\account_state;
 
 /**
  * Tests that a temporary user can be persisted while keeping the same user id and enrolment.
@@ -139,6 +140,9 @@ final class persistence_test extends \advanced_testcase {
             'Ified',
             'Str0ng-Pass!23'
         );
+        // The verification mail goes through the queue; the worker delivers it.
+        $this->assertSame(0, $sink->count());
+        \auth_flexaccess\local\mail_worker::run(time());
         $messages = $sink->get_messages();
         $sink->close();
 
@@ -185,5 +189,35 @@ final class persistence_test extends \advanced_testcase {
         $this->assertFalse(\auth_flexaccess\local\account_service::is_temporary($userid));
         $this->assertTrue(is_enrolled($context, \core_user::get_user($userid)));
         $this->assertTrue(get_auth_plugin('flexaccess')->user_login('now@example.com', 'Str0ng-Pass!23'));
+    }
+
+    /**
+     * SEC-03: a persistence token cannot revive a temporary account that has already expired.
+     *
+     * @return void
+     */
+    public function test_expired_account_cannot_be_persisted(): void {
+        global $DB;
+        $this->resetAfterTest();
+        set_config('requireemailverification', 1, 'auth_flexaccess');
+        [$userid] = $this->granted_temporary_user();
+
+        $sink = $this->redirectEmails();
+        \auth_flexaccess\api::request_persistence($userid, 'late@example.com', 'La', 'Te', 'Str0ng-Pass!23');
+        \auth_flexaccess\local\mail_worker::run(time());
+        $messages = $sink->get_messages();
+        $sink->close();
+        preg_match('/token=([A-Za-z0-9]+)/', quoted_printable_decode($messages[0]->body), $m);
+
+        // The temporary account expires before the link is opened.
+        $DB->set_field(
+            'auth_flexaccess_account',
+            'accountstate',
+            account_state::EXPIRED,
+            ['userid' => $userid]
+        );
+
+        $this->assertSame('expired', \auth_flexaccess\api::confirm_persistence($m[1]));
+        $this->assertFalse(get_auth_plugin('flexaccess')->user_login('late@example.com', 'Str0ng-Pass!23'));
     }
 }

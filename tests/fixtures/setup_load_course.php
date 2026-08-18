@@ -15,10 +15,13 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * CLI seed for the enrol_flexaccess Playwright tests.
+ * CLI fixture: create a visible course with an enabled FlexAccess enrolment instance that offers
+ * anonymous temporary access, and print its course id.
  *
- * Creates a course with an anonymous-temporary FlexAccess instance and prints the base URL, course
- * id and course name as shell "export" lines so the CI runner can source them.
+ * Used by the load (JMeter) and browser (Playwright) suites so they exercise a real FlexAccess
+ * entry point rather than only the Moodle login page. Intended for disposable CI test sites only.
+ *
+ * Usage: php enrol/flexaccess/tests/fixtures/setup_load_course.php
  *
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
@@ -26,14 +29,16 @@
  */
 
 define('CLI_SCRIPT', true);
+
 require(__DIR__ . '/../../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->libdir . '/clilib.php');
 
-$coursename = 'FlexAccess Load Test';
 $category = \core_course_category::get_default();
+
 $course = create_course((object) [
-    'fullname' => $coursename,
-    'shortname' => 'FAPW' . time(),
+    'fullname' => 'FlexAccess Load Test',
+    'shortname' => 'FALT' . time(),
     'category' => $category->id,
     'visible' => 1,
 ]);
@@ -46,6 +51,5 @@ $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
     'maxparticipants' => 0,
 ]);
 
-echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";
-echo "export FLEXACCESS_COURSE_ID='" . $course->id . "'\n";
-echo "export FLEXACCESS_COURSE_NAME='" . $coursename . "'\n";
+// Print only the course id on stdout so a CI job can capture it.
+echo $course->id . "\n";

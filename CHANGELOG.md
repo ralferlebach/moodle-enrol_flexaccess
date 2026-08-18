@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.32 — 2026-08-19 — Magic-Login, Mail-Queue-Retrofit, SEC-03, main-CI + jmeter/playwright
+- Tests: `magic_login_test` (5), `persistence_test` um SEC-03-Fall erweitert (abgelaufenes Konto nicht reaktivierbar) und auf den Queue-Versand umgestellt.
+- **Neue main-CI** `.github/workflows/main.yml` (push/PR nach main): plugin-uebergreifend PHPUnit+Behat+phpcs (alle 4 via --extra-plugins), plus echte **jmeter**- und **playwright**-Jobs gegen eine installierte Site.
+- **JMeter** trifft jetzt echte FlexAccess-Endpoints (`access.php` mit Policy-Aufloesung, `magic.php`) statt nur `/login` (Review §26), mit 200-/Exception-/Latenz-Assertions. **Playwright** um anonymen Temporary-Entry-Flow + Magic-Render erweitert (Review §27). Neue Fixtures `tests/fixtures/setup_load_course.php` und erweitertes `tests/playwright/seed.php`.
+
 ## 0.1.31 — 2026-08-18 — Aufraeumen: toter persistence_followup-Mailpfad entfernt
 - `access_controller::grant_temporary_access()` plant keinen Persistenz-Followup mehr ein (Konstante `FOLLOWUP_AFTER` entfernt). Test entsprechend angepasst.
 

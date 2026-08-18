@@ -150,6 +150,71 @@ class behat_enrol_flexaccess extends behat_base {
     }
 
     /**
+     * Creates a permanent (authenticated, active) FlexAccess account and enables the auth method.
+     *
+     * @Given a permanent FlexAccess account :email exists with name :firstname :lastname
+     * @param string $email Email address (also the username).
+     * @param string $firstname First name.
+     * @param string $lastname Last name.
+     * @return void
+     */
+    public function a_permanent_flexaccess_account_exists_with_name(
+        string $email,
+        string $firstname,
+        string $lastname
+    ): void {
+        global $CFG, $DB;
+        require_once($CFG->dirroot . '/user/lib.php');
+        $user = (object) [
+            'auth' => 'flexaccess',
+            'confirmed' => 1,
+            'mnethostid' => $CFG->mnet_localhost_id,
+            'username' => $email,
+            'email' => $email,
+            'firstname' => $firstname,
+            'lastname' => $lastname,
+            'emailstop' => 0,
+        ];
+        if (method_exists(\core\user::class, 'create_user')) {
+            $userid = (int) \core\user::create_user($user, false, true);
+        } else {
+            $userid = (int) user_create_user($user, false, true);
+        }
+        \auth_flexaccess\local\account_service::create_authenticated($userid, '5555555555');
+
+        $enabled = get_enabled_auth_plugins();
+        if (!in_array('flexaccess', $enabled, true)) {
+            $enabled[] = 'flexaccess';
+            set_config('auth', implode(',', $enabled));
+        }
+    }
+
+    /**
+     * Opens the FlexAccess magic-login request page.
+     *
+     * @When I open the FlexAccess magic-login page
+     * @return void
+     */
+    public function i_open_the_flexaccess_magic_login_page(): void {
+        $this->execute('behat_general::i_visit', [new \moodle_url('/auth/flexaccess/magic.php')]);
+    }
+
+    /**
+     * Issues a magic-login token for a user and opens the resulting link.
+     *
+     * @When I open a FlexAccess magic-login link for :email
+     * @param string $email Email address of an existing account.
+     * @return void
+     */
+    public function i_open_a_flexaccess_magic_login_link_for(string $email): void {
+        global $DB;
+        $userid = (int) $DB->get_field('user', 'id', ['email' => $email], MUST_EXIST);
+        $token = \auth_flexaccess\local\token_service::issue($userid, 'magiclogin', 900);
+        $url = new \moodle_url('/auth/flexaccess/magic.php', ['token' => $token]);
+        $this->execute('behat_general::i_visit', [$url]);
+    }
+
+    /**
      * Enables the FlexAccess authentication method so its accounts can log in.
      *
      * @Given the FlexAccess authentication method is enabled

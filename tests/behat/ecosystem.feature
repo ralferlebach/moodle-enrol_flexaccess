@@ -96,3 +96,14 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
       | Password      | Str0ng-Pass!23     |
     And I press "Make my account permanent"
     Then I should see "verification link"
+
+  Scenario: A user can request a passwordless magic-login link
+    When I open the FlexAccess magic-login page
+    And I set the field "Email address" to "magic@example.com"
+    And I press "Send me a login link"
+    Then I should see "a login link is on its way"
+
+  Scenario: A permanent account logs in through a magic-login link
+    Given a permanent FlexAccess account "magic@example.com" exists with name "Magic" "User"
+    When I open a FlexAccess magic-login link for "magic@example.com"
+    Then I should see "Magic User"
