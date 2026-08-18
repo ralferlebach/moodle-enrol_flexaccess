@@ -70,6 +70,8 @@ final class instance_config {
         $temporarylifetime = max(0, (int) ($data['temporarylifetime'] ?? 0));
         $expiryactionraw = (string) ($data['expiryaction'] ?? 'suspend');
         $expiryaction = in_array($expiryactionraw, ['suspend', 'unenrol'], true) ? $expiryactionraw : 'suspend';
+        $keymoderaw = (string) ($data['temporaryaccesskeymode'] ?? 'inherit');
+        $keymode = in_array($keymoderaw, ['inherit', 'course'], true) ? $keymoderaw : 'inherit';
 
         $fields = [
             'availablefrom' => $availablefrom,
@@ -80,10 +82,17 @@ final class instance_config {
             'allowguest' => $allowguest,
             'allownormallogin' => $allownormallogin,
             'expiryaction' => $expiryaction,
+            'temporaryaccesskeymode' => $keymode,
         ];
         // Only overwrite temporarylifetime when the form supplied one (0 keeps the stored default).
         if ($temporarylifetime > 0) {
             $fields['temporarylifetime'] = $temporarylifetime;
+        }
+        // Hash a newly entered course key; an empty field leaves any existing hash untouched. When the
+        // mode is not "course" the gate is inactive regardless of the stored hash.
+        $newkey = trim((string) ($data['temporaryaccesskey'] ?? ''));
+        if ($keymode === 'course' && $newkey !== '') {
+            $fields['temporaryaccesskeyhash'] = password_hash($newkey, PASSWORD_DEFAULT);
         }
 
         $existing = self::load($enrolid);

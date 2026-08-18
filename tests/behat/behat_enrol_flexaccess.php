@@ -97,4 +97,34 @@ class behat_enrol_flexaccess extends behat_base {
         $url = new \moodle_url('/auth/flexaccess/access.php', ['courseid' => $courseid]);
         $this->execute('behat_general::i_visit', [$url]);
     }
+
+    /**
+     * Configures a course whose temporary access is gated by a course access key.
+     *
+     * @Given a FlexAccess enrolment method requiring access key :key exists in course :coursefullname
+     * @param string $key Clear-text access key.
+     * @param string $coursefullname Full name of an existing course.
+     * @return void
+     */
+    public function a_flexaccess_method_requiring_access_key_exists_in_course(
+        string $key,
+        string $coursefullname
+    ): void {
+        global $DB;
+        $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
+        set_config('allowwidening', 1, 'enrol_flexaccess');
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance(get_course($courseid), ['status' => ENROL_INSTANCE_ENABLED]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, [
+            'allowtemporary' => 1,
+            'temporarylifetime' => DAYSECS,
+        ]);
+        $DB->set_field('enrol_flexaccess_instance', 'temporaryaccesskeymode', 'course', ['enrolid' => $enrolid]);
+        $DB->set_field(
+            'enrol_flexaccess_instance',
+            'temporaryaccesskeyhash',
+            password_hash($key, PASSWORD_DEFAULT),
+            ['enrolid' => $enrolid]
+        );
+    }
 }

@@ -45,10 +45,11 @@ final class access_controller {
      *
      * @param int $courseid Course id.
      * @param int|null $now Current time.
-     * @return \stdClass Result with ->status (granted|closed|notallowed|notenabled|full|<enrolstatus>),
+     * @param string|null $accesskey Clear-text access key, when the policy requires one.
+     * @return \stdClass Result with ->status (granted|closed|notallowed|badkey|notenabled|full|<enrolstatus>),
      *                   ->userid and ->enrolid (0 when not applicable).
      */
-    public static function grant_temporary_access(int $courseid, ?int $now = null): \stdClass {
+    public static function grant_temporary_access(int $courseid, ?int $now = null, ?string $accesskey = null): \stdClass {
         $now = $now ?? time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
 
@@ -57,6 +58,16 @@ final class access_controller {
         }
         if (!$policy->allowtemporary) {
             return self::result('notallowed');
+        }
+        // Server-side access-key enforcement: verified before any account is created, so it cannot
+        // be bypassed by calling the controller directly. The key is never persisted or logged here.
+        if ($policy->temporaryaccesskeyscope !== 'none') {
+            if (
+                $accesskey === null || $accesskey === ''
+                    || !access_key_service::verify($courseid, $policy, $accesskey)
+            ) {
+                return self::result('badkey');
+            }
         }
         $enrolid = self::enabled_instance($courseid);
         if ($enrolid === 0) {

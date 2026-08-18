@@ -114,6 +114,17 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     }
 
     /**
+     * Whether the given instance can be hidden or shown from the enrolment methods page.
+     *
+     * @param \stdClass $instance Enrol instance.
+     * @return bool
+     */
+    public function can_hide_show_instance($instance): bool {
+        $context = context_course::instance($instance->courseid);
+        return has_capability('enrol/flexaccess:config', $context);
+    }
+
+    /**
      * Default values for the add-instance form.
      *
      * @return array
@@ -194,13 +205,28 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('expiryaction', 'expiryaction', 'enrol_flexaccess');
         $mform->setDefault('expiryaction', 'suspend');
 
+        // Access key gating for temporary entry.
+        $mform->addElement('header', 'flexaccess_key', get_string('settings:accesskeygate', 'enrol_flexaccess'));
+
+        $mform->addElement('select', 'temporaryaccesskeymode', get_string('temporaryaccesskeymode', 'enrol_flexaccess'), [
+            'inherit' => get_string('temporaryaccesskeymode:inherit', 'enrol_flexaccess'),
+            'course' => get_string('temporaryaccesskeymode:course', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('temporaryaccesskeymode', 'temporaryaccesskeymode', 'enrol_flexaccess');
+        $mform->setDefault('temporaryaccesskeymode', 'inherit');
+
+        $mform->addElement('passwordunmask', 'temporaryaccesskey', get_string('temporaryaccesskey', 'enrol_flexaccess'));
+        $mform->setType('temporaryaccesskey', PARAM_RAW);
+        $mform->addHelpButton('temporaryaccesskey', 'temporaryaccesskey', 'enrol_flexaccess');
+        $mform->hideIf('temporaryaccesskey', 'temporaryaccesskeymode', 'neq', 'course');
+
         // Populate the extended fields from stored configuration when editing an existing instance.
         if (!empty($instance->id)) {
             $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
             if ($config) {
                 foreach (
                     ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
-                        'temporarylifetime', 'expiryaction'] as $field
+                        'temporarylifetime', 'expiryaction', 'temporaryaccesskeymode'] as $field
                 ) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);

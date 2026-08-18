@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.23 — 2026-08-18 — CI-Fixes
+- **Behat-Fix:** `can_hide_show_instance()` ueberschrieben. Ohne diese Methode meldete Moodle auf der Seite „Einschreibemethoden verwalten" ein `debugging()` ("should override can_hide_show_instance()"), was den @javascript-Behat-Lauf (`instance_access.feature`, "Add method") scheitern liess.
+- Hinweis: `temporary_access_key.feature` (undefinierte Steps) wurde bereits in 0.1.20 entfernt; der rote CI-Lauf lief noch auf einem aelteren enrol-Commit — ein Push dieses Stands raeumt das auf.
+
+## 0.1.23 — 2026-08-18 — Paket A (Access), Teil 2: Zugangsschlüssel
+- **Der Zugangsschlüssel ist jetzt wirksam** (war Sicherheits-Blocker B2). E2E per Behat verifiziert: falscher Schlüssel -> Fehler, richtiger -> Kurszugang.
+- **B2 (serverseitige Durchsetzung):** `access_controller::grant_temporary_access()` prueft den Schluessel jetzt VOR jeder Kontoerzeugung (neuer Status `badkey`); nicht umgehbar durch Direktaufruf. `access_key_service::verify()` loest System- bzw. Kurs-Hash intern auf und gibt nur einen Boolean zurueck.
+- **Rate-Limit (B7-Teil):** neue Klasse `local\access_key_rate` (MUC-basiert, pro IP+Kurs, gleitendes Fenster) blockt Brute-Force nach 5 Fehlversuchen fuer 5 Minuten; der Schluessel selbst wird nie gespeichert/geloggt.
+- **Konfigformular:** neuer Abschnitt „Zugangsschluessel" mit Modus (erben/kursspezifisch) und Schluesselfeld; beim Speichern wird ein neu eingegebener Schluessel gehasht (`password_hash`), ein leeres Feld laesst den bestehenden Hash unveraendert.
+- Neue Tests `access_key_test` (Durchsetzung, Rate-Limiter, Formular-Hash-Roundtrip); neues Behat-Szenario Key-Gating.
+
 ## 0.1.22 — 2026-08-18 — Paket A (Access), Teil 1
 - **Der URL-/aktivitaetssensitive Zugang funktioniert jetzt end-to-end** (war Beta-Blocker B1). Real per Behat verifiziert: ein anonymer Besucher gelangt ueber die Entry-Page zu temporaerem Zugang und landet im Zielkurs.
 - **B3 (Konfigformular):** das Enrolment-Formular exponiert und speichert jetzt die zentralen P0-Felder — `allowtemporary`, `allowquick`, `allowguest`, `allownormallogin`, `temporarylifetime`, `expiryaction` (zuvor nur gespeichert/Default). `instance_config::save()` persistiert sie.

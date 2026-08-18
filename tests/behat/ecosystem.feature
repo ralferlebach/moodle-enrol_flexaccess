@@ -21,3 +21,13 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     When I open the FlexAccess entry page for course "Course 1"
     And I press "Continue"
     Then I should see "Course 1"
+
+  Scenario: A course access key gates anonymous temporary entry
+    Given a FlexAccess enrolment method requiring access key "OPEN-SESAME" exists in course "Course 1"
+    When I open the FlexAccess entry page for course "Course 1"
+    And I set the field "Access key" to "wrong-key"
+    And I press "Continue"
+    Then I should see "That access key is not correct"
+    And I set the field "Access key" to "OPEN-SESAME"
+    And I press "Continue"
+    Then I should see "Course 1"
