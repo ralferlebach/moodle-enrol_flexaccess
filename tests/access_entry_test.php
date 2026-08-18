@@ -67,6 +67,30 @@ final class access_entry_test extends \advanced_testcase {
     }
 
     /**
+     * Guest access and normal-login offers follow their policy flags.
+     *
+     * @return void
+     */
+    public function test_offers_guest_and_normal_login(): void {
+        $this->resetAfterTest();
+
+        // Normal login is on by default and is not tied to the access window.
+        [$default] = $this->course_with_instance(['allowtemporary' => 1]);
+        $this->assertTrue(api::offers_normal_login((int) $default->id));
+        $this->assertFalse(api::offers_guest_access((int) $default->id));
+
+        // Guest enabled: offered. Normal login disabled: not offered.
+        [$guest] = $this->course_with_instance(['allowguest' => 1, 'allownormallogin' => 0]);
+        $this->assertTrue(api::offers_guest_access((int) $guest->id));
+        $this->assertFalse(api::offers_normal_login((int) $guest->id));
+
+        // A course without any FlexAccess instance offers neither.
+        $bare = $this->getDataGenerator()->create_course();
+        $this->assertFalse(api::offers_guest_access((int) $bare->id));
+        $this->assertFalse(api::offers_normal_login((int) $bare->id));
+    }
+
+    /**
      * A closed access window suppresses anonymous entry even with a method enabled.
      *
      * @return void

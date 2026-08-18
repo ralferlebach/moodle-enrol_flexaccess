@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.27 — 2026-08-18 — Paket A abgeschlossen: Methodenauswahl (Gast + Normallogin)
+- Neue Facades `api::offers_guest_access()` (fenstergebunden) und `api::offers_normal_login()` (nicht fenstergebunden, da Login-Fallback). Test in `access_entry_test` ergaenzt.
+
 ## 0.1.26 — 2026-08-18 — Paket A: Quick-Registration (allowquick)
 - **Grant-Pfad fuer Schnellregistrierung**: `access_controller::grant_quick_registration()` prueft Fenster/allowquick/Instanz/Kapazitaet, erzeugt das persistente Konto und schreibt es ein. Neuer Facade `api::offers_quick_registration()`. Test `quick_registration_test` beweist: erzeugtes Konto ist eingeschrieben UND kann sich mit E-Mail+Passwort erneut anmelden (`user_login`).
 

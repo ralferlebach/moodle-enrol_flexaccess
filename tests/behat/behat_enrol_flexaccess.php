@@ -122,6 +122,34 @@ class behat_enrol_flexaccess extends behat_base {
     }
 
     /**
+     * Configures a course whose FlexAccess method offers guest access and normal login, and enables
+     * Moodle guest enrolment on the course so the guest link can actually enter.
+     *
+     * @Given a FlexAccess enrolment method offering guest access and normal login exists in course :coursefullname
+     * @param string $coursefullname Full name of an existing course.
+     * @return void
+     */
+    public function a_flexaccess_method_offering_guest_access_and_normal_login_exists_in_course(
+        string $coursefullname
+    ): void {
+        global $DB;
+        $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
+        set_config('allowwidening', 1, 'enrol_flexaccess');
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance(get_course($courseid), ['status' => ENROL_INSTANCE_ENABLED]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, [
+            'allowtemporary' => 1,
+            'allowguest' => 1,
+            'allownormallogin' => 1,
+        ]);
+
+        $guest = enrol_get_plugin('guest');
+        if ($guest) {
+            $guest->add_instance(get_course($courseid), ['status' => ENROL_INSTANCE_ENABLED]);
+        }
+    }
+
+    /**
      * Opens the site login page directly.
      *
      * @When I open the site login page
