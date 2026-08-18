@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.30 — 2026-08-18 — DRY: gemeinsame Identitaetsfelder der Formulare
+- Keine Codeaenderung.
+
 ## 0.1.29 — 2026-08-18 — Paket B: E-Mail-Verifikation der Persistierung (Option, Default an)
 - Tests in `persistence_test` ergaenzt: mit Verifikation wird eine Mail mit Einmal-Token versendet, das Konto bleibt bis zur Bestaetigung temporaer/nicht anmeldbar; nach `confirm_persistence` ist es dauerhaft, weiterhin eingeschrieben und anmeldbar; Link ist nicht wiederverwendbar. Ohne Verifikation konvertiert es sofort.
 
