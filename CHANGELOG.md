@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.31 — 2026-08-18 — Aufraeumen: toter persistence_followup-Mailpfad entfernt
+- `access_controller::grant_temporary_access()` plant keinen Persistenz-Followup mehr ein (Konstante `FOLLOWUP_AFTER` entfernt). Test entsprechend angepasst.
+
 ## 0.1.30 — 2026-08-18 — DRY: gemeinsame Identitaetsfelder der Formulare
 - Keine Codeaenderung.
 

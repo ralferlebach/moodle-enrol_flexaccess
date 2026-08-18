@@ -94,7 +94,9 @@ final class access_controller_test extends \advanced_testcase {
             'user_enrolments',
             ['enrolid' => $result->enrolid, 'userid' => $result->userid]
         ));
-        $this->assertEquals(1, $DB->count_records(
+        // Granting temporary access no longer enqueues a follow-up mail (the persistence follow-up
+        // path was removed; persistence is now self-service via persist.php).
+        $this->assertEquals(0, $DB->count_records(
             'auth_flexaccess_mailqueue',
             ['userid' => $result->userid, 'status' => 'queued']
         ));

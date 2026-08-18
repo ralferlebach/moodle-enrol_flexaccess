@@ -36,11 +36,6 @@ namespace enrol_flexaccess\local;
  */
 final class access_controller {
     /**
-     * Default follow-up delay after account creation, in seconds.
-     */
-    private const FOLLOWUP_AFTER = DAYSECS;
-
-    /**
      * Grant temporary access to a course for a new anonymous visitor.
      *
      * @param int $courseid Course id.
@@ -86,7 +81,6 @@ final class access_controller {
             return self::result($enrolstatus, $userid, $enrolid);
         }
 
-        \auth_flexaccess\api::request_persistence_followup($userid, self::FOLLOWUP_AFTER);
         return self::result('granted', $userid, $enrolid);
     }
 
