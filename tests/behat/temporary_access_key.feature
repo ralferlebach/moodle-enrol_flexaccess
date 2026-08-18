@@ -1,11 +1,21 @@
-@enrol @enrol_flexaccess @javascript
-Feature: Protect temporary-user entry with a shared access key
-  In order to restrict temporary access to invited participants
-  As a teacher or administrator
-  I need a system or course access key to gate only temporary-user FlexAccess modes
+@enrol @enrol_flexaccess
+Feature: FlexAccess temporary access can be gated by a shared access key
+  In order to protect a course while keeping entry low-barrier
+  As an administrator
+  I need temporary access to require the correct shared key
 
-  Scenario: Course access key does not replace normal Moodle login
-    Given the FlexAccess enrolment method is configured with a course access key
-    When a visitor opens the FlexAccess entry page for the course
-    Then temporary-user entry requires the shared access key
-    And normal Moodle login remains available without that shared access key
+  Background:
+    Given the following "courses" exist:
+      | fullname     | shortname | category |
+      | Keyed course | KEYC      | 0        |
+
+  Scenario: The correct shared key is required for temporary entry
+    Given a FlexAccess enrolment method requiring access key "OPEN-SESAME" exists in course "Keyed course"
+    When I open the FlexAccess entry page for course "Keyed course"
+    Then I should see "Access key"
+    And I set the field "Access key" to "wrong-key"
+    And I press "Continue"
+    Then I should see "That access key is not correct."
+    And I set the field "Access key" to "OPEN-SESAME"
+    And I press "Continue"
+    Then I should see "Keyed course"

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.25 — 2026-08-18 — CI-Fix (veraltete Behat-Datei)
+- **`tests/behat/temporary_access_key.feature` als funktionierender Test neu angelegt** (statt der in 0.1.20 geloeschten Version mit undefinierten Steps). Grund: Beim Entpacken eines Zips ueber ein bestehendes Repo werden geloeschte Dateien nicht entfernt, sodass die Altdatei in der CI weiter lief. Die neue Datei nutzt die vorhandenen Steps und prueft die Access-Key-Challenge (falscher Schluessel abgewiesen, korrekter gewaehrt Zugang). Lokal verifiziert: 1 Szenario, 10 Steps gruen.
+
 ## 0.1.24 — 2026-08-18 — Paket A: B2 (Access-Key) verifiziert
 - **Access-Key-Durchsetzung end-to-end per Behat verifiziert** (Sicherheits-Blocker B2 geschlossen): Challenge-Formular, falscher Schluessel wird abgewiesen, korrekter Schluessel gewaehrt Zugang; Rate-Limit im Flow, Schluessel nur per POST (nie in URL/Log). 3 Ecosystem-Szenarien, 20 Steps gruen.
 - Neuer Facade `api::requires_temporary_access_key()` (kapselt die Key-Pflicht der Policy fuer den Entry-Point).
