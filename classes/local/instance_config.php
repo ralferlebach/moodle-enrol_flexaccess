@@ -63,24 +63,43 @@ final class instance_config {
         $availablefrom = max(0, (int) ($data['availablefrom'] ?? 0));
         $availableuntil = max(0, (int) ($data['availableuntil'] ?? 0));
         $maxparticipants = max(0, (int) ($data['maxparticipants'] ?? 0));
+        $allowtemporary = !empty($data['allowtemporary']) ? 1 : 0;
+        $allowquick = !empty($data['allowquick']) ? 1 : 0;
+        $allowguest = !empty($data['allowguest']) ? 1 : 0;
+        $allownormallogin = isset($data['allownormallogin']) ? (!empty($data['allownormallogin']) ? 1 : 0) : 1;
+        $temporarylifetime = max(0, (int) ($data['temporarylifetime'] ?? 0));
+        $expiryactionraw = (string) ($data['expiryaction'] ?? 'suspend');
+        $expiryaction = in_array($expiryactionraw, ['suspend', 'unenrol'], true) ? $expiryactionraw : 'suspend';
+
+        $fields = [
+            'availablefrom' => $availablefrom,
+            'availableuntil' => $availableuntil,
+            'maxparticipants' => $maxparticipants,
+            'allowtemporary' => $allowtemporary,
+            'allowquick' => $allowquick,
+            'allowguest' => $allowguest,
+            'allownormallogin' => $allownormallogin,
+            'expiryaction' => $expiryaction,
+        ];
+        // Only overwrite temporarylifetime when the form supplied one (0 keeps the stored default).
+        if ($temporarylifetime > 0) {
+            $fields['temporarylifetime'] = $temporarylifetime;
+        }
 
         $existing = self::load($enrolid);
         if ($existing) {
-            $existing->availablefrom = $availablefrom;
-            $existing->availableuntil = $availableuntil;
-            $existing->maxparticipants = $maxparticipants;
+            foreach ($fields as $key => $value) {
+                $existing->$key = $value;
+            }
             $existing->timemodified = $now;
             $DB->update_record(self::TABLE, $existing);
             return;
         }
 
-        $record = (object) [
+        $record = (object) array_merge($fields, [
             'enrolid' => $enrolid,
-            'availablefrom' => $availablefrom,
-            'availableuntil' => $availableuntil,
-            'maxparticipants' => $maxparticipants,
             'timemodified' => $now,
-        ];
+        ]);
         $DB->insert_record(self::TABLE, $record);
     }
 

@@ -75,9 +75,20 @@ jobs:
             moodlehq/moodle-plugin-ci ci ${{ env.MOODLE_CI }}
           echo "$GITHUB_WORKSPACE/ci/bin"        >> "$GITHUB_PATH"
           echo "$GITHUB_WORKSPACE/ci/vendor/bin" >> "$GITHUB_PATH"
+      - name: Check out sibling FlexAccess plugins (ecosystem dependencies)
+        run: |
+          mkdir -p "$HOME/extra-plugins"
+          for sib in auth mod tool; do
+            git clone --depth 1 --branch main \
+              "https://github.com/ralferlebach/moodle-${sib}_flexaccess.git" \
+              "$HOME/extra-plugins/${sib}_flexaccess" \
+              || git clone --depth 1 \
+              "https://github.com/ralferlebach/moodle-${sib}_flexaccess.git" \
+              "$HOME/extra-plugins/${sib}_flexaccess"
+          done
       - name: Install Moodle and plugin
         run: |
-          moodle-plugin-ci install --plugin ./plugin \
+          moodle-plugin-ci install --plugin ./plugin --extra-plugins "$HOME/extra-plugins" \
             --db-host 127.0.0.1 --db-port ${{ matrix.db.port }} \
             --db-user ${{ matrix.db.user }} --db-pass ${{ matrix.db.pass }} --db-name moodle
         env:

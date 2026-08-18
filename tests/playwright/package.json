@@ -1,0 +1,13 @@
+{
+  "name": "enrol_flexaccess-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Browser smoke tests for enrol_flexaccess against a live Moodle site.",
+  "scripts": {
+    "test": "playwright test",
+    "install-browsers": "playwright install --with-deps chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.47.0"
+  }
+}

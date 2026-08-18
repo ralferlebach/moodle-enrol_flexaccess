@@ -15,19 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition for enrol_flexaccess.
+ * CLI seed for the enrol_flexaccess Playwright smoke tests.
+ *
+ * Prints the base URL as a shell "export" line so it can be sourced by the test runner.
+ * The smoke test only needs a reachable site with the plugin installed; no fixture data is required.
  *
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+define('CLI_SCRIPT', true);
+require(__DIR__ . '/../../../../config.php');
 
-$plugin->component = 'enrol_flexaccess';
-$plugin->version = 2026081930;
-$plugin->requires = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.1.22';
-$plugin->dependencies = ['auth_flexaccess' => 2026081700];
+echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";

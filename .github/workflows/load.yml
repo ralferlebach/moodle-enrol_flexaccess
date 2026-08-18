@@ -153,8 +153,6 @@ jobs:
             -t plugin/tests/load/flexaccess-read-endpoints.jmx \
             -Jbase_url='${{ steps.params.outputs.base_url }}' \
             -Jtoken='${{ steps.params.outputs.token }}' \
-            -Jworkspaceid='${{ steps.params.outputs.workspaceid }}' \
-            -Jcmid='${{ steps.params.outputs.cmid }}' \
             -Jthreads='${{ github.event.inputs.threads }}' \
             -Jrampup='${{ github.event.inputs.rampup }}' \
             -Jduration='${{ github.event.inputs.duration }}' \

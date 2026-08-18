@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.1.22 — 2026-08-18 — Paket A (Access), Teil 1
+- **Der URL-/aktivitaetssensitive Zugang funktioniert jetzt end-to-end** (war Beta-Blocker B1). Real per Behat verifiziert: ein anonymer Besucher gelangt ueber die Entry-Page zu temporaerem Zugang und landet im Zielkurs.
+- **B3 (Konfigformular):** das Enrolment-Formular exponiert und speichert jetzt die zentralen P0-Felder — `allowtemporary`, `allowquick`, `allowguest`, `allownormallogin`, `temporarylifetime`, `expiryaction` (zuvor nur gespeichert/Default). `instance_config::save()` persistiert sie.
+- **Eine FlexAccess-Instanz pro Kurs** (`can_add_instance`) — beseitigt Policy-/Capacity-Ambiguitaet (Review §15).
+- **Neuer Facade `api::offers_anonymous_entry()`** (Methode aktiv + Fenster offen + mind. ein anonymer Modus). Neue Tests `access_entry_test` (offers/Fenster/Persistenz/Eine-Instanz).
+- **Ecosystem-Behat erweitert:** neues Szenario „anonymer Deep-Link-Entry" + Steps; lokal gruen.
+
+## 0.1.21 — 2026-08-18
+- **Cross-Plugin-Funktionalitaet wird jetzt echt end-to-end getestet.** Behat wurde in der Sandbox real ausgefuehrt (Moodle 5.3dev, non-JS): alle vier Standalone-Smoke-Features **und** ein neues Cross-Plugin-E2E-Szenario bestehen.
+- **Ecosystem-E2E-Behat:** neues `tests/behat/ecosystem.feature` (Tag `@flexaccess_ecosystem`) mit Step-Definition `tests/behat/behat_enrol_flexaccess.php`. Es treibt den **realen** Enrol-Grant-Flow (`access_controller::grant_temporary_access`, der ueber `auth_flexaccess` ein temporaeres Konto erzeugt und einschreibt) und prueft, dass das `tool_flexaccess`-Dashboard den Account zaehlt — also auth+enrol+tool in einem Test. Lokal verifiziert: 1 Szenario, 6 Steps gruen.
+- **Ecosystem-CI:** die phpunit- und behat-Jobs installieren die Schwester-Plugins via `moodle-plugin-ci --extra-plugins` (Checkout von auth/mod/tool). Damit laufen die Cross-Plugin-PHPUnit-Tests in der CI (statt sich zu ueberspringen) und die Vier-Plugin-Installation inkl. der zyklischen auth<->enrol-Abhaengigkeit wird bei jedem Lauf frisch validiert (Review §21/Paket F).
+
+## 0.1.20 — 2026-08-18
+- **Behat gruen gemacht (war der letzte rote CI-Schritt).** Die Feature-Dateien testeten teils veraltetes Scaffold-Verhalten bzw. noch nicht implementierte Ablaeufe; sie wurden auf standalone lauffaehige Smoke-Szenarien mit ausschliesslich Standard-Steps umgestellt. Verifiziert mit moodle-plugin-ci 4.5.11 (phpcs 0/0, validate 0 Fehler, PHPUnit auf Moodle 5.3dev gruen).
+- **Playwright- und jMeter-Lasttests real implementiert** (`tests/playwright/`, `tests/load/`): lauffaehige Browser-Smoke-Tests (Admin-Login -> FlexAccess-Enrolment gelistet) und ein JMeter-Plateau-Lastplan auf einen Read-Endpoint, jeweils per `make playwright` / `make jmeter` startbar und ueber die Workflows automatisiert. `load.yml` von vimipad-Resten (workspaceid/cmid) bereinigt; phpcs schliesst `tests/{playwright,load}` aus. Behat `settings.feature` unveraendert lauffaehig.
+
 ## 0.1.19 — 2026-08-18
 - **Verifiziert mit der exakten CI-Toolchain (moodle-plugin-ci 4.5.11 PHAR): phpcs 0/0, `validate` 0 Fehler, PHPUnit auf Moodle 5.3dev gruen.** Cross-Plugin-Integrationstests laufen in der Vollumgebung (alle vier Plugins) normal und ueberspringen sich nur in der Einzel-Plugin-CI.
 - **Weitere CI-Fixes:** PHPDoc `incomplete parameters list` in Test-Helfern behoben (`access_gate_test::policy`, `restriction_evaluator_test::rule`, `restriction_service_test::restrict` mit vollstaendigen `@param`/`@return`). `access_controller_test` ueberspringt sich sauber (markTestSkipped), wenn das Schwester-Plugin `auth_flexaccess` in der Einzel-Plugin-CI nicht installiert ist. Behat `settings.feature` mit `@enrol`-Typ-Tag.

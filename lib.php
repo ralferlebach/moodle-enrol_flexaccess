@@ -52,9 +52,16 @@ class enrol_flexaccess_plugin extends enrol_plugin {
      * @return bool
      */
     public function can_add_instance($courseid): bool {
+        global $DB;
         $context = context_course::instance($courseid);
-        return has_capability('moodle/course:enrolconfig', $context)
-            && has_capability('enrol/flexaccess:config', $context);
+        if (
+            !has_capability('moodle/course:enrolconfig', $context)
+                || !has_capability('enrol/flexaccess:config', $context)
+        ) {
+            return false;
+        }
+        // Exactly one FlexAccess enrolment method per course keeps policy and capacity deterministic.
+        return !$DB->record_exists('enrol', ['enrol' => 'flexaccess', 'courseid' => $courseid]);
     }
 
     /**
@@ -163,6 +170,44 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->setType('maxparticipants', PARAM_INT);
         $mform->addHelpButton('maxparticipants', 'maxparticipants', 'enrol_flexaccess');
         $mform->setDefault('maxparticipants', 0);
+
+        // Access methods offered by this instance.
+        $mform->addElement('header', 'flexaccess_methods', get_string('settings:methods', 'enrol_flexaccess'));
+
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+            $mform->addElement('advcheckbox', $flag, get_string($flag, 'enrol_flexaccess'));
+            $mform->addHelpButton($flag, $flag, 'enrol_flexaccess');
+        }
+        $mform->setDefault('allownormallogin', 1);
+
+        // Lifetimes and expiry behaviour.
+        $mform->addElement('header', 'flexaccess_lifecycle', get_string('settings:lifecycle', 'enrol_flexaccess'));
+
+        $mform->addElement('duration', 'temporarylifetime', get_string('temporarylifetime', 'enrol_flexaccess'));
+        $mform->addHelpButton('temporarylifetime', 'temporarylifetime', 'enrol_flexaccess');
+        $mform->setDefault('temporarylifetime', 6 * HOURSECS);
+
+        $mform->addElement('select', 'expiryaction', get_string('expiryaction', 'enrol_flexaccess'), [
+            'suspend' => get_string('expiryaction:suspend', 'enrol_flexaccess'),
+            'unenrol' => get_string('expiryaction:unenrol', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('expiryaction', 'expiryaction', 'enrol_flexaccess');
+        $mform->setDefault('expiryaction', 'suspend');
+
+        // Populate the extended fields from stored configuration when editing an existing instance.
+        if (!empty($instance->id)) {
+            $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
+            if ($config) {
+                foreach (
+                    ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
+                        'temporarylifetime', 'expiryaction'] as $field
+                ) {
+                    if (isset($config->$field)) {
+                        $mform->setDefault($field, $config->$field);
+                    }
+                }
+            }
+        }
     }
 
     /**

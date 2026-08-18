@@ -4,4 +4,6 @@
         <rule ref="moodle"/>
         <exclude-pattern>*/tools/*</exclude-pattern>
         <exclude-pattern>*/vendor/*</exclude-pattern>
+        <exclude-pattern>*/tests/playwright/*</exclude-pattern>
+        <exclude-pattern>*/tests/load/*</exclude-pattern>
     </ruleset>
