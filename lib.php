@@ -198,6 +198,15 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('temporarylifetime', 'temporarylifetime', 'enrol_flexaccess');
         $mform->setDefault('temporarylifetime', 6 * HOURSECS);
 
+        $mform->addElement(
+            'duration',
+            'enrolperiod',
+            get_string('enrolperiod', 'enrol_flexaccess'),
+            ['optional' => true, 'defaultunit' => DAYSECS]
+        );
+        $mform->addHelpButton('enrolperiod', 'enrolperiod', 'enrol_flexaccess');
+        $mform->setDefault('enrolperiod', 0);
+
         $mform->addElement('select', 'expiryaction', get_string('expiryaction', 'enrol_flexaccess'), [
             'suspend' => get_string('expiryaction:suspend', 'enrol_flexaccess'),
             'unenrol' => get_string('expiryaction:unenrol', 'enrol_flexaccess'),
@@ -226,7 +235,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             if ($config) {
                 foreach (
                     ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
-                        'temporarylifetime', 'expiryaction', 'temporaryaccesskeymode'] as $field
+                        'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode'] as $field
                 ) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);

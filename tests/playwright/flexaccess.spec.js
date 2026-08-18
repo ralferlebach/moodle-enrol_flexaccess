@@ -71,3 +71,60 @@ test('magic-login request page renders for anonymous users', async ({ page, cont
   await expect(page.locator('body')).toContainText('email link');
   await expect(page.locator('input[name="email"]')).toBeVisible();
 });
+
+test('quick registration creates a persistent account that can log in again', async ({ page, context }) => {
+  test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
+  const email = `pw_quick_${Date.now()}@example.com`;
+  const password = 'Str0ng-Pass!23';
+
+  await context.clearCookies();
+  await page.goto(`/auth/flexaccess/register.php?courseid=${COURSE_ID}`);
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="firstname"]', 'Quick');
+  await page.fill('input[name="lastname"]', 'Learner');
+  await page.fill('input[name="password"]', password);
+  await page.getByRole('button', { name: /Create account and enter/i }).click();
+  await expect(page.locator('body')).toContainText(COURSE_NAME);
+
+  // Log out and log back in with the credentials just created.
+  await context.clearCookies();
+  await page.goto('/login/index.php');
+  await page.fill('#username', email);
+  await page.fill('#password', password);
+  await page.click('#loginbtn');
+  await expect(page.locator('body')).toContainText('Quick Learner');
+});
+
+test('temporary access can be made permanent and log in again', async ({ page, context }) => {
+  test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
+  const email = `pw_persist_${Date.now()}@example.com`;
+  const password = 'Str0ng-Pass!23';
+
+  // Enter anonymously as a temporary user.
+  await context.clearCookies();
+  await page.goto(`/auth/flexaccess/access.php?courseid=${COURSE_ID}`);
+  const cont = page.getByRole('button', { name: /Continue/i });
+  if (await cont.count()) {
+    await cont.first().click();
+  } else {
+    await page.getByRole('link', { name: /Continue/i }).first().click();
+  }
+  await expect(page).toHaveURL(/course\/view\.php/);
+
+  // Make the account permanent (verification is disabled on the test site).
+  await page.goto('/auth/flexaccess/persist.php');
+  await page.fill('input[name="email"]', email);
+  await page.fill('input[name="firstname"]', 'Persist');
+  await page.fill('input[name="lastname"]', 'Learner');
+  await page.fill('input[name="password"]', password);
+  await page.getByRole('button', { name: /Make my account permanent/i }).click();
+  await expect(page.locator('body')).toContainText(/permanent/i);
+
+  // Log out and log back in.
+  await context.clearCookies();
+  await page.goto('/login/index.php');
+  await page.fill('#username', email);
+  await page.fill('#password', password);
+  await page.click('#loginbtn');
+  await expect(page.locator('body')).toContainText('Persist Learner');
+});

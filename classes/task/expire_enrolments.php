@@ -42,6 +42,6 @@ final class expire_enrolments extends \core\task\scheduled_task {
      * Execute task.
      */
     public function execute(): void {
-        // Phase 2: suspend or unenrol due user_enrolments according to instance policy.
+        \enrol_flexaccess\local\enrol_expiry::process(time());
     }
 }

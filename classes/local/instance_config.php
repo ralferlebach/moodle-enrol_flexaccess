@@ -68,6 +68,7 @@ final class instance_config {
         $allowguest = !empty($data['allowguest']) ? 1 : 0;
         $allownormallogin = isset($data['allownormallogin']) ? (!empty($data['allownormallogin']) ? 1 : 0) : 1;
         $temporarylifetime = max(0, (int) ($data['temporarylifetime'] ?? 0));
+        $enrolperiod = max(0, (int) ($data['enrolperiod'] ?? 0));
         $expiryactionraw = (string) ($data['expiryaction'] ?? 'suspend');
         $expiryaction = in_array($expiryactionraw, ['suspend', 'unenrol'], true) ? $expiryactionraw : 'suspend';
         $keymoderaw = (string) ($data['temporaryaccesskeymode'] ?? 'inherit');
@@ -82,6 +83,7 @@ final class instance_config {
             'allowguest' => $allowguest,
             'allownormallogin' => $allownormallogin,
             'expiryaction' => $expiryaction,
+            'enrolperiod' => $enrolperiod,
             'temporaryaccesskeymode' => $keymode,
         ];
         // Only overwrite temporarylifetime when the form supplied one (0 keeps the stored default).

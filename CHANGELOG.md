@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.33 — 2026-08-19 — Enrolment-Expiry (§32/§33) + echte jmeter/playwright-Plaene (§26/§27)
+- **Enrolment-Expiry umgesetzt** (Review §33): neuer Service `local\enrol_expiry::process()`, den der Task `expire_enrolments` nun aufruft (war leer). Aktive FlexAccess-Enrolments mit abgelaufenem `timeend` werden je nach Instanz-Policy **suspendiert oder ausgetragen**. Getestet: suspend, unenrol, aktive/unbefristete bleiben unberuehrt.
+- **Einschreibungsdauer konfigurierbar** (Review §32): `enrolperiod` wird jetzt im Instanzformular angeboten (Dauer, optional) und in `instance_config::save()` persistiert; `enrol_with_capacity()` setzt daraus das `timeend`. Test: gespeichert + angewandt.
+- **Lasttest realistisch** (Review §26): JMX um eine Write-Thread-Gruppe erweitert, die anonyme temporaere Nutzer real per POST/Confirm erzeugt (Cookie-Manager + sesskey-Extraktion), zusaetzlich zu den Read-Endpoints.
+- **Browser-Journeys** (Review §27): Playwright deckt jetzt den anonymen Temporary-Entry, die Schnellregistrierung mit Re-Login und die Persistierung temporaer->dauerhaft mit Re-Login ab; `seed.php` richtet den Kurs entsprechend ein.
+
 ## 0.1.32 — 2026-08-19 — Magic-Login, Mail-Queue-Retrofit, SEC-03, main-CI + jmeter/playwright
 - Tests: `magic_login_test` (5), `persistence_test` um SEC-03-Fall erweitert (abgelaufenes Konto nicht reaktivierbar) und auf den Queue-Versand umgestellt.
 - **Neue main-CI** `.github/workflows/main.yml` (push/PR nach main): plugin-uebergreifend PHPUnit+Behat+phpcs (alle 4 via --extra-plugins), plus echte **jmeter**- und **playwright**-Jobs gegen eine installierte Site.

@@ -43,8 +43,18 @@ $plugin = enrol_get_plugin('flexaccess');
 $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
 \enrol_flexaccess\local\instance_config::save($enrolid, [
     'allowtemporary' => 1,
+    'allowquick' => 1,
     'maxparticipants' => 0,
 ]);
+
+// The browser journey cannot read verification email, so persistence is immediate on this test
+// site, and the FlexAccess auth method must be enabled so converted accounts can log in again.
+set_config('requireemailverification', 0, 'auth_flexaccess');
+$enabledauths = get_enabled_auth_plugins();
+if (!in_array('flexaccess', $enabledauths, true)) {
+    $enabledauths[] = 'flexaccess';
+    set_config('auth', implode(',', $enabledauths));
+}
 
 echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";
 echo "export FLEXACCESS_COURSE_ID='" . $course->id . "'\n";
