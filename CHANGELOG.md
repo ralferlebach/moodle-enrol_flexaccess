@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.28 — 2026-08-18 — Paket B: B4 Konvertierung temporaer -> persistent
+- Test `persistence_test`: temporaerer Zugang -> Persistierung -> gleiche user id weiterhin eingeschrieben UND per E-Mail+Passwort anmeldbar; Persistierung wird fuer Nicht-temporaere Konten abgelehnt.
+
 ## 0.1.27 — 2026-08-18 — Paket A abgeschlossen: Methodenauswahl (Gast + Normallogin)
 - Neue Facades `api::offers_guest_access()` (fenstergebunden) und `api::offers_normal_login()` (nicht fenstergebunden, da Login-Fallback). Test in `access_entry_test` ergaenzt.
 

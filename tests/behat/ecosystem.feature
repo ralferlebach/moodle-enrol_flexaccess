@@ -56,3 +56,26 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     And I should see "Already have an account? Log in"
     And I follow "Continue as a guest"
     Then I should see "Course 1"
+
+  Scenario: A temporary user makes the account permanent and keeps enrolment on re-login
+    Given a FlexAccess enrolment method allowing temporary access exists in course "Course 1"
+    And the FlexAccess authentication method is enabled
+    When I open the FlexAccess entry page for course "Course 1"
+    And I press "Continue"
+    Then I should see "Course 1"
+    When I open the FlexAccess persistence page
+    And I set the following fields to these values:
+      | Email address | kept@example.com |
+      | First name    | Kept             |
+      | Last name     | Learner          |
+      | Password      | Str0ng-Pass!23   |
+    And I press "Make my account permanent"
+    Then I should see "now permanent"
+    And I log out
+    And I open the site login page
+    And I set the field "Username" to "kept@example.com"
+    And I set the field "Password" to "Str0ng-Pass!23"
+    And I press "Log in"
+    Then I should see "Kept Learner"
+    And I am on "Course 1" course homepage
+    Then I should see "Course 1"

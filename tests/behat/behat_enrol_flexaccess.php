@@ -150,6 +150,30 @@ class behat_enrol_flexaccess extends behat_base {
     }
 
     /**
+     * Enables the FlexAccess authentication method so its accounts can log in.
+     *
+     * @Given the FlexAccess authentication method is enabled
+     * @return void
+     */
+    public function the_flexaccess_authentication_method_is_enabled(): void {
+        $enabled = get_enabled_auth_plugins();
+        if (!in_array('flexaccess', $enabled, true)) {
+            $enabled[] = 'flexaccess';
+            set_config('auth', implode(',', $enabled));
+        }
+    }
+
+    /**
+     * Opens the FlexAccess persistence page for the current user.
+     *
+     * @When I open the FlexAccess persistence page
+     * @return void
+     */
+    public function i_open_the_flexaccess_persistence_page(): void {
+        $this->execute('behat_general::i_visit', [new \moodle_url('/auth/flexaccess/persist.php')]);
+    }
+
+    /**
      * Opens the site login page directly.
      *
      * @When I open the site login page
