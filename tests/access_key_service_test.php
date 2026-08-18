@@ -17,6 +17,7 @@
 /**
  * Tests for the temporary-user access-key verification boundary.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,9 @@ namespace enrol_flexaccess;
 
 /**
  * Access-key service tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_key_service
  */
 final class access_key_service_test extends \advanced_testcase {
     /**

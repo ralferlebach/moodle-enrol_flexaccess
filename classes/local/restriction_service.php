@@ -29,6 +29,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Resolves whether a user is permitted by course restrictions.
+ *
+ * @package    enrol_flexaccess
  */
 final class restriction_service {
     /**

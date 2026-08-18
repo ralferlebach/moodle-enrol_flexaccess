@@ -17,6 +17,7 @@
 /**
  * Tests for FlexAccess policy precedence.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,9 @@ namespace enrol_flexaccess;
 
 /**
  * Policy resolver tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\policy_resolver
  */
 final class policy_resolver_test extends \advanced_testcase {
     /**

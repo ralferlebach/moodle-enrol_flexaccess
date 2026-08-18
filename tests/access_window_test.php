@@ -29,6 +29,9 @@ use enrol_flexaccess\local\policy;
 
 /**
  * Access-window tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_window
  */
 final class access_window_test extends \advanced_testcase {
     /**

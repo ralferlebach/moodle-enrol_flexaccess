@@ -28,6 +28,9 @@ use enrol_flexaccess\local\restriction_evaluator;
 
 /**
  * Restriction evaluator tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\restriction_evaluator
  */
 final class restriction_evaluator_test extends \advanced_testcase {
     /**

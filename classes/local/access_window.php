@@ -30,6 +30,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Stateless helpers evaluating a time-based access window.
+ *
+ * @package    enrol_flexaccess
  */
 final class access_window {
     /**

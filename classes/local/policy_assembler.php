@@ -31,6 +31,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Resolves the effective policy for a course.
+ *
+ * @package    enrol_flexaccess
  */
 final class policy_assembler {
     /**

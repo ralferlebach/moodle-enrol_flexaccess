@@ -30,6 +30,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Counts active enrolments and guards capacity with the Moodle Lock API.
+ *
+ * @package    enrol_flexaccess
  */
 final class capacity_service {
     /**

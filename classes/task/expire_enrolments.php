@@ -17,6 +17,7 @@
 /**
  * Scheduled task applying FlexAccess enrolment expiry.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,8 @@ namespace enrol_flexaccess\task;
 
 /**
  * Expire course enrolments independently from account lifetime.
+ *
+ * @package    enrol_flexaccess
  */
 final class expire_enrolments extends \core\task\scheduled_task {
     /**

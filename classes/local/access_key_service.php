@@ -17,6 +17,7 @@
 /**
  * Temporary-user access-key policy and verification boundary.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Verifies shared access keys without exposing persisted hashes to callers.
+ *
+ * @package    enrol_flexaccess
  */
 final class access_key_service {
     /**

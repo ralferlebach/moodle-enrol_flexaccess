@@ -31,6 +31,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Enrols users under the capacity limit.
+ *
+ * @package    enrol_flexaccess
  */
 final class enrol_service {
     /**

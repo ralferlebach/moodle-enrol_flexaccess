@@ -31,6 +31,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Orchestrates granting temporary access to a course.
+ *
+ * @package    enrol_flexaccess
  */
 final class access_controller {
     /**

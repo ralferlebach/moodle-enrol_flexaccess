@@ -29,6 +29,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Reads and writes the enrol_flexaccess_instance extension row.
+ *
+ * @package    enrol_flexaccess
  */
 final class instance_config {
     /**

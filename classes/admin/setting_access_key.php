@@ -17,6 +17,7 @@
 /**
  * Write-only administration setting for a shared FlexAccess access key.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,8 @@ namespace enrol_flexaccess\admin;
 
 /**
  * Stores only a password hash and never renders an existing hash back into the form.
+ *
+ * @package    enrol_flexaccess
  */
 final class setting_access_key extends \admin_setting_configtext {
     /**

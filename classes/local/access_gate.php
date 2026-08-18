@@ -30,6 +30,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Runtime decision helper for offerable access methods.
+ *
+ * @package    enrol_flexaccess
  */
 final class access_gate {
     /**

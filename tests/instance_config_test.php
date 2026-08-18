@@ -28,6 +28,9 @@ use enrol_flexaccess\local\instance_config;
 
 /**
  * Instance-config persistence tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\instance_config
  */
 final class instance_config_test extends \advanced_testcase {
     /**

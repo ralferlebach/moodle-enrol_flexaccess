@@ -28,6 +28,8 @@ use enrol_flexaccess\local\instance_config;
 
 /**
  * FlexAccess enrolment plugin.
+ *
+ * @package    enrol_flexaccess
  */
 class enrol_flexaccess_plugin extends enrol_plugin {
     /**

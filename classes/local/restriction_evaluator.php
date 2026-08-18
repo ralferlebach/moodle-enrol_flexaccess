@@ -31,6 +31,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Stateless restriction evaluation.
+ *
+ * @package    enrol_flexaccess
  */
 final class restriction_evaluator {
     /**

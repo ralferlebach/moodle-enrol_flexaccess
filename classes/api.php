@@ -35,6 +35,8 @@ use enrol_flexaccess\local\capacity_service;
 
 /**
  * Read-only cross-plugin facade.
+ *
+ * @package    enrol_flexaccess
  */
 final class api {
     /**

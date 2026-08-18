@@ -28,6 +28,8 @@
  *
  * @param int $oldversion The version we are upgrading from.
  * @return bool
+ *
+ * @package    enrol_flexaccess
  */
 function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
     global $DB;

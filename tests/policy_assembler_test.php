@@ -28,6 +28,9 @@ use enrol_flexaccess\local\policy_assembler;
 
 /**
  * Policy assembler and API facade tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\policy_assembler
  */
 final class policy_assembler_test extends \advanced_testcase {
     /**

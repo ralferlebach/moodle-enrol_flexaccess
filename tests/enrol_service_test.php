@@ -29,6 +29,9 @@ use enrol_flexaccess\local\capacity_service;
 
 /**
  * Enrolment service tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\enrol_service
  */
 final class enrol_service_test extends \advanced_testcase {
     /**

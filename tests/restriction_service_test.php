@@ -26,6 +26,9 @@ namespace enrol_flexaccess;
 
 /**
  * Restriction service / facade integration tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\restriction_service
  */
 final class restriction_service_test extends \advanced_testcase {
     /**

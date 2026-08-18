@@ -17,6 +17,7 @@
 /**
  * Immutable-ish policy value object for enrol_flexaccess.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,6 +26,8 @@ namespace enrol_flexaccess\local;
 
 /**
  * Effective FlexAccess access policy.
+ *
+ * @package    enrol_flexaccess
  */
 final class policy {
     /** @var bool */ public bool $allowtemporary = false;

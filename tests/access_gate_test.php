@@ -29,6 +29,9 @@ use enrol_flexaccess\local\policy;
 
 /**
  * Access-gate tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_gate
  */
 final class access_gate_test extends \advanced_testcase {
     /**

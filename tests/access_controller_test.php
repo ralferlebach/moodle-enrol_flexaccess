@@ -28,6 +28,9 @@ use enrol_flexaccess\local\access_controller;
 
 /**
  * Access controller tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_controller
  */
 final class access_controller_test extends \advanced_testcase {
     /**
