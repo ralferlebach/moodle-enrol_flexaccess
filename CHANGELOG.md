@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.24 — 2026-08-18 — Paket A: B2 (Access-Key) verifiziert
+- **Access-Key-Durchsetzung end-to-end per Behat verifiziert** (Sicherheits-Blocker B2 geschlossen): Challenge-Formular, falscher Schluessel wird abgewiesen, korrekter Schluessel gewaehrt Zugang; Rate-Limit im Flow, Schluessel nur per POST (nie in URL/Log). 3 Ecosystem-Szenarien, 20 Steps gruen.
+- Neuer Facade `api::requires_temporary_access_key()` (kapselt die Key-Pflicht der Policy fuer den Entry-Point).
+
 ## 0.1.23 — 2026-08-18 — CI-Fixes
 - **Behat-Fix:** `can_hide_show_instance()` ueberschrieben. Ohne diese Methode meldete Moodle auf der Seite „Einschreibemethoden verwalten" ein `debugging()` ("should override can_hide_show_instance()"), was den @javascript-Behat-Lauf (`instance_access.feature`, "Add method") scheitern liess.
 - Hinweis: `temporary_access_key.feature` (undefinierte Steps) wurde bereits in 0.1.20 entfernt; der rote CI-Lauf lief noch auf einem aelteren enrol-Commit — ein Push dieses Stands raeumt das auf.

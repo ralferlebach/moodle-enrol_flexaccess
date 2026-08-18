@@ -78,6 +78,16 @@ final class api {
     }
 
     /**
+     * Whether temporary access for the course is gated by a shared access key.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    public static function requires_temporary_access_key(int $courseid): bool {
+        return self::get_effective_policy($courseid)->temporaryaccesskeyscope !== 'none';
+    }
+
+    /**
      * Resolve the effective FlexAccess policy for a course.
      *
      * Identity-dependent rules (role/cohort) require a known user and are applied only when a
