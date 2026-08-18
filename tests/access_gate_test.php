@@ -36,6 +36,11 @@ use enrol_flexaccess\local\policy;
 final class access_gate_test extends \advanced_testcase {
     /**
      * Build a policy enabling all methods with the given window/capacity.
+     *
+     * @param int $from Available-from timestamp.
+     * @param int $until Available-until timestamp.
+     * @param int $max Maximum number of participants.
+     * @return policy
      */
     private function policy(int $from, int $until, int $max): policy {
         $p = new policy();

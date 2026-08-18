@@ -34,6 +34,19 @@ use enrol_flexaccess\local\access_controller;
  */
 final class access_controller_test extends \advanced_testcase {
     /**
+     * Skip when the required sibling plugin is not installed (per-plugin CI).
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        global $DB;
+        if (!$DB->get_manager()->table_exists('auth_flexaccess_account')) {
+            $this->markTestSkipped('Requires the auth_flexaccess sibling plugin to be installed.');
+        }
+    }
+
+    /**
      * Create a course with an enabled FlexAccess instance that offers temporary access.
      *
      * @param int $max Maximum participants (0 = unlimited).

@@ -35,6 +35,11 @@ use enrol_flexaccess\local\restriction_evaluator;
 final class restriction_evaluator_test extends \advanced_testcase {
     /**
      * Build a restriction row.
+     *
+     * @param string $kind Restriction kind (role or cohort).
+     * @param int $refid Reference id (role id or cohort id).
+     * @param string $effect Effect, either allow or deny.
+     * @return \stdClass
      */
     private function rule(string $kind, int $refid, string $effect): \stdClass {
         return (object) ['kind' => $kind, 'refid' => $refid, 'effect' => $effect];

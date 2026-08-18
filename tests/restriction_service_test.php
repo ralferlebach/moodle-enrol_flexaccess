@@ -33,6 +33,13 @@ namespace enrol_flexaccess;
 final class restriction_service_test extends \advanced_testcase {
     /**
      * Insert a restriction row.
+     *
+     * @param string $scope Scope level (system/category/instance).
+     * @param int $scopeid Scope instance id.
+     * @param string $kind Restriction kind (role or cohort).
+     * @param int $refid Reference id (role id or cohort id).
+     * @param string $effect Effect, either allow or deny.
+     * @return void
      */
     private function restrict(string $scope, int $scopeid, string $kind, int $refid, string $effect): void {
         global $DB;
