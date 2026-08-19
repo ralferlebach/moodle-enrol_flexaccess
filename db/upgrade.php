@@ -83,10 +83,11 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         upgrade_plugin_savepoint(true, 2026081730, 'enrol', 'flexaccess');
     }
 
-    if ($oldversion < 2026082080) {
+    if ($oldversion < 2026081901) {
         // Introduce the dedicated FlexAccess participant role, migrate existing FlexAccess
         // enrolments onto it, and apply the participant-list visibility override for every
         // existing instance so the setting takes effect without re-saving each instance.
+        // ensure() also (re)applies the system-context assignability and site-wide restrictions.
         \enrol_flexaccess\local\participant_role::ensure();
         \enrol_flexaccess\local\participant_role::migrate_existing();
 
@@ -96,7 +97,25 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
             \enrol_flexaccess\local\participant_visibility::sync((int) $instance->courseid, $policy->participantvisibility);
         }
 
-        upgrade_plugin_savepoint(true, 2026082080, 'enrol', 'flexaccess');
+        upgrade_plugin_savepoint(true, 2026081901, 'enrol', 'flexaccess');
+    }
+
+    if ($oldversion < 2026081902) {
+        // The ensure() helper now also makes the role assignable at system level and applies the
+        // site-wide restrictions (messaging, profile editing). Re-run it and restrict existing
+        // temporary visitors so the setting takes effect without re-enrolling them.
+        \enrol_flexaccess\local\participant_role::ensure();
+        $tempusers = $DB->get_fieldset_select(
+            'auth_flexaccess_account',
+            'userid',
+            'accounttype = :type',
+            ['type' => \auth_flexaccess\local\account_type::TEMPORARY_USER]
+        );
+        foreach ($tempusers as $userid) {
+            \enrol_flexaccess\local\participant_role::restrict((int) $userid);
+        }
+
+        upgrade_plugin_savepoint(true, 2026081902, 'enrol', 'flexaccess');
     }
 
     return true;

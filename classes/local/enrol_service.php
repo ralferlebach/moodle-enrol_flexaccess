@@ -92,6 +92,9 @@ final class enrol_service {
                     $roleid = !empty($instance->roleid) ? (int) $instance->roleid : null;
                 }
                 $plugin->enrol_user($instance, $userid, $roleid, $now, $timeend, ENROL_USER_ACTIVE);
+                // Apply the site-wide restrictions for anonymous FlexAccess visitors (messaging,
+                // profile editing) via a system-context assignment of the dedicated role.
+                participant_role::restrict($userid);
                 return (object) ['status' => 'enrolled', 'userid' => $userid];
             }
         );

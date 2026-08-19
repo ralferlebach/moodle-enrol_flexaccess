@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.2 — 2026-08-19 — Welle 2: Retention/Deletion, zentraler Conversion-Guard, Temp-Restriktionen (P0 #9/#10/#6)
+- **P0 #6 — Temp-Restriktionen per Capability:** die dedizierte Rolle ist jetzt auch im System-Kontext zuweisbar und entzieht anonymen FlexAccess-Besuchern site-weit Messaging und Profilbearbeitung (`moodle/site:sendmessage`, `moodle/user:editownprofile`, `...editownmessageprofile`) per `CAP_PROHIBIT`. `reserve_and_enrol` weist die Restriktion beim Enrol zu; die Conversion hebt sie auf. Upgrade-Schritt restringiert bestehende temporaere Besucher.
+- Tests: Restriktion entzieht/stellt Messaging + Profilbearbeitung wieder her.
+
 ## 0.9.1 — 2026-08-19 — Welle 1: Token-Sicherheit + atomares Temp-Rate-Limit (P0 #1, #2)
 - **P0 #2 — generelles Temp-Limit:** `grant_temporary_access` nimmt jetzt die Client-Adresse und drosselt anonyme Kontoerzeugung **unabhaengig vom Access-Key** — per Adresse, per Kurs+Adresse und optionaler seitenweiter Circuit-Breaker. Neue Settings `tempmaxperip`/`tempwindow`/`tempsitemax`/`tempsitewindow`. `access.php` reicht `getremoteaddr()` durch.
 - Tests: Temp-Limit pro IP + Site-Circuit-Breaker.

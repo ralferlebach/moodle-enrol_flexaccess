@@ -35,6 +35,15 @@ final class participant_role {
     public const SHORTNAME = 'flexaccessparticipant';
 
     /**
+     * Capabilities prevented for FlexAccess visitors site-wide (anti-abuse of anonymous accounts).
+     */
+    private const RESTRICTED_CAPS = [
+        'moodle/site:sendmessage',
+        'moodle/user:editownprofile',
+        'moodle/user:editownmessageprofile',
+    ];
+
+    /**
      * Ensure the dedicated role exists and return its id. Idempotent.
      *
      * @return int Role id.
@@ -43,6 +52,7 @@ final class participant_role {
         global $DB;
         $existing = $DB->get_field('role', 'id', ['shortname' => self::SHORTNAME]);
         if ($existing) {
+            self::apply_system_restrictions((int) $existing);
             return (int) $existing;
         }
         $roleid = create_role(
@@ -51,10 +61,62 @@ final class participant_role {
             get_string('participantrole_desc', 'enrol_flexaccess'),
             'student'
         );
-        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
+        // Assignable both in courses (participant-list visibility) and at system level (the
+        // site-wide restrictions applied to anonymous FlexAccess visitors).
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM, CONTEXT_COURSE]);
         // Apply the student archetype's default capabilities at system level.
         reset_role_capabilities($roleid);
+        self::apply_system_restrictions($roleid);
         return (int) $roleid;
+    }
+
+    /**
+     * Prevent the restricted capabilities for the role at system level.
+     *
+     * @param int $roleid Role id.
+     * @return void
+     */
+    private static function apply_system_restrictions(int $roleid): void {
+        $system = \context_system::instance();
+        foreach (self::RESTRICTED_CAPS as $cap) {
+            if (get_capability_info($cap)) {
+                // Hard deny: PROHIBIT reliably overrides the authenticated-user ALLOW for these
+                // capabilities while the visitor holds this role. It is lifted on conversion.
+                assign_capability($cap, CAP_PROHIBIT, $roleid, $system->id, true);
+            }
+        }
+        $system->mark_dirty();
+    }
+
+    /**
+     * Assign the dedicated role to a visitor at system level so the site-wide restrictions apply.
+     *
+     * @param int $userid User id.
+     * @return void
+     */
+    public static function restrict(int $userid): void {
+        $roleid = self::get_id();
+        if ($roleid === 0) {
+            return;
+        }
+        $system = \context_system::instance();
+        if (!user_has_role_assignment($userid, $roleid, $system->id)) {
+            role_assign($roleid, $userid, $system->id, 'enrol_flexaccess');
+        }
+    }
+
+    /**
+     * Lift the site-wide restrictions for a user (e.g. once they convert to a full account).
+     *
+     * @param int $userid User id.
+     * @return void
+     */
+    public static function unrestrict(int $userid): void {
+        $roleid = self::get_id();
+        if ($roleid === 0) {
+            return;
+        }
+        role_unassign($roleid, $userid, \context_system::instance()->id, 'enrol_flexaccess');
     }
 
     /**

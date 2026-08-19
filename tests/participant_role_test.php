@@ -28,6 +28,30 @@ use enrol_flexaccess\local\participant_role;
  */
 final class participant_role_test extends \advanced_testcase {
     /**
+     * restrict() prevents messaging and profile editing site-wide; unrestrict() restores them.
+     *
+     * @return void
+     */
+    public function test_restrict_and_unrestrict_site_capabilities(): void {
+        $this->resetAfterTest();
+        participant_role::ensure();
+        $user = $this->getDataGenerator()->create_user();
+        $system = \context_system::instance();
+
+        // Baseline: a normal authenticated user may message and edit their own profile.
+        $this->assertTrue(has_capability('moodle/site:sendmessage', $system, $user));
+
+        participant_role::restrict((int) $user->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertFalse(has_capability('moodle/site:sendmessage', $system, $user));
+        $this->assertFalse(has_capability('moodle/user:editownprofile', $system, $user));
+
+        participant_role::unrestrict((int) $user->id);
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertTrue(has_capability('moodle/site:sendmessage', $system, $user));
+    }
+
+    /**
      * ensure() creates a course-level, student-archetype role that can view participants by default.
      *
      * @return void
@@ -42,8 +66,9 @@ final class participant_role_test extends \advanced_testcase {
         $this->assertSame(participant_role::SHORTNAME, $role->shortname);
         $this->assertSame('student', $role->archetype);
 
-        $levels = $DB->get_fieldset_select('role_context_levels', 'contextlevel', 'roleid = ?', [$roleid]);
-        $this->assertSame([CONTEXT_COURSE], array_map('intval', $levels));
+        $levels = array_map('intval', $DB->get_fieldset_select('role_context_levels', 'contextlevel', 'roleid = ?', [$roleid]));
+        sort($levels);
+        $this->assertSame([CONTEXT_SYSTEM, CONTEXT_COURSE], $levels);
 
         // Student archetype defaults let the role view participants (so 'show' is a no-op).
         $system = \context_system::instance();
