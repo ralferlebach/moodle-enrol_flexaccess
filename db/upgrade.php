@@ -118,5 +118,29 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         upgrade_plugin_savepoint(true, 2026081902, 'enrol', 'flexaccess');
     }
 
+    if ($oldversion < 2026081903) {
+        $table = new xmldb_table('enrol_flexaccess_instance');
+        $fields = [
+            new xmldb_field(
+                'quickreggatemode',
+                XMLDB_TYPE_CHAR,
+                '16',
+                null,
+                XMLDB_NOTNULL,
+                null,
+                'inherit',
+                'temporaryaccesskeyhash'
+            ),
+            new xmldb_field('quickreggatepasswordhash', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'quickreggatemode'),
+            new xmldb_field('quickreggatedomains', XMLDB_TYPE_TEXT, null, null, null, null, null, 'quickreggatepasswordhash'),
+        ];
+        foreach ($fields as $field) {
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026081903, 'enrol', 'flexaccess');
+    }
+
     return true;
 }

@@ -59,6 +59,37 @@ if ($ADMIN->fulltree) {
     ));
 
     $settings->add(new admin_setting_heading(
+        'enrol_flexaccess/quickreggate',
+        get_string('settings:quickreggate', 'enrol_flexaccess'),
+        get_string('settings:quickreggate_desc', 'enrol_flexaccess')
+    ));
+    $settings->add(new admin_setting_configselect(
+        'enrol_flexaccess/quickreggatemode',
+        get_string('setting:quickreggatemode', 'enrol_flexaccess'),
+        get_string('setting:quickreggatemode_desc', 'enrol_flexaccess'),
+        'none',
+        [
+            'none' => get_string('gate:none', 'enrol_flexaccess'),
+            'password' => get_string('gate:password', 'enrol_flexaccess'),
+            'domain' => get_string('gate:domain', 'enrol_flexaccess'),
+        ]
+    ));
+    $settings->add(new \enrol_flexaccess\admin\setting_access_key(
+        'enrol_flexaccess/quickreggatepasswordhash',
+        get_string('setting:quickreggatepassword', 'enrol_flexaccess'),
+        get_string('setting:quickreggatepassword_desc', 'enrol_flexaccess'),
+        '',
+        PARAM_RAW_TRIMMED
+    ));
+    $settings->add(new admin_setting_configtextarea(
+        'enrol_flexaccess/quickreggatedomains',
+        get_string('setting:quickreggatedomains', 'enrol_flexaccess'),
+        get_string('setting:quickreggatedomains_desc', 'enrol_flexaccess'),
+        '',
+        PARAM_RAW
+    ));
+
+    $settings->add(new admin_setting_heading(
         'enrol_flexaccess/ratelimit',
         get_string('settings:ratelimit', 'enrol_flexaccess'),
         get_string('settings:ratelimit_desc', 'enrol_flexaccess')

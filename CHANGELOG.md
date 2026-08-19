@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.3 — 2026-08-19 — Welle 3 Strom F: Quick-Registration neu spezifiziert (P0 #5)
+- **P0 #5 — Zugangs-Gate:** zusaetzlich zur E-Mail-Freischaltung kann die Schnellregistrierung durch ein gemeinsames **Passwort** oder eine **E-Mail-Domain-Allowlist** beschraenkt werden. Konfigurierbar **systemweit** (Einstellungen) **und kursweit** (Enrol-Instanz); die Instanz ueberschreibt die Systemvorgabe. Neuer Service `quickreg_gate` (bcrypt-Passwortpruefung bzw. Domain-/Subdomain-Abgleich, fail-closed).
+- Neue Instanzfelder `quickreggatemode`/`quickreggatepasswordhash`/`quickreggatedomains` (install.xml + Upgrade 2026081903), System-Settings, Instanz-Formular und Policy-Aufloesung (System-Default + Instanz-Override).
+- `grant_quick_registration` erzeugt das provisorische Konto, prueft das Gate und triggert die Verifizierung (Status `verificationsent`/`granted`/`badgate`).
+- Tests: Verify-Flow end-to-end, Passwort-Gate, Domain-Gate, Instanz-ueberschreibt-System.
+
 ## 0.9.2 — 2026-08-19 — Welle 2: Retention/Deletion, zentraler Conversion-Guard, Temp-Restriktionen (P0 #9/#10/#6)
 - **P0 #6 — Temp-Restriktionen per Capability:** die dedizierte Rolle ist jetzt auch im System-Kontext zuweisbar und entzieht anonymen FlexAccess-Besuchern site-weit Messaging und Profilbearbeitung (`moodle/site:sendmessage`, `moodle/user:editownprofile`, `...editownmessageprofile`) per `CAP_PROHIBIT`. `reserve_and_enrol` weist die Restriktion beim Enrol zu; die Conversion hebt sie auf. Upgrade-Schritt restringiert bestehende temporaere Besucher.
 - Tests: Restriktion entzieht/stellt Messaging + Profilbearbeitung wieder her.

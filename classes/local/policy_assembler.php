@@ -45,6 +45,11 @@ final class policy_assembler {
         $vis = get_config('enrol_flexaccess', 'participantvisibilitydefault');
         $p->participantvisibility = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
         $p->temporaryaccesskeyrequired = (bool) get_config('enrol_flexaccess', 'temporaryaccesskeyrequired');
+
+        $gatemode = (string) get_config('enrol_flexaccess', 'quickreggatemode');
+        $p->quickreggatemode = in_array($gatemode, ['password', 'domain'], true) ? $gatemode : 'none';
+        $p->quickreggatepasswordhash = (string) get_config('enrol_flexaccess', 'quickreggatepasswordhash');
+        $p->quickreggatedomains = (string) get_config('enrol_flexaccess', 'quickreggatedomains');
         return $p;
     }
 
@@ -162,6 +167,14 @@ final class policy_assembler {
         );
         $mode = in_array($flex->temporaryaccesskeymode, ['inherit', 'course'], true) ? $flex->temporaryaccesskeymode : 'inherit';
         $p->temporaryaccesskeyscope = policy_resolver::temporary_access_key_scope($p->temporaryaccesskeyrequired, $mode);
+
+        // Quick-registration gate: an instance value overrides the system default when set.
+        $instancegate = (string) ($flex->quickreggatemode ?? 'inherit');
+        if (in_array($instancegate, ['none', 'password', 'domain'], true)) {
+            $p->quickreggatemode = $instancegate;
+            $p->quickreggatepasswordhash = (string) ($flex->quickreggatepasswordhash ?? '');
+            $p->quickreggatedomains = (string) ($flex->quickreggatedomains ?? '');
+        }
         return $p;
     }
 

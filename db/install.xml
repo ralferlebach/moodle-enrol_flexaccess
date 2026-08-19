@@ -24,6 +24,9 @@
         <FIELD NAME="participantvisibility" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeymode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeyhash" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatemode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatepasswordhash" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatedomains" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="profilefieldsjson" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>

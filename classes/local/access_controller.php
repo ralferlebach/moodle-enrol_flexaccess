@@ -188,6 +188,12 @@ final class access_controller {
         if (!$policy->allowquick) {
             return self::result('notallowed');
         }
+        // Additional access gate (shared password or allowed email domain), on top of email
+        // activation. Instance settings override the site default (resolved in the policy).
+        $accesspassword = (string) ($userdata->accesspassword ?? '');
+        if (!quickreg_gate::passes($policy, (string) $userdata->email, $accesspassword)) {
+            return self::result('badgate');
+        }
         // Throttle anonymous account creation per client address. The limit is generous so a whole
         // class behind one NAT address is not blocked, but scripted mass-creation is slowed. Limits
         // are admin-configurable; the constants are the fallback defaults.
@@ -213,22 +219,34 @@ final class access_controller {
             return self::result('full');
         }
 
+        $provisionalexpiry = $now + ($policy->provisionallifetime > 0 ? $policy->provisionallifetime : DAYSECS);
         $outcome = enrol_service::reserve_and_enrol(
             $enrolid,
-            static fn(): int => \auth_flexaccess\api::create_quick_registered_user(
-                (string) $userdata->email,
-                (string) $userdata->firstname,
-                (string) $userdata->lastname,
-                (string) $userdata->password,
-                $now
-            ),
+            static fn(): int => \auth_flexaccess\api::create_temporary_user($provisionalexpiry, $courseid, null, $now),
             $now
         );
         if ($outcome->status !== 'enrolled') {
             return self::result($outcome->status, $outcome->userid, $enrolid);
         }
 
-        return self::result('granted', $outcome->userid, $enrolid);
+        // Bind the upgrade to a real, verified identity: the provisional account only becomes a
+        // regular authenticated account once the emailed activation link is followed. When email
+        // verification is disabled site-wide the funnel converts immediately.
+        $status = \auth_flexaccess\api::request_persistence(
+            $outcome->userid,
+            (string) $userdata->email,
+            (string) $userdata->firstname,
+            (string) $userdata->lastname,
+            (string) $userdata->password,
+            $now
+        );
+        if ($status === 'verificationsent') {
+            return self::result('verificationsent', $outcome->userid, $enrolid);
+        }
+        if ($status === 'converted') {
+            return self::result('granted', $outcome->userid, $enrolid);
+        }
+        return self::result($status, $outcome->userid, $enrolid);
     }
 
     /**

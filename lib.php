@@ -237,6 +237,32 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('temporaryaccesskey', 'temporaryaccesskey', 'enrol_flexaccess');
         $mform->hideIf('temporaryaccesskey', 'temporaryaccesskeymode', 'neq', 'course');
 
+        $mform->addElement('header', 'flexaccess_quickreggate', get_string('settings:quickreggate', 'enrol_flexaccess'));
+
+        $mform->addElement('select', 'quickreggatemode', get_string('instance:quickreggatemode', 'enrol_flexaccess'), [
+            'inherit' => get_string('gate:inherit', 'enrol_flexaccess'),
+            'none' => get_string('gate:none', 'enrol_flexaccess'),
+            'password' => get_string('gate:password', 'enrol_flexaccess'),
+            'domain' => get_string('gate:domain', 'enrol_flexaccess'),
+        ]);
+        $mform->setDefault('quickreggatemode', 'inherit');
+
+        $mform->addElement(
+            'passwordunmask',
+            'quickreggatepassword',
+            get_string('instance:quickreggatepassword', 'enrol_flexaccess')
+        );
+        $mform->setType('quickreggatepassword', PARAM_RAW);
+        $mform->hideIf('quickreggatepassword', 'quickreggatemode', 'neq', 'password');
+
+        $mform->addElement(
+            'textarea',
+            'quickreggatedomains',
+            get_string('instance:quickreggatedomains', 'enrol_flexaccess')
+        );
+        $mform->setType('quickreggatedomains', PARAM_RAW);
+        $mform->hideIf('quickreggatedomains', 'quickreggatemode', 'neq', 'domain');
+
         // Populate the extended fields from stored configuration when editing an existing instance.
         if (!empty($instance->id)) {
             $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
@@ -244,7 +270,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
                 foreach (
                     ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
                         'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
-                        'participantvisibility'] as $field
+                        'participantvisibility', 'quickreggatemode', 'quickreggatedomains'] as $field
                 ) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);

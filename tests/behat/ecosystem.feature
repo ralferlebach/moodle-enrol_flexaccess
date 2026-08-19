@@ -34,6 +34,9 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
 
   Scenario: Quick registration creates a persistent account that can log in again
     Given a FlexAccess enrolment method allowing quick registration exists in course "Course 1"
+    And the FlexAccess authentication method is enabled
+    And the following config values are set as admin:
+      | requireemailverification | 0 | auth_flexaccess |
     When I open the FlexAccess quick registration page for course "Course 1"
     And I set the following fields to these values:
       | Email address | learner@example.com |

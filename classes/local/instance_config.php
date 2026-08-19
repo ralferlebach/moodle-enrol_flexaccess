@@ -75,6 +75,9 @@ final class instance_config {
         $keymode = in_array($keymoderaw, ['inherit', 'course'], true) ? $keymoderaw : 'inherit';
         $visraw = (string) ($data['participantvisibility'] ?? 'inherit');
         $participantvisibility = in_array($visraw, ['inherit', 'show', 'hide'], true) ? $visraw : 'inherit';
+        $gateraw = (string) ($data['quickreggatemode'] ?? 'inherit');
+        $quickreggatemode = in_array($gateraw, ['inherit', 'none', 'password', 'domain'], true) ? $gateraw : 'inherit';
+        $quickreggatedomains = trim((string) ($data['quickreggatedomains'] ?? ''));
 
         $fields = [
             'availablefrom' => $availablefrom,
@@ -88,6 +91,8 @@ final class instance_config {
             'enrolperiod' => $enrolperiod,
             'temporaryaccesskeymode' => $keymode,
             'participantvisibility' => $participantvisibility,
+            'quickreggatemode' => $quickreggatemode,
+            'quickreggatedomains' => $quickreggatedomains,
         ];
         // Only overwrite temporarylifetime when the form supplied one (0 keeps the stored default).
         if ($temporarylifetime > 0) {
@@ -98,6 +103,11 @@ final class instance_config {
         $newkey = trim((string) ($data['temporaryaccesskey'] ?? ''));
         if ($keymode === 'course' && $newkey !== '') {
             $fields['temporaryaccesskeyhash'] = password_hash($newkey, PASSWORD_DEFAULT);
+        }
+        // Hash a newly entered quick-registration gate password; empty leaves any existing hash.
+        $newgatepw = trim((string) ($data['quickreggatepassword'] ?? ''));
+        if ($quickreggatemode === 'password' && $newgatepw !== '') {
+            $fields['quickreggatepasswordhash'] = quickreg_gate::hash($newgatepw);
         }
 
         $existing = self::load($enrolid);
