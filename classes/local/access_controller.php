@@ -102,6 +102,7 @@ final class access_controller {
      *
      * @param int $courseid Course id.
      * @param \stdClass $userdata Object with email, firstname, lastname and password.
+     * @param string|null $clientip Client address for rate limiting, or null to skip it.
      * @param int|null $now Current time.
      * @return \stdClass Result with ->status and, on success, ->userid and ->enrolid.
      */

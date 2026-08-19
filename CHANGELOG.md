@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.35 — 2026-08-19 — DSGVO-Privacy-Provider (§11) + PHPDoc-Fixes
+- **PHPDoc-Fix:** fehlender `@param $clientip` bei `access_controller::grant_quick_registration` (CI-PHPDoc-Checker).
+- Privacy bleibt `null_provider` (keine eigenen personenbezogenen Tabellen; Einschreibungen liegen in den Kern-Tabellen).
+
+## 0.1.35 — 2026-08-19 — DSGVO-Datenschutz-Provider vervollstaendigt (§11)
+- Keine Codeaenderung (Provider bleibt korrekt `null_provider`: `enrol_flexaccess_instance` hat keine userid; Einschreibungen liegen in Core-Tabellen).
+
 ## 0.1.34 — 2026-08-19 — Rate-Limiting der oeffentlichen Schreib-Endpoints (§5)
 - **Quick-Registration rate-limitiert** pro Client-Adresse (NAT-freundlich: 30/10min, damit eine ganze Klasse hinter einer IP nicht blockiert wird, Skript-Massenanlage aber gebremst). `grant_quick_registration()` nimmt die Client-Adresse und liefert `ratelimited`; `register.php` reicht `getremoteaddr()` durch. Neuer String `access:ratelimited`.
 - Tests: `rate_limiter_test` (Sliding-Window + Magic-pro-E-Mail), Quick-Reg-IP-Limit-Integrationstest.
