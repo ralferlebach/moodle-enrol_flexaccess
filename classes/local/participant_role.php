@@ -64,10 +64,32 @@ final class participant_role {
         // Assignable both in courses (participant-list visibility) and at system level (the
         // site-wide restrictions applied to anonymous FlexAccess visitors).
         set_role_contextlevels($roleid, [CONTEXT_SYSTEM, CONTEXT_COURSE]);
-        // Apply the student archetype's default capabilities at system level.
-        reset_role_capabilities($roleid);
+        // Apply the student archetype's default capabilities at system level. We do this defensively
+        // rather than via reset_role_capabilities(): during an upgrade the capability table can be in
+        // a transitional state, and reset_role_capabilities() aborts the whole upgrade if a single
+        // archetype capability (e.g. a not-yet-installed module's) is missing. Skipping unknown
+        // capabilities keeps the install/upgrade robust across sites with differing plugin sets.
+        self::apply_archetype_capabilities($roleid);
         self::apply_system_restrictions($roleid);
         return (int) $roleid;
+    }
+
+    /**
+     * Apply the student archetype's default capabilities, skipping any not currently defined.
+     *
+     * @param int $roleid Role id.
+     * @return void
+     */
+    private static function apply_archetype_capabilities(int $roleid): void {
+        $system = \context_system::instance();
+        foreach (get_default_capabilities('student') as $capability => $permission) {
+            if ((int) $permission === CAP_INHERIT) {
+                continue;
+            }
+            if (get_capability_info($capability)) {
+                assign_capability($capability, (int) $permission, $roleid, $system->id, true);
+            }
+        }
     }
 
     /**

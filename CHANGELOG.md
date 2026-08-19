@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.4 — 2026-08-19 — CI-Härtung + Upgrade-Robustheit (Plugin-Isolation, PHPDoc, reset_role_capabilities)
+- **CI-Fix (PHPDoc):** fehlender `@param string|null $clientip` bei `access_controller::grant_temporary_access` ergaenzt (PHPDoc-Checker gruen).
+- **Upgrade-Robustheit:** die dedizierte Rolle wendet die Student-Archetyp-Capabilities jetzt defensiv an (fehlende Capabilities werden uebersprungen) statt via `reset_role_capabilities()`. Behebt den Upgrade-Abbruch `Capability 'mod/data:comment' was not found` auf Sites mit abweichendem Plugin-Satz.
+
 ## 0.9.3 — 2026-08-19 — Welle 3 Strom F: Quick-Registration neu spezifiziert (P0 #5)
 - **P0 #5 — Zugangs-Gate:** zusaetzlich zur E-Mail-Freischaltung kann die Schnellregistrierung durch ein gemeinsames **Passwort** oder eine **E-Mail-Domain-Allowlist** beschraenkt werden. Konfigurierbar **systemweit** (Einstellungen) **und kursweit** (Enrol-Instanz); die Instanz ueberschreibt die Systemvorgabe. Neuer Service `quickreg_gate` (bcrypt-Passwortpruefung bzw. Domain-/Subdomain-Abgleich, fail-closed).
 - Neue Instanzfelder `quickreggatemode`/`quickreggatepasswordhash`/`quickreggatedomains` (install.xml + Upgrade 2026081903), System-Settings, Instanz-Formular und Policy-Aufloesung (System-Default + Instanz-Override).

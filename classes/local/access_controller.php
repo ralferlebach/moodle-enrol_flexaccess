@@ -104,6 +104,7 @@ final class access_controller {
      * @param int $courseid Course id.
      * @param int|null $now Current time.
      * @param string|null $accesskey Clear-text access key, when the policy requires one.
+     * @param string|null $clientip Client IP address used for rate limiting.
      * @return \stdClass Result with ->status (granted|closed|notallowed|badkey|notenabled|full|<enrolstatus>),
      *                   ->userid and ->enrolid (0 when not applicable).
      */
