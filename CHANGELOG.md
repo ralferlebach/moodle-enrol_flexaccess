@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.5 — 2026-08-19 — Welle 3 Strom E: administrierbare Kategorie-Policies (P0 #8) + Cleanup
+- **P0 #8 — Schreibpfad fuer Kategorie-Policies:** neuer `category_policy`-Service (load/all/save/delete). Die Kategorietabelle wurde bisher nur gelesen/gemergt; jetzt ist sie administrierbar. Ein reiner Inherit-Datensatz wird nicht gespeichert (bzw. geloescht), sodass keine leeren Overrides zurueckbleiben.
+- Cleanup: „iteration"-Kommentar in `edit_instance_form` durch eine praezise Beschreibung ersetzt.
+
 ## 0.9.4 — 2026-08-19 — CI-Härtung + Upgrade-Robustheit (Plugin-Isolation, PHPDoc, reset_role_capabilities)
 - **CI-Fix (PHPDoc):** fehlender `@param string|null $clientip` bei `access_controller::grant_temporary_access` ergaenzt (PHPDoc-Checker gruen).
 - **Upgrade-Robustheit:** die dedizierte Rolle wendet die Student-Archetyp-Capabilities jetzt defensiv an (fehlende Capabilities werden uebersprungen) statt via `reset_role_capabilities()`. Behebt den Upgrade-Abbruch `Capability 'mod/data:comment' was not found` auf Sites mit abweichendem Plugin-Satz.

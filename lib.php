@@ -141,8 +141,8 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     /**
      * Add the instance configuration form elements.
      *
-     * This iteration exposes the access window and participant capacity; other extended
-     * configuration keeps its stored/default values until later iterations expose it.
+     * Exposes the access methods, lifecycle, access-key gate, quick-registration gate, participant
+     * visibility, access window and capacity for the instance; unset fields keep their stored values.
      *
      * @param stdClass $instance Enrolment instance (or defaults object for a new instance).
      * @param MoodleQuickForm $mform The form being built.

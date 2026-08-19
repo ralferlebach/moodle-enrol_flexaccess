@@ -17,8 +17,9 @@
 /**
  * Persistence for the extended FlexAccess enrolment-instance configuration.
  *
- * This iteration owns the access window and participant capacity. Columns not written here
- * keep their database defaults on insert and their existing values on update.
+ * Persists the access methods, lifecycle, access-key and quick-registration gates, participant
+ * visibility, access window and capacity. Columns not written here keep their database defaults on
+ * insert and their existing values on update.
  *
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
