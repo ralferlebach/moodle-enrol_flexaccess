@@ -46,6 +46,18 @@ final class access_controller {
     private const QUICKREG_MAX_PER_IP = 30;
 
     /**
+     * Read a positive integer plugin setting, falling back to a default when unset or non-positive.
+     *
+     * @param string $name Setting name within enrol_flexaccess.
+     * @param int $default Fallback value.
+     * @return int
+     */
+    private static function config_int(string $name, int $default): int {
+        $value = (int) get_config('enrol_flexaccess', $name);
+        return $value > 0 ? $value : $default;
+    }
+
+    /**
      * Grant temporary access to a course for a new anonymous visitor.
      *
      * @param int $courseid Course id.
@@ -124,13 +136,16 @@ final class access_controller {
             return self::result('notallowed');
         }
         // Throttle anonymous account creation per client address. The limit is generous so a whole
-        // class behind one NAT address is not blocked, but scripted mass-creation is slowed.
+        // class behind one NAT address is not blocked, but scripted mass-creation is slowed. Limits
+        // are admin-configurable; the constants are the fallback defaults.
+        $maxperip = self::config_int('quickregmaxperip', self::QUICKREG_MAX_PER_IP);
+        $window = self::config_int('quickregwindow', self::QUICKREG_RATE_WINDOW);
         if (
             $clientip !== null && \auth_flexaccess\local\rate_limiter::too_many(
                 'quickreg',
                 $clientip,
-                self::QUICKREG_MAX_PER_IP,
-                self::QUICKREG_RATE_WINDOW,
+                $maxperip,
+                $window,
                 $now
             )
         ) {
@@ -146,7 +161,7 @@ final class access_controller {
         }
 
         if ($clientip !== null) {
-            \auth_flexaccess\local\rate_limiter::record('quickreg', $clientip, self::QUICKREG_RATE_WINDOW, $now);
+            \auth_flexaccess\local\rate_limiter::record('quickreg', $clientip, $window, $now);
         }
 
         $outcome = enrol_service::reserve_and_enrol(

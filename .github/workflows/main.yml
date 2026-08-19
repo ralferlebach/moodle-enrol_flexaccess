@@ -53,7 +53,7 @@ jobs:
           php-version: ${{ matrix.php }}
           extensions: pgsql, gd, intl, zip, soap, mbstring, curl, xml, exif
           ini-values: max_input_vars=5000
-          coverage: none
+          coverage: pcov
       - name: Install en_AU.UTF-8 locale
         run: sudo locale-gen en_AU.UTF-8 && sudo update-locale
       - name: Install moodle-plugin-ci
@@ -87,8 +87,16 @@ jobs:
           moodle-plugin-ci phpcs "$HOME/extra-plugins/auth_flexaccess" --max-warnings 0
           moodle-plugin-ci phpcs "$HOME/extra-plugins/mod_flexaccess"  --max-warnings 0
           moodle-plugin-ci phpcs "$HOME/extra-plugins/tool_flexaccess" --max-warnings 0
-      - name: PHPUnit (enrol + siblings)
-        run: moodle-plugin-ci phpunit
+      - name: PHPUnit (enrol + siblings) with coverage gate
+        run: |
+          moodle-plugin-ci phpunit --coverage-text --coverage-pcov | tee /tmp/phpunit-cov.txt
+          pct=$(grep -Eo 'Lines:[[:space:]]+[0-9.]+%' /tmp/phpunit-cov.txt | head -1 | grep -Eo '[0-9.]+' | head -1)
+          echo "Measured line coverage: ${pct:-unknown}%"
+          # Conservative floor guarding against coverage collapse. Raise after reviewing the first
+          # measured run (see docs/coverage.md).
+          floor=25
+          awk -v p="${pct:-0}" -v f="$floor" 'BEGIN { exit (p+0 >= f+0) ? 0 : 1 }' \
+            || { echo "::error::Line coverage ${pct}% is below the required floor ${floor}%"; exit 1; }
       - name: Behat ecosystem journeys
         run: moodle-plugin-ci behat --profile chrome --tags "@flexaccess_ecosystem" --start-servers
 
@@ -165,7 +173,7 @@ jobs:
       - name: Install Playwright
         run: |
           cd moodle/enrol/flexaccess/tests/playwright
-          npm ci || npm install
+          npm ci
           npx playwright install --with-deps chromium
       - name: Run Playwright tests
         env:
@@ -252,9 +260,17 @@ jobs:
           echo "courseid=$COURSE_ID" >> "$GITHUB_OUTPUT"
       - name: Set up JMeter (checksum-verified)
         run: |
-          curl -sSL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz" -o jmeter.tgz
-          # Supply-chain: verify the published checksum before trusting the archive.
-          # echo "${JMETER_SHA512}  jmeter.tgz" | sha512sum -c -
+          base="https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}"
+          curl -sSL "${base}.tgz" -o jmeter.tgz
+          # Supply-chain: verify the archive against Apache's published SHA-512 before trusting it.
+          # A pinned JMETER_SHA512 (a full 128-hex digest) takes precedence; otherwise the official
+          # published checksum file is used. The build fails on any mismatch.
+          if printf '%s' "${JMETER_SHA512}" | grep -Eq '^[0-9a-fA-F]{128}$'; then
+            echo "${JMETER_SHA512}  jmeter.tgz" | sha512sum -c -
+          else
+            curl -sSL "${base}.tgz.sha512" -o jmeter.tgz.sha512
+            echo "$(cut -d' ' -f1 jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
+          fi
           tar xzf jmeter.tgz
       - name: Run JMeter against FlexAccess endpoints
         run: |

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.39 — 2026-08-19 — Konfigurierbare Rate-Limits, Cleanup, i18n, Backup/Restore, CI-Härtung
+- **§5:** Quick-Registration-Rate-Limits admin-konfigurierbar (`quickregmaxperip`, `quickregwindow`); Konstanten bleiben Fallback-Defaults.
+- **§3 Cleanup:** ungenutzte Capability `enrol/flexaccess:manage` entfernt.
+- **§22 Coverage-Gate:** ecosystem-CI misst jetzt Zeilenabdeckung (pcov) und bricht unter einem Schwellwert ab (konservativer Start-Floor 25 %, siehe `docs/coverage.md`).
+- **§29 Supply-Chain:** JMeter wird gegen Apaches offizielle SHA-512 verifiziert (oder gepinnten `JMETER_SHA512`); Playwright nutzt striktes `npm ci` mit beigelegtem `package-lock.json`.
+
 ## 0.1.37 — 2026-08-19 — Teilnehmerlisten-Sichtbarkeit durchgesetzt (§35, P0)
 - **`participantvisibility` wird jetzt tatsaechlich durchgesetzt (§35, P0):** Bei `hide` sehen temporaere und schnellregistrierte Besucher die Teilnehmerliste des Kurses nicht mehr. Zuvor war die Einstellung wirkungslos (Security-Theater).
 - **Dedizierte Rolle `flexaccessparticipant`** (Archetyp student): FlexAccess-Besucher werden mit dieser Rolle eingeschrieben. Ein Kurskontext-Override entzieht ihr bei `hide` die Faehigkeiten `moodle/course:viewparticipants` und `moodle/course:enrolreview` (beide gaten die Kern-Teilnehmerseite) — betrifft ausschliesslich FlexAccess-Besucher, nicht regulaere Studierende.

@@ -30,11 +30,6 @@ $capabilities = [
         'captype' => 'write', 'contextlevel' => CONTEXT_COURSE,
         'archetypes' => ['editingteacher' => CAP_ALLOW, 'manager' => CAP_ALLOW],
     ],
-    'enrol/flexaccess:manage' => [
-        'riskbitmask' => RISK_PERSONAL,
-        'captype' => 'write', 'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => ['editingteacher' => CAP_ALLOW, 'manager' => CAP_ALLOW],
-    ],
     'enrol/flexaccess:unenrol' => [
         'riskbitmask' => RISK_PERSONAL,
         'captype' => 'write', 'contextlevel' => CONTEXT_COURSE,

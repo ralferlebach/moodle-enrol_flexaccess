@@ -57,4 +57,24 @@ if ($ADMIN->fulltree) {
         '',
         PARAM_RAW_TRIMMED
     ));
+
+    $settings->add(new admin_setting_heading(
+        'enrol_flexaccess/ratelimit',
+        get_string('settings:ratelimit', 'enrol_flexaccess'),
+        get_string('settings:ratelimit_desc', 'enrol_flexaccess')
+    ));
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/quickregmaxperip',
+        get_string('setting:quickregmaxperip', 'enrol_flexaccess'),
+        get_string('setting:quickregmaxperip_desc', 'enrol_flexaccess'),
+        30,
+        PARAM_INT
+    ));
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/quickregwindow',
+        get_string('setting:quickregwindow', 'enrol_flexaccess'),
+        get_string('setting:quickregwindow_desc', 'enrol_flexaccess'),
+        600,
+        PARAM_INT
+    ));
 }
