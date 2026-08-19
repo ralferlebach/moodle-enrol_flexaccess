@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.37 — 2026-08-19 — Teilnehmerlisten-Sichtbarkeit durchgesetzt (§35, P0)
+- **`participantvisibility` wird jetzt tatsaechlich durchgesetzt (§35, P0):** Bei `hide` sehen temporaere und schnellregistrierte Besucher die Teilnehmerliste des Kurses nicht mehr. Zuvor war die Einstellung wirkungslos (Security-Theater).
+- **Dedizierte Rolle `flexaccessparticipant`** (Archetyp student): FlexAccess-Besucher werden mit dieser Rolle eingeschrieben. Ein Kurskontext-Override entzieht ihr bei `hide` die Faehigkeiten `moodle/course:viewparticipants` und `moodle/course:enrolreview` (beide gaten die Kern-Teilnehmerseite) — betrifft ausschliesslich FlexAccess-Besucher, nicht regulaere Studierende.
+- Neue Services `local\participant_role` (Rolle anlegen/finden/migrieren) und `local\participant_visibility` (Override synchronisieren).
+- **Formular:** `participantvisibility` (Erben/Anzeigen/Ausblenden) in der Instanz-Konfiguration; `instance_config::save` schreibt den Wert und synchronisiert den Override anhand der effektiven Policy.
+- **Install/Upgrade:** `db/install.php` legt die Rolle an; der Upgrade-Schritt legt sie an, **migriert bestehende FlexAccess-Enrolments** auf die Rolle und wendet die Sichtbarkeit auf alle bestehenden Instanzen an.
+- Verhaltensaenderung: temporaere/Quick-Nutzer erhalten nun die dedizierte Rolle (student-aequivalent) statt der Instanz-`roleid`.
+- Tests: `participant_role_test` (Anlegen/Idempotenz/Migration), `participant_visibility_test` (hide entzieht, show stellt her, reguläre Studierende unberührt).
+
+## 0.1.36 — 2026-08-19 — Capacity-Race / verwaiste Accounts behoben (§18)
+- **Kein verwaister Account mehr bei Kapazitaets-Rennen (§18, P0):** Der Account wird jetzt *innerhalb* des Kapazitaets-Locks erzeugt — erst nachdem die autoritative `is_full`-Pruefung einen Platz gesichert hat. Verliert eine gleichzeitige Anmeldung das Rennen, liefert der Grant `full`, ohne einen Account (oder Moodle-Nutzer) anzulegen. Zuvor wurde der Account VOR dem Lock erzeugt und blieb bei vollem Kurs zurueck (bei Quick-Reg mit echter, dann blockierter E-Mail).
+- Neuer Kern `enrol_service::reserve_and_enrol($enrolid, callable $createuser, $now)`: reserviert unter Lock, ruft den Account-Ersteller nur bei freiem Platz auf und schreibt ein; `enrol_with_capacity` delegiert jetzt daran (unveraendertes Verhalten fuer bestehende Nutzer).
+- `access_controller::grant_temporary_access` und `grant_quick_registration` nutzen den neuen Pfad; bei `full` ist `->userid` nun 0.
+- Tests: `reserve_and_enrol`-Ersteller wird bei vollem Kurs nie aufgerufen (keine Waise); `test_full_capacity` prueft zusaetzlich, dass kein Account/Nutzer entsteht.
+
 ## 0.1.35 — 2026-08-19 — DSGVO-Privacy-Provider (§11) + PHPDoc-Fixes
 - **PHPDoc-Fix:** fehlender `@param $clientip` bei `access_controller::grant_quick_registration` (CI-PHPDoc-Checker).
 - Privacy bleibt `null_provider` (keine eigenen personenbezogenen Tabellen; Einschreibungen liegen in den Kern-Tabellen).

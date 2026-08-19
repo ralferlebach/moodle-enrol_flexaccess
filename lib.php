@@ -182,6 +182,14 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('maxparticipants', 'maxparticipants', 'enrol_flexaccess');
         $mform->setDefault('maxparticipants', 0);
 
+        $mform->addElement('select', 'participantvisibility', get_string('participantvisibility', 'enrol_flexaccess'), [
+            'inherit' => get_string('participantvisibility:inherit', 'enrol_flexaccess'),
+            'show' => get_string('show', 'enrol_flexaccess'),
+            'hide' => get_string('hide', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('participantvisibility', 'participantvisibility', 'enrol_flexaccess');
+        $mform->setDefault('participantvisibility', 'inherit');
+
         // Access methods offered by this instance.
         $mform->addElement('header', 'flexaccess_methods', get_string('settings:methods', 'enrol_flexaccess'));
 
@@ -235,7 +243,8 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             if ($config) {
                 foreach (
                     ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
-                        'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode'] as $field
+                        'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
+                        'participantvisibility'] as $field
                 ) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);

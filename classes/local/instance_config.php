@@ -73,6 +73,8 @@ final class instance_config {
         $expiryaction = in_array($expiryactionraw, ['suspend', 'unenrol'], true) ? $expiryactionraw : 'suspend';
         $keymoderaw = (string) ($data['temporaryaccesskeymode'] ?? 'inherit');
         $keymode = in_array($keymoderaw, ['inherit', 'course'], true) ? $keymoderaw : 'inherit';
+        $visraw = (string) ($data['participantvisibility'] ?? 'inherit');
+        $participantvisibility = in_array($visraw, ['inherit', 'show', 'hide'], true) ? $visraw : 'inherit';
 
         $fields = [
             'availablefrom' => $availablefrom,
@@ -85,6 +87,7 @@ final class instance_config {
             'expiryaction' => $expiryaction,
             'enrolperiod' => $enrolperiod,
             'temporaryaccesskeymode' => $keymode,
+            'participantvisibility' => $participantvisibility,
         ];
         // Only overwrite temporarylifetime when the form supplied one (0 keeps the stored default).
         if ($temporarylifetime > 0) {
@@ -104,14 +107,31 @@ final class instance_config {
             }
             $existing->timemodified = $now;
             $DB->update_record(self::TABLE, $existing);
-            return;
+        } else {
+            $record = (object) array_merge($fields, [
+                'enrolid' => $enrolid,
+                'timemodified' => $now,
+            ]);
+            $DB->insert_record(self::TABLE, $record);
         }
 
-        $record = (object) array_merge($fields, [
-            'enrolid' => $enrolid,
-            'timemodified' => $now,
-        ]);
-        $DB->insert_record(self::TABLE, $record);
+        self::sync_participant_visibility($enrolid);
+    }
+
+    /**
+     * Apply the effective participant-list visibility to the dedicated role override for the course.
+     *
+     * @param int $enrolid Core enrol instance id.
+     * @return void
+     */
+    private static function sync_participant_visibility(int $enrolid): void {
+        global $DB;
+        $courseid = (int) $DB->get_field('enrol', 'courseid', ['id' => $enrolid]);
+        if ($courseid === 0) {
+            return;
+        }
+        $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
+        participant_visibility::sync($courseid, $policy->participantvisibility);
     }
 
     /**

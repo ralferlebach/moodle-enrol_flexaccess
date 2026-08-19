@@ -83,5 +83,21 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         upgrade_plugin_savepoint(true, 2026081730, 'enrol', 'flexaccess');
     }
 
+    if ($oldversion < 2026082080) {
+        // Introduce the dedicated FlexAccess participant role, migrate existing FlexAccess
+        // enrolments onto it, and apply the participant-list visibility override for every
+        // existing instance so the setting takes effect without re-saving each instance.
+        \enrol_flexaccess\local\participant_role::ensure();
+        \enrol_flexaccess\local\participant_role::migrate_existing();
+
+        $instances = $DB->get_records('enrol', ['enrol' => 'flexaccess'], '', 'id, courseid');
+        foreach ($instances as $instance) {
+            $policy = \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid);
+            \enrol_flexaccess\local\participant_visibility::sync((int) $instance->courseid, $policy->participantvisibility);
+        }
+
+        upgrade_plugin_savepoint(true, 2026082080, 'enrol', 'flexaccess');
+    }
+
     return true;
 }

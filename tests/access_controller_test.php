@@ -118,17 +118,25 @@ final class access_controller_test extends \advanced_testcase {
     }
 
     /**
-     * A full instance refuses further grants.
+     * A full instance refuses further grants without orphaning an account.
      */
     public function test_full_capacity(): void {
+        global $DB;
         $this->resetAfterTest();
         $sink = $this->redirectEmails();
         $now = 1000000;
         $course = $this->course_with_instance(1);
         $first = access_controller::grant_temporary_access((int) $course->id, $now);
         $this->assertSame('granted', $first->status);
+
+        $accountsbefore = $DB->count_records('auth_flexaccess_account');
+        $usersbefore = $DB->count_records('user');
         $second = access_controller::grant_temporary_access((int) $course->id, $now);
         $this->assertSame('full', $second->status);
+        $this->assertSame(0, (int) $second->userid);
+        // The refused grant must not create an account (or a user) that is never enrolled.
+        $this->assertSame($accountsbefore, $DB->count_records('auth_flexaccess_account'));
+        $this->assertSame($usersbefore, $DB->count_records('user'));
         $sink->close();
     }
 }

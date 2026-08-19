@@ -38,17 +38,37 @@ final class enrol_service {
     /**
      * Enrol a user into a FlexAccess instance if capacity allows.
      *
+     * Thin wrapper over {@see self::reserve_and_enrol()} for the case where the account already
+     * exists; the callback simply yields the given user id.
+     *
      * @param int $enrolid FlexAccess enrol instance id.
      * @param int $userid User id to enrol.
      * @param int|null $now Current time.
      * @return string One of: enrolled, full, notenabled.
      */
     public static function enrol_with_capacity(int $enrolid, int $userid, ?int $now = null): string {
+        return self::reserve_and_enrol($enrolid, static fn(): int => $userid, $now)->status;
+    }
+
+    /**
+     * Reserve a capacity slot under the lock, then create and enrol the account inside the same
+     * critical section.
+     *
+     * The account-creating callback is invoked only after the authoritative capacity re-check has
+     * secured a slot, so a request that loses the capacity race never leaves an orphaned account
+     * behind. The callback runs while the per-instance lock is held and must return the new user id.
+     *
+     * @param int $enrolid FlexAccess enrol instance id.
+     * @param callable $createuser Zero-argument callback returning the user id to enrol.
+     * @param int|null $now Current time.
+     * @return \stdClass ->status (enrolled|full|notenabled) and ->userid (0 when no account was created).
+     */
+    public static function reserve_and_enrol(int $enrolid, callable $createuser, ?int $now = null): \stdClass {
         global $DB;
         $now = $now ?? time();
         $instance = $DB->get_record('enrol', ['id' => $enrolid, 'enrol' => 'flexaccess'], '*', IGNORE_MISSING);
         if (!$instance || (int) $instance->status !== ENROL_INSTANCE_ENABLED) {
-            return 'notenabled';
+            return (object) ['status' => 'notenabled', 'userid' => 0];
         }
         $flex = instance_config::load($enrolid);
         $max = $flex ? (int) $flex->maxparticipants : 0;
@@ -56,15 +76,23 @@ final class enrol_service {
 
         return capacity_service::run_with_lock(
             $enrolid,
-            static function () use ($instance, $enrolid, $userid, $max, $enrolperiod, $now): string {
+            static function () use ($instance, $enrolid, $createuser, $max, $enrolperiod, $now): \stdClass {
                 if (capacity_service::is_full($enrolid, $max, $now)) {
-                    return 'full';
+                    // No account is created here, so a lost capacity race cannot orphan a user.
+                    return (object) ['status' => 'full', 'userid' => 0];
                 }
+                $userid = (int) $createuser();
                 $plugin = enrol_get_plugin('flexaccess');
                 $timeend = $enrolperiod > 0 ? $now + $enrolperiod : 0;
-                $roleid = !empty($instance->roleid) ? (int) $instance->roleid : null;
+                // Enrol FlexAccess visitors under the dedicated participant role so that per-course
+                // participant-list visibility can be enforced on it; fall back to the instance role
+                // only if the dedicated role is somehow absent.
+                $roleid = participant_role::get_id();
+                if ($roleid === 0) {
+                    $roleid = !empty($instance->roleid) ? (int) $instance->roleid : null;
+                }
                 $plugin->enrol_user($instance, $userid, $roleid, $now, $timeend, ENROL_USER_ACTIVE);
-                return 'enrolled';
+                return (object) ['status' => 'enrolled', 'userid' => $userid];
             }
         );
     }

@@ -84,14 +84,16 @@ final class access_controller {
         }
 
         $timeexpires = $policy->temporarylifetime > 0 ? $now + $policy->temporarylifetime : null;
-        $userid = \auth_flexaccess\api::create_temporary_user($timeexpires, $courseid, null, $now);
-
-        $enrolstatus = enrol_service::enrol_with_capacity($enrolid, $userid, $now);
-        if ($enrolstatus !== 'enrolled') {
-            return self::result($enrolstatus, $userid, $enrolid);
+        $outcome = enrol_service::reserve_and_enrol(
+            $enrolid,
+            static fn(): int => \auth_flexaccess\api::create_temporary_user($timeexpires, $courseid, null, $now),
+            $now
+        );
+        if ($outcome->status !== 'enrolled') {
+            return self::result($outcome->status, $outcome->userid, $enrolid);
         }
 
-        return self::result('granted', $userid, $enrolid);
+        return self::result('granted', $outcome->userid, $enrolid);
     }
 
     /**
@@ -147,20 +149,22 @@ final class access_controller {
             \auth_flexaccess\local\rate_limiter::record('quickreg', $clientip, self::QUICKREG_RATE_WINDOW, $now);
         }
 
-        $userid = \auth_flexaccess\api::create_quick_registered_user(
-            (string) $userdata->email,
-            (string) $userdata->firstname,
-            (string) $userdata->lastname,
-            (string) $userdata->password,
+        $outcome = enrol_service::reserve_and_enrol(
+            $enrolid,
+            static fn(): int => \auth_flexaccess\api::create_quick_registered_user(
+                (string) $userdata->email,
+                (string) $userdata->firstname,
+                (string) $userdata->lastname,
+                (string) $userdata->password,
+                $now
+            ),
             $now
         );
-
-        $enrolstatus = enrol_service::enrol_with_capacity($enrolid, $userid, $now);
-        if ($enrolstatus !== 'enrolled') {
-            return self::result($enrolstatus, $userid, $enrolid);
+        if ($outcome->status !== 'enrolled') {
+            return self::result($outcome->status, $outcome->userid, $enrolid);
         }
 
-        return self::result('granted', $userid, $enrolid);
+        return self::result('granted', $outcome->userid, $enrolid);
     }
 
     /**
