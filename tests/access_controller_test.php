@@ -139,4 +139,53 @@ final class access_controller_test extends \advanced_testcase {
         $this->assertSame($usersbefore, $DB->count_records('user'));
         $sink->close();
     }
+
+    /**
+     * Anonymous temporary creation is rate limited per client address (atomic, independent of key).
+     *
+     * @return void
+     */
+    public function test_temporary_creation_rate_limited_per_ip(): void {
+        $this->resetAfterTest();
+        set_config('tempmaxperip', 3, 'enrol_flexaccess');
+        set_config('tempwindow', 600, 'enrol_flexaccess');
+        $sink = $this->redirectEmails();
+        $now = 1000000;
+        $course = $this->course_with_instance(0);
+        $ip = '198.51.100.20';
+
+        for ($i = 0; $i < 3; $i++) {
+            $r = access_controller::grant_temporary_access((int) $course->id, $now, null, $ip);
+            $this->assertSame('granted', $r->status);
+        }
+        $blocked = access_controller::grant_temporary_access((int) $course->id, $now, null, $ip);
+        $this->assertSame('ratelimited', $blocked->status);
+
+        // A different address is unaffected.
+        $other = access_controller::grant_temporary_access((int) $course->id, $now, null, '203.0.113.44');
+        $this->assertSame('granted', $other->status);
+        $sink->close();
+    }
+
+    /**
+     * The site-wide circuit breaker blocks creation regardless of client address once tripped.
+     *
+     * @return void
+     */
+    public function test_temporary_creation_site_circuit_breaker(): void {
+        $this->resetAfterTest();
+        set_config('tempmaxperip', 1000, 'enrol_flexaccess');
+        set_config('tempsitemax', 2, 'enrol_flexaccess');
+        set_config('tempsitewindow', 3600, 'enrol_flexaccess');
+        $sink = $this->redirectEmails();
+        $now = 1000000;
+        $course = $this->course_with_instance(0);
+
+        $this->assertSame('granted', access_controller::grant_temporary_access((int) $course->id, $now, null, '10.0.0.1')->status);
+        $this->assertSame('granted', access_controller::grant_temporary_access((int) $course->id, $now, null, '10.0.0.2')->status);
+        // Third creation from a fresh address is still blocked by the site breaker.
+        $third = access_controller::grant_temporary_access((int) $course->id, $now, null, '10.0.0.3');
+        $this->assertSame('ratelimited', $third->status);
+        $sink->close();
+    }
 }

@@ -58,6 +58,47 @@ final class access_controller {
     }
 
     /**
+     * Default per-address cap for anonymous temporary-account creation within the window.
+     */
+    private const TEMP_MAX_PER_IP = 30;
+
+    /**
+     * Default sliding window (seconds) for temporary-account creation limits.
+     */
+    private const TEMP_RATE_WINDOW = 600;
+
+    /**
+     * Default site-wide circuit-breaker window (seconds).
+     */
+    private const TEMP_SITE_WINDOW = 3600;
+
+    /**
+     * Whether anonymous temporary-account creation is currently rate limited for this client.
+     *
+     * Applies an atomic per-address limit, a per-course+address limit, and an optional site-wide
+     * circuit breaker (disabled when its maximum is zero). Each check records the attempt.
+     *
+     * @param int $courseid Target course id.
+     * @param string $clientip Client address.
+     * @param int $now Current time.
+     * @return bool
+     */
+    private static function temporary_creation_limited(int $courseid, string $clientip, int $now): bool {
+        $maxperip = self::config_int('tempmaxperip', self::TEMP_MAX_PER_IP);
+        $window = self::config_int('tempwindow', self::TEMP_RATE_WINDOW);
+        $sitemax = (int) get_config('enrol_flexaccess', 'tempsitemax');
+        $sitewindow = self::config_int('tempsitewindow', self::TEMP_SITE_WINDOW);
+
+        if ($sitemax > 0 && \auth_flexaccess\local\rate_limiter::hit('temp_site', 'site', $sitemax, $sitewindow, $now)) {
+            return true;
+        }
+        if (\auth_flexaccess\local\rate_limiter::hit('temp_ip', $clientip, $maxperip, $window, $now)) {
+            return true;
+        }
+        return \auth_flexaccess\local\rate_limiter::hit('temp_course_ip', $courseid . '|' . $clientip, $maxperip, $window, $now);
+    }
+
+    /**
      * Grant temporary access to a course for a new anonymous visitor.
      *
      * @param int $courseid Course id.
@@ -66,7 +107,12 @@ final class access_controller {
      * @return \stdClass Result with ->status (granted|closed|notallowed|badkey|notenabled|full|<enrolstatus>),
      *                   ->userid and ->enrolid (0 when not applicable).
      */
-    public static function grant_temporary_access(int $courseid, ?int $now = null, ?string $accesskey = null): \stdClass {
+    public static function grant_temporary_access(
+        int $courseid,
+        ?int $now = null,
+        ?string $accesskey = null,
+        ?string $clientip = null
+    ): \stdClass {
         $now = $now ?? time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
 
@@ -85,6 +131,13 @@ final class access_controller {
             ) {
                 return self::result('badkey');
             }
+        }
+        // General, atomic rate limit on anonymous account creation, independent of the access key.
+        // A correct key does not license mass creation; limits are per client address, per
+        // course+address, and an optional site-wide circuit breaker. Checked after the key so failed
+        // key attempts are not counted as creations.
+        if ($clientip !== null && self::temporary_creation_limited($courseid, $clientip, $now)) {
+            return self::result('ratelimited');
         }
         $enrolid = self::enabled_instance($courseid);
         if ($enrolid === 0) {
@@ -141,7 +194,7 @@ final class access_controller {
         $maxperip = self::config_int('quickregmaxperip', self::QUICKREG_MAX_PER_IP);
         $window = self::config_int('quickregwindow', self::QUICKREG_RATE_WINDOW);
         if (
-            $clientip !== null && \auth_flexaccess\local\rate_limiter::too_many(
+            $clientip !== null && \auth_flexaccess\local\rate_limiter::hit(
                 'quickreg',
                 $clientip,
                 $maxperip,
@@ -158,10 +211,6 @@ final class access_controller {
         $active = \enrol_flexaccess\api::get_active_enrolment_count($courseid, $now);
         if (!capacity_service::has_free_capacity($active, $policy->maxparticipants)) {
             return self::result('full');
-        }
-
-        if ($clientip !== null) {
-            \auth_flexaccess\local\rate_limiter::record('quickreg', $clientip, $window, $now);
         }
 
         $outcome = enrol_service::reserve_and_enrol(

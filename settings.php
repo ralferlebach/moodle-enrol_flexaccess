@@ -77,4 +77,33 @@ if ($ADMIN->fulltree) {
         600,
         PARAM_INT
     ));
+
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/tempmaxperip',
+        get_string('setting:tempmaxperip', 'enrol_flexaccess'),
+        get_string('setting:tempmaxperip_desc', 'enrol_flexaccess'),
+        30,
+        PARAM_INT
+    ));
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/tempwindow',
+        get_string('setting:tempwindow', 'enrol_flexaccess'),
+        get_string('setting:tempwindow_desc', 'enrol_flexaccess'),
+        600,
+        PARAM_INT
+    ));
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/tempsitemax',
+        get_string('setting:tempsitemax', 'enrol_flexaccess'),
+        get_string('setting:tempsitemax_desc', 'enrol_flexaccess'),
+        0,
+        PARAM_INT
+    ));
+    $settings->add(new admin_setting_configtext(
+        'enrol_flexaccess/tempsitewindow',
+        get_string('setting:tempsitewindow', 'enrol_flexaccess'),
+        get_string('setting:tempsitewindow_desc', 'enrol_flexaccess'),
+        3600,
+        PARAM_INT
+    ));
 }

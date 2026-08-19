@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1 — 2026-08-19 — Welle 1: Token-Sicherheit + atomares Temp-Rate-Limit (P0 #1, #2)
+- **P0 #2 — generelles Temp-Limit:** `grant_temporary_access` nimmt jetzt die Client-Adresse und drosselt anonyme Kontoerzeugung **unabhaengig vom Access-Key** — per Adresse, per Kurs+Adresse und optionaler seitenweiter Circuit-Breaker. Neue Settings `tempmaxperip`/`tempwindow`/`tempsitemax`/`tempsitewindow`. `access.php` reicht `getremoteaddr()` durch.
+- Tests: Temp-Limit pro IP + Site-Circuit-Breaker.
+
 ## 0.9.0 — 2026-08-19 — Beta-Schwelle: CI-Fix, Maturity BETA, Versions-Neustart
 - Versionsschema auf `2026081900` / Release `0.9.0` gesetzt, Maturity auf **MATURITY_BETA** angehoben; Cross-Plugin-Dependencies auf `2026081900` gezogen.
 - **CI-Fix:** fehlende `@param $reference` in den Docblocks von `api::search_accounts` und `api::build_account_filter` ergaenzt (PHPDoc-Checker).
