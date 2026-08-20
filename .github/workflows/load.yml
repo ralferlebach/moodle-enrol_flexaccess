@@ -141,7 +141,14 @@ jobs:
 
       - name: Set up JMeter
         run: |
+          # Supply-chain hardening: verify the download against Apache's published SHA-512 before
+          # extracting, so a corrupted or truncated download is rejected. For protection against a
+          # compromised mirror, pin KNOWN_SHA512 below to a value verified out-of-band and compare
+          # against it instead of (or in addition to) the fetched checksum.
           curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz -o jmeter.tgz
+          curl -sSL https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512 \
+            || curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512
+          echo "$(cat jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
           tar xzf jmeter.tgz
 
       # A plateau run: threads ramp up, then stay concurrently active for
