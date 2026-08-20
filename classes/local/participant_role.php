@@ -30,12 +30,17 @@ namespace enrol_flexaccess\local;
  */
 final class participant_role {
     /**
-     * Short name of the dedicated role.
+     * Short name of the dedicated course participant role (student-archetype, course context only).
      */
     public const SHORTNAME = 'flexaccessparticipant';
 
     /**
-     * Capabilities prevented for FlexAccess visitors site-wide (anti-abuse of anonymous accounts).
+     * Short name of the site-wide restriction role (prohibit-only, system context only).
+     */
+    public const RESTRICTION_SHORTNAME = 'flexaccessrestricted';
+
+    /**
+     * Capabilities hard-denied for FlexAccess visitors site-wide (anti-abuse of anonymous accounts).
      */
     private const RESTRICTED_CAPS = [
         'moodle/site:sendmessage',
@@ -44,15 +49,22 @@ final class participant_role {
     ];
 
     /**
-     * Ensure the dedicated role exists and return its id. Idempotent.
+     * Ensure the dedicated course role exists and return its id. Idempotent.
+     *
+     * This role carries the student-archetype capabilities and is assignable ONLY in course context,
+     * so it never grants any positive capability site-wide. The site-wide anti-abuse restrictions live
+     * in a separate prohibit-only role (see {@see ensure_restriction()}).
      *
      * @return int Role id.
      */
     public static function ensure(): int {
         global $DB;
+        // Always make sure the companion restriction role exists too.
+        self::ensure_restriction();
         $existing = $DB->get_field('role', 'id', ['shortname' => self::SHORTNAME]);
         if ($existing) {
-            self::apply_system_restrictions((int) $existing);
+            // Repair earlier installs that made this role assignable (and assigned) at system level.
+            set_role_contextlevels((int) $existing, [CONTEXT_COURSE]);
             return (int) $existing;
         }
         $roleid = create_role(
@@ -61,17 +73,48 @@ final class participant_role {
             get_string('participantrole_desc', 'enrol_flexaccess'),
             'student'
         );
-        // Assignable both in courses (participant-list visibility) and at system level (the
-        // site-wide restrictions applied to anonymous FlexAccess visitors).
-        set_role_contextlevels($roleid, [CONTEXT_SYSTEM, CONTEXT_COURSE]);
-        // Apply the student archetype's default capabilities at system level. We do this defensively
-        // rather than via reset_role_capabilities(): during an upgrade the capability table can be in
-        // a transitional state, and reset_role_capabilities() aborts the whole upgrade if a single
-        // archetype capability (e.g. a not-yet-installed module's) is missing. Skipping unknown
-        // capabilities keeps the install/upgrade robust across sites with differing plugin sets.
+        // Course context only: the role's capabilities apply where it is assigned (in a course),
+        // never site-wide.
+        set_role_contextlevels($roleid, [CONTEXT_COURSE]);
         self::apply_archetype_capabilities($roleid);
+        return (int) $roleid;
+    }
+
+    /**
+     * Ensure the site-wide restriction role exists and return its id. Idempotent.
+     *
+     * This role has no archetype and only the hard-denied capabilities, so assigning it to a visitor
+     * at system level withdraws messaging/profile editing site-wide without granting anything.
+     *
+     * @return int Role id.
+     */
+    public static function ensure_restriction(): int {
+        global $DB;
+        $existing = $DB->get_field('role', 'id', ['shortname' => self::RESTRICTION_SHORTNAME]);
+        if ($existing) {
+            set_role_contextlevels((int) $existing, [CONTEXT_SYSTEM]);
+            self::apply_system_restrictions((int) $existing);
+            return (int) $existing;
+        }
+        $roleid = create_role(
+            get_string('restrictionrole', 'enrol_flexaccess'),
+            self::RESTRICTION_SHORTNAME,
+            get_string('restrictionrole_desc', 'enrol_flexaccess'),
+            ''
+        );
+        set_role_contextlevels($roleid, [CONTEXT_SYSTEM]);
         self::apply_system_restrictions($roleid);
         return (int) $roleid;
+    }
+
+    /**
+     * Id of the site-wide restriction role, or 0 when it does not exist yet.
+     *
+     * @return int
+     */
+    public static function get_restriction_id(): int {
+        global $DB;
+        return (int) $DB->get_field('role', 'id', ['shortname' => self::RESTRICTION_SHORTNAME]);
     }
 
     /**
@@ -93,9 +136,9 @@ final class participant_role {
     }
 
     /**
-     * Prevent the restricted capabilities for the role at system level.
+     * Define the hard-denied capabilities on the restriction role at system level.
      *
-     * @param int $roleid Role id.
+     * @param int $roleid Restriction role id.
      * @return void
      */
     private static function apply_system_restrictions(int $roleid): void {
@@ -111,13 +154,13 @@ final class participant_role {
     }
 
     /**
-     * Assign the dedicated role to a visitor at system level so the site-wide restrictions apply.
+     * Assign the restriction role to a visitor at system level so the site-wide denials apply.
      *
      * @param int $userid User id.
      * @return void
      */
     public static function restrict(int $userid): void {
-        $roleid = self::get_id();
+        $roleid = self::ensure_restriction();
         if ($roleid === 0) {
             return;
         }
@@ -134,7 +177,7 @@ final class participant_role {
      * @return void
      */
     public static function unrestrict(int $userid): void {
-        $roleid = self::get_id();
+        $roleid = self::get_restriction_id();
         if ($roleid === 0) {
             return;
         }

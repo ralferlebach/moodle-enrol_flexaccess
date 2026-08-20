@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.11 — 2026-08-20 — RC-Hardening: P0#6 (Admin-Conversion über Mailqueue)
+- Keine Codeaenderung.
+
+## 0.9.10 — 2026-08-20 — RC-Hardening: 7/8 P0 aus dem 0.9.8-Review
+- **P0#1 (kritisch) — Privilege-Escalation behoben:** die Participant-Rolle wurde bisher im **Systemkontext** zugewiesen und vererbte damit Student-Archetyp-ALLOWs siteweit. Aufgeteilt in `flexaccessparticipant` (Student-Archetyp, **nur** CONTEXT_COURSE, für die Einschreibung) und `flexaccessrestricted` (kein Archetyp, **nur** CONTEXT_SYSTEM, ausschliesslich die CAP_PROHIBIT-Restriktionen). `restrict()`/`unrestrict()` nutzen jetzt die Restriktionsrolle. Upgrade 2026081910 hängt bestehende Besucher von der System-Zuweisung der Participant-Rolle auf die Restriktionsrolle um. Test beweist Least-Privilege strukturell.
+- **P0#7 — Participant-Visibility ehrlich benannt:** die Einstellung steuert, ob ein temporaerer Besucher die Teilnehmerliste **ansehen** darf. Labels/Hilfe klargestellt; dokumentiert, dass das Ausblenden temporaerer Besucher **aus fremden** Listen mangels stabilem Moodle-Extension-Point nicht enthalten ist.
+
+**Offen (bewusst gestaffelt):** P0#6 — Admin-Conversion versendet die Passwort-Mail noch via Core `setnew_password_and_mail` (umgeht die FlexAccess-Mailqueue/Ratelimit). Fix erfordert einen neuen queued 'set-password'-Mailfluss.
+
 ## 0.9.9 — 2026-08-19 — Welle 4 Abschluss: Accessibility-Gate + Docs-SSOT & Traceability
 - **Accessibility-Gate:** neuer `tests/playwright/accessibility.spec.js` prueft die anonymen FlexAccess-Seiten (Temporaerzugang-Einstieg, Schnellregistrierung) mit axe-core (WCAG 2.1 A/AA) und laesst den Build bei serious/critical-Verstoessen fehlschlagen. Laeuft im bestehenden Playwright-Job mit (`@axe-core/playwright` in package.json).
 - Lasttest: k6 (leerer Stub) zugunsten des vorhandenen JMeter-Plans entfernt/aufgeloest.

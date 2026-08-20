@@ -142,5 +142,33 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         upgrade_plugin_savepoint(true, 2026081903, 'enrol', 'flexaccess');
     }
 
+    if ($oldversion < 2026081910) {
+        // Security fix: the participant role was previously assignable (and assigned) at system
+        // context, leaking student-archetype ALLOW capabilities site-wide. Restrict it to course
+        // context and move existing visitors onto the new prohibit-only restriction role.
+        \enrol_flexaccess\local\participant_role::ensure();
+        $restrictionid = \enrol_flexaccess\local\participant_role::ensure_restriction();
+        $participantid = \enrol_flexaccess\local\participant_role::get_id();
+        $systemid = \context_system::instance()->id;
+
+        if ($participantid) {
+            // Remove any lingering system-context assignments of the participant role and
+            // re-restrict those users through the dedicated restriction role.
+            $assignments = $DB->get_records('role_assignments', [
+                'roleid' => $participantid,
+                'contextid' => $systemid,
+                'component' => 'enrol_flexaccess',
+            ]);
+            foreach ($assignments as $ra) {
+                role_unassign($participantid, (int) $ra->userid, $systemid, 'enrol_flexaccess');
+                if ($restrictionid && !user_has_role_assignment((int) $ra->userid, $restrictionid, $systemid)) {
+                    role_assign($restrictionid, (int) $ra->userid, $systemid, 'enrol_flexaccess');
+                }
+            }
+        }
+        \context_system::instance()->mark_dirty();
+        upgrade_plugin_savepoint(true, 2026081910, 'enrol', 'flexaccess');
+    }
+
     return true;
 }

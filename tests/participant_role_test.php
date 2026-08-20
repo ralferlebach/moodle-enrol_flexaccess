@@ -45,6 +45,18 @@ final class participant_role_test extends \advanced_testcase {
         accesslib_clear_all_caches_for_unit_testing();
         $this->assertFalse(has_capability('moodle/site:sendmessage', $system, $user));
         $this->assertFalse(has_capability('moodle/user:editownprofile', $system, $user));
+        // Least privilege: the visitor is restricted through the prohibit-only role, and the
+        // student-archetype participant role is NOT assigned site-wide.
+        $this->assertTrue(user_has_role_assignment(
+            (int) $user->id,
+            participant_role::get_restriction_id(),
+            $system->id
+        ));
+        $this->assertFalse(user_has_role_assignment(
+            (int) $user->id,
+            participant_role::get_id(),
+            $system->id
+        ));
 
         participant_role::unrestrict((int) $user->id);
         accesslib_clear_all_caches_for_unit_testing();
@@ -68,11 +80,16 @@ final class participant_role_test extends \advanced_testcase {
 
         $levels = array_map('intval', $DB->get_fieldset_select('role_context_levels', 'contextlevel', 'roleid = ?', [$roleid]));
         sort($levels);
-        $this->assertSame([CONTEXT_SYSTEM, CONTEXT_COURSE], $levels);
+        $this->assertSame([CONTEXT_COURSE], $levels);
 
-        // Student archetype defaults let the role view participants (so 'show' is a no-op).
-        $system = \context_system::instance();
-        $this->assertTrue(has_capability('moodle/course:viewparticipants', $system, $this->make_holder($roleid, $system)));
+        // Student archetype defaults let the role view participants where assigned (in a course).
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        $this->assertTrue(has_capability(
+            'moodle/course:viewparticipants',
+            $coursecontext,
+            $this->make_holder($roleid, $coursecontext)
+        ));
     }
 
     /**
