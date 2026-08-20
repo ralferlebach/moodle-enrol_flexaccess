@@ -57,7 +57,7 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     When I open the FlexAccess entry page for course "Course 1"
     Then I should see "Continue as a guest"
     And I should see "Already have an account? Log in"
-    And I follow "Continue as a guest"
+    And I press "Continue as a guest"
     Then I should see "Course 1"
 
   Scenario: A temporary user makes the account permanent and keeps enrolment on re-login

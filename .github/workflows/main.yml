@@ -83,7 +83,7 @@ jobs:
           MOODLE_BRANCH: ${{ matrix.moodle }}
       - name: Coding standards (all four plugins)
         run: |
-          moodle-plugin-ci phpcs --max-warnings 0 || true
+          moodle-plugin-ci phpcs --max-warnings 0
           moodle-plugin-ci phpcs "$HOME/extra-plugins/auth_flexaccess" --max-warnings 0
           moodle-plugin-ci phpcs "$HOME/extra-plugins/mod_flexaccess"  --max-warnings 0
           moodle-plugin-ci phpcs "$HOME/extra-plugins/tool_flexaccess" --max-warnings 0

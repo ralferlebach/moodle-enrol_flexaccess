@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.12 — 2026-08-20 — P1/P2-Härtung: Security (a) + Identity/State (b) + Cleanup/Docs (c)
+- **(c) Cleanup:** Makefile von k6-Targets (referenzierten eine nicht existierende Datei) und Skeleton-Kommentaren bereinigt; CI-`|| true` am phpcs-Gate entfernt (jetzt striktes Gate).
+
 ## 0.9.11 — 2026-08-20 — RC-Hardening: P0#6 (Admin-Conversion über Mailqueue)
 - Keine Codeaenderung.
 
