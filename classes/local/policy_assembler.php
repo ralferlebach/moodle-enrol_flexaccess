@@ -186,6 +186,12 @@ final class policy_assembler {
      */
     public static function assemble(int $courseid): policy {
         global $DB;
+        $cache = \cache::make('enrol_flexaccess', 'policy');
+        $cached = $cache->get($courseid);
+        if ($cached instanceof policy) {
+            // Return a clone so callers (e.g. per-user restriction) never mutate the cached base.
+            return clone $cached;
+        }
         $allowwidening = self::allow_widening();
         $p = self::system_policy();
         $p = self::apply_categories($p, $courseid, $allowwidening);
@@ -205,7 +211,26 @@ final class policy_assembler {
         if ($p->temporaryaccesskeyscope === 'none' && $p->temporaryaccesskeyrequired) {
             $p->temporaryaccesskeyscope = 'system';
         }
-        return $p;
+        $cache->set($courseid, $p);
+        return clone $p;
+    }
+
+    /**
+     * Invalidate the cached base policy for one course, or all courses.
+     *
+     * Called by the write paths (instance/category policy changes) so a change made earlier in the
+     * same request is reflected by a later resolution within that request.
+     *
+     * @param int|null $courseid Course id to purge, or null to purge every course.
+     * @return void
+     */
+    public static function purge_cache(?int $courseid = null): void {
+        $cache = \cache::make('enrol_flexaccess', 'policy');
+        if ($courseid === null) {
+            $cache->purge();
+        } else {
+            $cache->delete($courseid);
+        }
     }
 
     /**

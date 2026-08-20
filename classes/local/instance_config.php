@@ -127,6 +127,12 @@ final class instance_config {
         }
 
         self::sync_participant_visibility($enrolid);
+
+        // A change made in this request must be visible to a later resolution in the same request.
+        $courseid = $DB->get_field('enrol', 'courseid', ['id' => $enrolid]);
+        if ($courseid) {
+            policy_assembler::purge_cache((int) $courseid);
+        }
     }
 
     /**

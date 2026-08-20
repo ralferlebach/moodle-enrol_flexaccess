@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.9 — 2026-08-19 — Welle 4 Abschluss: Accessibility-Gate + Docs-SSOT & Traceability
+- **Accessibility-Gate:** neuer `tests/playwright/accessibility.spec.js` prueft die anonymen FlexAccess-Seiten (Temporaerzugang-Einstieg, Schnellregistrierung) mit axe-core (WCAG 2.1 A/AA) und laesst den Build bei serious/critical-Verstoessen fehlschlagen. Laeuft im bestehenden Playwright-Job mit (`@axe-core/playwright` in package.json).
+- Lasttest: k6 (leerer Stub) zugunsten des vorhandenen JMeter-Plans entfernt/aufgeloest.
+
+## 0.9.8 — 2026-08-19 — Welle 4: Policy-Caching (Perf)
+- **Perf — Policy-Caching:** die aufgeloeste Basis-Policy (System + Kategorie + Instanz) wird pro Kurs in einem **request-scoped** MUC-Cache (`MODE_REQUEST`, `db/caches.php`) gehalten. Mehrfache `get_effective_policy`-Aufrufe im selben Request (z. B. die fuenf `offers_*`-Pruefungen in access.php) treffen jetzt einmal die DB statt jedes Mal.
+- **Keine Staleness:** da der Cache nur pro Request lebt, werden Config-/Kategorie-/Instanz-Aenderungen automatisch im naechsten Request beruecksichtigt; nur ein Schreibvorgang im selben Request invalidiert gezielt (Instanz -> Kurs-Eintrag in `instance_config::save`, Kategorie -> gesamter Cache in `category_policy::save/delete`).
+- **Korrektheit:** `assemble()` gibt stets einen Clone zurueck, damit die per-Nutzer-Restriktion in `get_effective_policy` die gecachte Basis nie mutiert. Tests decken Clone-Isolation und Invalidierung-im-Request ab.
+
 ## 0.9.7 — 2026-08-19 — Welle 5: Einladungskampagnen (§49)
 - Keine Codeaenderung.
 

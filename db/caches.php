@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version definition for enrol_flexaccess.
+ * Cache definitions for enrol_flexaccess.
  *
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
@@ -24,10 +24,13 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'enrol_flexaccess';
-$plugin->version = 2026081909;
-$plugin->requires = 2024100700;
-$plugin->supported = [405, 502];
-$plugin->maturity = MATURITY_BETA;
-$plugin->release = '0.9.9';
-$plugin->dependencies = ['auth_flexaccess' => 2026081909];
+$definitions = [
+    // The resolved (system + category + instance) base policy per course. Request-scoped, so it is
+    // rebuilt each request and never goes stale across config, category or instance changes; only a
+    // write within the same request needs an explicit purge (handled by the write paths).
+    'policy' => [
+        'mode' => cache_store::MODE_REQUEST,
+        'simplekeys' => true,
+        'simpledata' => false,
+    ],
+];

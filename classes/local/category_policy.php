@@ -108,6 +108,8 @@ final class category_policy {
             self::delete($categoryid);
             return;
         }
+        // Category overrides affect every course in the category (and descendants).
+        policy_assembler::purge_cache();
 
         $existing = self::load($categoryid);
         $normalised['timemodified'] = time();
@@ -130,6 +132,7 @@ final class category_policy {
     public static function delete(int $categoryid): void {
         global $DB;
         $DB->delete_records(self::TABLE, ['categoryid' => $categoryid]);
+        policy_assembler::purge_cache();
     }
 
     /**
