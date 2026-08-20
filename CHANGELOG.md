@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.7 — 2026-08-19 — Welle 5: Einladungskampagnen (§49)
+- Keine Codeaenderung.
+
+## 0.9.6 — 2026-08-19 — Welle 4: Persistence-Follow-up (schließt P0 #9 vollständig)
+- Keine Codeaenderung.
+
 ## 0.9.5 — 2026-08-19 — Welle 3 Strom E: administrierbare Kategorie-Policies (P0 #8) + Cleanup
 - **P0 #8 — Schreibpfad fuer Kategorie-Policies:** neuer `category_policy`-Service (load/all/save/delete). Die Kategorietabelle wurde bisher nur gelesen/gemergt; jetzt ist sie administrierbar. Ein reiner Inherit-Datensatz wird nicht gespeichert (bzw. geloescht), sodass keine leeren Overrides zurueckbleiben.
 - Cleanup: „iteration"-Kommentar in `edit_instance_form` durch eine praezise Beschreibung ersetzt.
