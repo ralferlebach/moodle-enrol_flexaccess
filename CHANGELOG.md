@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.17 — 2026-08-20 — Fix: Cross-Plugin-Mailqueue (Standalone-CI) + saubere API-Grenze
+- Keine Codeaenderung.
+
+## 0.9.16 — 2026-08-20 — P2-Cleanup: Performance, Reliability, i18n
+- Keine Codeaenderung.
+
 ## 0.9.15 — 2026-08-20 — RC-Gates (Review 0.9.13): 4 P0 + Reliability + Doku/CI-Sync
 - **P0-2 (Orphan-Account):** `grant_quick_registration()` prueft E-Mail-Format + Verfuegbarkeit **vor** Kontoerstellung (kein eingeschriebener Orphan mehr bei `emailtaken`); ein Rest-Race nach der Einschreibung wird via `rollback_temporary_user()` kompensiert (userid=0).
 - **P0-3 (Gate-Kollision):** neuer Parameter `$trustedgate` — Campaign/Invitation sind autorisierte Provisioning-Pfade und ueberspringen das Kurs-Gate (Variante A), statt es mit leerem Passwort erneut zu pruefen.

@@ -174,6 +174,7 @@ final class access_controller {
      * @param \stdClass $userdata Object with email, firstname, lastname and password.
      * @param string|null $clientip Client address for rate limiting, or null to skip it.
      * @param int|null $now Current time.
+     * @param bool|false $trustedgate Trusted gate flag. 
      * @return \stdClass Result with ->status and, on success, ->userid and ->enrolid.
      */
     public static function grant_quick_registration(
