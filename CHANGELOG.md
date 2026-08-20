@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.18 — 2026-08-20 — Fix: PHPDoc-Parameterliste (enrol-CI rot)
+- **Fix (CI rot):** `grant_quick_registration()` bekam in 0.9.15 den Parameter `$trustedgate`, dessen `@param` im Docblock fehlte -> `moodle-plugin-ci phpdoc --max-warnings 0` meldete 'incomplete parameters list' (Error), die abhaengigen phpunit/behat-Jobs wurden uebersprungen. Docblock ergaenzt; evtl. Trailing-Whitespace bereinigt. Lokaler phpdoc-Gate laeuft jetzt ebenfalls mit `--max-warnings 0`, damit solche Faelle vor dem Push auffallen.
+
 ## 0.9.17 — 2026-08-20 — Fix: Cross-Plugin-Mailqueue (Standalone-CI) + saubere API-Grenze
 - Keine Codeaenderung.
 
