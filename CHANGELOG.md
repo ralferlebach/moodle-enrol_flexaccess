@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.14 — 2026-08-20 — Einladungen: personengebundenes Single-Use-Modell (Review §9)
+- Keine Codeaenderung.
+
 ## 0.9.13 — 2026-08-20 — P2-Batch: Performance, Retention, Supply-Chain, Doku
 - **Supply-Chain:** JMeter-Download im Lasttest-Workflow verifiziert jetzt die von Apache publizierte **SHA-512** vor dem Entpacken (mit Hinweis zum Pinning gegen kompromittierte Mirror).
 
