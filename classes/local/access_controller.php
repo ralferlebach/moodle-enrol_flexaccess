@@ -163,7 +163,9 @@ final class access_controller {
     }
 
     /**
-     * Grant access by quick registration: create a persistent account and enrol it.
+     * Grant access by quick registration: create a provisional temporary account, enrol it, and bind
+     * the upgrade to a full account to email verification (immediate conversion only when verification
+     * is disabled site-wide).
      *
      * The created account has the person's own email and password, so unlike temporary access it
      * survives logout and can be used to log in again later.
@@ -178,7 +180,8 @@ final class access_controller {
         int $courseid,
         \stdClass $userdata,
         ?string $clientip = null,
-        ?int $now = null
+        ?int $now = null,
+        bool $trustedgate = false
     ): \stdClass {
         $now = $now ?? time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
@@ -190,10 +193,25 @@ final class access_controller {
             return self::result('notallowed');
         }
         // Additional access gate (shared password or allowed email domain), on top of email
-        // activation. Instance settings override the site default (resolved in the policy).
-        $accesspassword = (string) ($userdata->accesspassword ?? '');
-        if (!quickreg_gate::passes($policy, (string) $userdata->email, $accesspassword)) {
-            return self::result('badgate');
+        // activation. Instance settings override the site default (resolved in the policy). A
+        // trusted caller (a campaign or a person-bound invitation) has already authorised the
+        // applicant through its own gate and is an alternative provisioning path, so the course
+        // gate is not applied again.
+        if (!$trustedgate) {
+            $accesspassword = (string) ($userdata->accesspassword ?? '');
+            if (!quickreg_gate::passes($policy, (string) $userdata->email, $accesspassword)) {
+                return self::result('badgate');
+            }
+        }
+        // Pre-validate the email before any account is created, so a syntactically invalid or
+        // already-taken address is rejected up front instead of leaving an enrolled orphan account
+        // (which would also hold a capacity slot). A residual race is compensated below.
+        $email = \core_text::strtolower(trim((string) ($userdata->email ?? '')));
+        if ($email === '' || !validate_email($email)) {
+            return self::result('invalidemail');
+        }
+        if (\auth_flexaccess\api::email_available($email) === false) {
+            return self::result('emailtaken');
         }
         // Throttle anonymous account creation per client address. The limit is generous so a whole
         // class behind one NAT address is not blocked, but scripted mass-creation is slowed. Limits
@@ -247,7 +265,11 @@ final class access_controller {
         if ($status === 'converted') {
             return self::result('granted', $outcome->userid, $enrolid);
         }
-        return self::result($status, $outcome->userid, $enrolid);
+        // Persistence setup failed after the account was created and enrolled (e.g. a residual
+        // email-availability race). Compensate by removing the enrolment and deleting the temporary
+        // user, so no orphaned account is left holding a capacity slot.
+        \auth_flexaccess\api::rollback_temporary_user((int) $outcome->userid);
+        return self::result($status, 0, $enrolid);
     }
 
     /**

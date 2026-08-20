@@ -224,4 +224,56 @@ final class quick_registration_test extends \advanced_testcase {
         ]);
         $this->assertSame('granted', $result->status);
     }
+
+    /**
+     * P0-2: an already-used email is rejected up front, leaving no enrolled orphan account.
+     *
+     * @return void
+     */
+    public function test_quick_registration_emailtaken_leaves_no_orphan(): void {
+        $this->resetAfterTest();
+        set_config('requireemailverification', 0, 'auth_flexaccess');
+        $course = $this->course_allowing_quick();
+        $context = \context_course::instance((int) $course->id);
+        // An existing user already owns this address.
+        $this->getDataGenerator()->create_user(['email' => 'taken@example.com']);
+        $before = count_enrolled_users($context);
+
+        $result = access_controller::grant_quick_registration((int) $course->id, (object) [
+            'email' => 'taken@example.com', 'firstname' => 'A', 'lastname' => 'B',
+            'password' => 'Str0ng-Pass!23',
+        ]);
+
+        $this->assertSame('emailtaken', $result->status);
+        // No account was created and no enrolment was left behind.
+        $this->assertSame($before, count_enrolled_users($context));
+        $this->assertSame(0, (int) $result->userid);
+    }
+
+    /**
+     * P0-3: a trusted caller (campaign/invitation) bypasses the course quick-registration gate.
+     *
+     * @return void
+     */
+    public function test_trusted_gate_bypasses_course_gate(): void {
+        $this->resetAfterTest();
+        set_config('requireemailverification', 0, 'auth_flexaccess');
+        set_config('quickreggatemode', 'password', 'enrol_flexaccess');
+        set_config('quickreggatepasswordhash', \enrol_flexaccess\local\quickreg_gate::hash('course-secret'), 'enrol_flexaccess');
+        $course = $this->course_allowing_quick();
+
+        // Untrusted with no course password fails the gate.
+        $blocked = access_controller::grant_quick_registration((int) $course->id, (object) [
+            'email' => 'g1@example.com', 'firstname' => 'A', 'lastname' => 'B',
+            'password' => 'Str0ng-Pass!23', 'accesspassword' => '',
+        ], null, null, false);
+        $this->assertSame('badgate', $blocked->status);
+
+        // Trusted caller is admitted despite the empty course password.
+        $ok = access_controller::grant_quick_registration((int) $course->id, (object) [
+            'email' => 'g2@example.com', 'firstname' => 'A', 'lastname' => 'B',
+            'password' => 'Str0ng-Pass!23', 'accesspassword' => '',
+        ], null, null, true);
+        $this->assertSame('granted', $ok->status);
+    }
 }

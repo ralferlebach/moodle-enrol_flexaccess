@@ -19,7 +19,10 @@ namespace enrol_flexaccess\local;
 /**
  * Enforces participant-list visibility for FlexAccess visitors.
  *
- * When a course hides its FlexAccess participants, the roster-exposing capabilities are prevented
+ * When a course denies participant-list access to its FlexAccess visitors, the roster-viewing
+ * capabilities are prevented for the FlexAccess role, so those visitors cannot open the participant
+ * list. (This controls the visitor's ACCESS to the list; it does not hide the visitor FROM the list
+ * shown to others, for which Moodle offers no stable extension point.) The roster-exposing capabilities are prevented
  * on the dedicated participant role within that course context. Because only FlexAccess visitors
  * hold that role, the override hides the participant list from them without affecting anyone else.
  * The core participant page gate ({@see course_can_view_participants()}) accepts either
