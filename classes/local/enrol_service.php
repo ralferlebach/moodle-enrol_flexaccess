@@ -51,6 +51,61 @@ final class enrol_service {
     }
 
     /**
+     * Ensure a single enabled FlexAccess enrol instance exists in a course, returning its id.
+     *
+     * @param int $courseid Course id.
+     * @return int Enrol instance id (0 if the instance could not be created).
+     */
+    public static function ensure_instance(int $courseid): int {
+        global $DB;
+        $existing = $DB->get_record(
+            'enrol',
+            ['enrol' => 'flexaccess', 'courseid' => $courseid, 'status' => ENROL_INSTANCE_ENABLED],
+            'id',
+            IGNORE_MULTIPLE
+        );
+        if ($existing) {
+            return (int) $existing->id;
+        }
+        $plugin = enrol_get_plugin('flexaccess');
+        if (!$plugin) {
+            return 0;
+        }
+        $course = get_course($courseid);
+        $instanceid = $plugin->add_instance($course);
+        return (int) $instanceid;
+    }
+
+    /**
+     * Administratively enrol a user into a course through the FlexAccess enrol instance, so the
+     * participant role, expiry and restrictions apply. Bypasses the public capacity gate: this is
+     * an administrator action, not a self-service registration.
+     *
+     * @param int $courseid Target course id.
+     * @param int $userid User to enrol.
+     * @param bool $restrict Whether to apply the temporary-visitor restriction role.
+     * @param int|null $now Current time.
+     * @return bool Whether the enrolment succeeded.
+     */
+    public static function admin_enrol(int $courseid, int $userid, bool $restrict = false, ?int $now = null): bool {
+        global $DB;
+        $now = $now ?? time();
+        $enrolid = self::ensure_instance($courseid);
+        if ($enrolid === 0) {
+            return false;
+        }
+        $instance = $DB->get_record('enrol', ['id' => $enrolid], '*', MUST_EXIST);
+        $plugin = enrol_get_plugin('flexaccess');
+        $roleid = participant_role::get_id();
+        $timeend = (int) $instance->enrolperiod > 0 ? $now + (int) $instance->enrolperiod : 0;
+        $plugin->enrol_user($instance, $userid, $roleid, $now, $timeend, ENROL_USER_ACTIVE);
+        if ($restrict) {
+            participant_role::restrict($userid);
+        }
+        return true;
+    }
+
+    /**
      * Reserve a capacity slot under the lock, then create and enrol the account inside the same
      * critical section.
      *

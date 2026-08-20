@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.21 — 2026-08-20 — Feature: Excel-Rückkonversion von Stapel-Accounts (Kampagne, Teil 2)
+- Keine Codeänderung.
+
+## 0.9.20 — 2026-08-20 — Feature: Stapel-Bereitstellung von Kurs-Accounts (Kampagne, Teil 1)
+- **Neu:** `enrol_service::ensure_instance()` und `enrol_service::admin_enrol()` — administratives Einschreiben ueber die FlexAccess-Einschreibung mit Teilnehmerrolle (ohne Kapazitaets-Gate), inkl. optionaler Einschraenkung fuer vorlaeufige Accounts.
+
+## 0.9.19 — 2026-08-20 — Fix: Upgrade-Crash beim Verbreitern der indizierten ratehit.identifier-Spalte
+- Keine Codeaenderung.
+
+## 0.9.19 — 2026-08-20 — RC-Gates (Review 0.9.17): Invitation-Security (2 P0) + Playwright-Lockfile
+- **P0-CI:** `tests/playwright/package-lock.json` mit `@axe-core/playwright` (4.13.0) synchronisiert, sodass `npm ci` den Playwright+Axe-Gate reproduzierbar aus dem Lockfile installiert.
+
 ## 0.9.18 — 2026-08-20 — Fix: PHPDoc-Parameterliste (enrol-CI rot)
 - **Fix (CI rot):** `grant_quick_registration()` bekam in 0.9.15 den Parameter `$trustedgate`, dessen `@param` im Docblock fehlte -> `moodle-plugin-ci phpdoc --max-warnings 0` meldete 'incomplete parameters list' (Error), die abhaengigen phpunit/behat-Jobs wurden uebersprungen. Docblock ergaenzt; evtl. Trailing-Whitespace bereinigt. Lokaler phpdoc-Gate laeuft jetzt ebenfalls mit `--max-warnings 0`, damit solche Faelle vor dem Push auffallen.
 
