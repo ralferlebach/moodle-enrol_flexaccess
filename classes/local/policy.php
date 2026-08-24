@@ -17,13 +17,18 @@
 /**
  * Immutable-ish policy value object for enrol_flexaccess.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace enrol_flexaccess\local;
 
-/** Effective FlexAccess access policy. */
+/**
+ * Effective FlexAccess access policy.
+ *
+ * @package    enrol_flexaccess
+ */
 final class policy {
     /** @var bool */ public bool $allowtemporary = false;
     /** @var bool */ public bool $allowquick = false;
@@ -37,6 +42,10 @@ final class policy {
     /** @var int Access window start; 0 = no lower bound. */ public int $availablefrom = 0;
     /** @var int Access window end; 0 = no upper bound. */ public int $availableuntil = 0;
     /** @var int Maximum active FlexAccess enrolments; 0 = unlimited. */ public int $maxparticipants = 0;
+    /** @var string Quick-registration access gate: none|password|domain. */ public string $quickreggatemode = 'none';
+    /** @var string Hashed shared password for the password gate (empty when unset). */
+    public string $quickreggatepasswordhash = '';
+    /** @var string Newline/comma separated allowed email domains for the domain gate. */ public string $quickreggatedomains = '';
 
     /**
      * Whether the configured access window is open at the given time.

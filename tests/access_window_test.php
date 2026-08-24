@@ -27,15 +27,24 @@ namespace enrol_flexaccess;
 use enrol_flexaccess\local\access_window;
 use enrol_flexaccess\local\policy;
 
-/** Access-window tests. */
+/**
+ * Access-window tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_window
+ */
 final class access_window_test extends \advanced_testcase {
-    /** An unbounded window (0/0) is always open. */
+    /**
+     * An unbounded window (0/0) is always open.
+     */
     public function test_unbounded_is_always_open(): void {
         $this->assertTrue(access_window::is_open(0, 0, 0));
         $this->assertTrue(access_window::is_open(0, 0, 1000000000));
     }
 
-    /** A window with both bounds is open only inside, lower inclusive, upper exclusive. */
+    /**
+     * A window with both bounds is open only inside, lower inclusive, upper exclusive.
+     */
     public function test_bounded_window_boundaries(): void {
         $from = 2000;
         $until = 3000;
@@ -46,21 +55,27 @@ final class access_window_test extends \advanced_testcase {
         $this->assertFalse(access_window::is_open($from, $until, 3001));
     }
 
-    /** Only a lower bound is set. */
+    /**
+     * Only a lower bound is set.
+     */
     public function test_only_from(): void {
         $this->assertFalse(access_window::is_open(2000, 0, 1999));
         $this->assertTrue(access_window::is_open(2000, 0, 2000));
         $this->assertTrue(access_window::is_open(2000, 0, 999999));
     }
 
-    /** Only an upper bound is set. */
+    /**
+     * Only an upper bound is set.
+     */
     public function test_only_until(): void {
         $this->assertTrue(access_window::is_open(0, 3000, 0));
         $this->assertTrue(access_window::is_open(0, 3000, 2999));
         $this->assertFalse(access_window::is_open(0, 3000, 3000));
     }
 
-    /** Range validity: both unset is valid; from must precede until when both set. */
+    /**
+     * Range validity: both unset is valid; from must precede until when both set.
+     */
     public function test_is_valid_range(): void {
         $this->assertTrue(access_window::is_valid_range(0, 0));
         $this->assertTrue(access_window::is_valid_range(2000, 0));
@@ -71,7 +86,9 @@ final class access_window_test extends \advanced_testcase {
         $this->assertFalse(access_window::is_valid_range(-1, 0));
     }
 
-    /** The policy value object delegates to the window logic. */
+    /**
+     * The policy value object delegates to the window logic.
+     */
     public function test_policy_is_within_window(): void {
         $p = new policy();
         $p->availablefrom = 2000;

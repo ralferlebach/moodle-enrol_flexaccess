@@ -17,13 +17,18 @@
 /**
  * Policy precedence helper for enrol_flexaccess.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace enrol_flexaccess\local;
 
-/** Resolves policy layers without widening higher-level prohibitions by default. */
+/**
+ * Resolves policy layers without widening higher-level prohibitions by default.
+ *
+ * @package    enrol_flexaccess
+ */
 final class policy_resolver {
     /**
      * Merge boolean access-method layers.
@@ -80,5 +85,4 @@ final class policy_resolver {
         }
         return $systemrequired ? 'system' : 'none';
     }
-
 }

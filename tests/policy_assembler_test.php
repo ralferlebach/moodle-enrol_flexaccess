@@ -26,9 +26,16 @@ namespace enrol_flexaccess;
 
 use enrol_flexaccess\local\policy_assembler;
 
-/** Policy assembler and API facade tests. */
+/**
+ * Policy assembler and API facade tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\policy_assembler
+ */
 final class policy_assembler_test extends \advanced_testcase {
-    /** System policy reads participant-visibility and access-key defaults from config. */
+    /**
+     * System policy reads participant-visibility and access-key defaults from config.
+     */
     public function test_system_policy_from_config(): void {
         $this->resetAfterTest();
         set_config('participantvisibilitydefault', 'hide', 'enrol_flexaccess');
@@ -38,7 +45,9 @@ final class policy_assembler_test extends \advanced_testcase {
         $this->assertTrue($p->temporaryaccesskeyrequired);
     }
 
-    /** Assembling a course with an instance applies the instance window/capacity. */
+    /**
+     * Assembling a course with an instance applies the instance window/capacity.
+     */
     public function test_assemble_applies_instance(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
@@ -58,7 +67,9 @@ final class policy_assembler_test extends \advanced_testcase {
         $this->assertSame(25, $p->maxparticipants);
     }
 
-    /** A course without a FlexAccess instance is not an enabled target. */
+    /**
+     * A course without a FlexAccess instance is not an enabled target.
+     */
     public function test_target_not_enabled_without_instance(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
@@ -69,7 +80,9 @@ final class policy_assembler_test extends \advanced_testcase {
         $this->assertFalse($p->allowtemporary);
     }
 
-    /** Active enrolment count is summed across enabled instances. */
+    /**
+     * Active enrolment count is summed across enabled instances.
+     */
     public function test_active_enrolment_count(): void {
         global $DB;
         $this->resetAfterTest();

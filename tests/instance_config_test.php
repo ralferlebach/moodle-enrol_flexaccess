@@ -26,9 +26,16 @@ namespace enrol_flexaccess;
 
 use enrol_flexaccess\local\instance_config;
 
-/** Instance-config persistence tests. */
+/**
+ * Instance-config persistence tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\instance_config
+ */
 final class instance_config_test extends \advanced_testcase {
-    /** Adding an instance persists the access window and capacity; delete removes it. */
+    /**
+     * Adding an instance persists the access window and capacity; delete removes it.
+     */
     public function test_add_update_delete_persistence(): void {
         global $DB;
         $this->resetAfterTest();

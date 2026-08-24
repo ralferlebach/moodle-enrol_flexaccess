@@ -29,7 +29,11 @@
 
 namespace enrol_flexaccess\local;
 
-/** Resolves the effective policy for a course. */
+/**
+ * Resolves the effective policy for a course.
+ *
+ * @package    enrol_flexaccess
+ */
 final class policy_assembler {
     /**
      * Read the system-default policy from plugin configuration.
@@ -41,6 +45,11 @@ final class policy_assembler {
         $vis = get_config('enrol_flexaccess', 'participantvisibilitydefault');
         $p->participantvisibility = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
         $p->temporaryaccesskeyrequired = (bool) get_config('enrol_flexaccess', 'temporaryaccesskeyrequired');
+
+        $gatemode = (string) get_config('enrol_flexaccess', 'quickreggatemode');
+        $p->quickreggatemode = in_array($gatemode, ['password', 'domain'], true) ? $gatemode : 'none';
+        $p->quickreggatepasswordhash = (string) get_config('enrol_flexaccess', 'quickreggatepasswordhash');
+        $p->quickreggatedomains = (string) get_config('enrol_flexaccess', 'quickreggatedomains');
         return $p;
     }
 
@@ -99,13 +108,25 @@ final class policy_assembler {
      */
     private static function merge_category_row(policy $p, \stdClass $row, bool $allowwidening): policy {
         $p->allowtemporary = policy_resolver::merge_permission(
-            $p->allowtemporary, self::flag((int) $row->allowtemporary), $allowwidening);
+            $p->allowtemporary,
+            self::flag((int) $row->allowtemporary),
+            $allowwidening
+        );
         $p->allowquick = policy_resolver::merge_permission(
-            $p->allowquick, self::flag((int) $row->allowquick), $allowwidening);
+            $p->allowquick,
+            self::flag((int) $row->allowquick),
+            $allowwidening
+        );
         $p->allowguest = policy_resolver::merge_permission(
-            $p->allowguest, self::flag((int) $row->allowguest), $allowwidening);
+            $p->allowguest,
+            self::flag((int) $row->allowguest),
+            $allowwidening
+        );
         $p->allownormallogin = policy_resolver::merge_permission(
-            $p->allownormallogin, self::flag((int) $row->allownormallogin), $allowwidening);
+            $p->allownormallogin,
+            self::flag((int) $row->allownormallogin),
+            $allowwidening
+        );
         if ($row->temporarylifetime !== null) {
             $p->temporarylifetime = (int) $row->temporarylifetime;
         }
@@ -131,7 +152,10 @@ final class policy_assembler {
         $p->allowquick = policy_resolver::merge_permission($p->allowquick, (bool) $flex->allowquick, $allowwidening);
         $p->allowguest = policy_resolver::merge_permission($p->allowguest, (bool) $flex->allowguest, $allowwidening);
         $p->allownormallogin = policy_resolver::merge_permission(
-            $p->allownormallogin, (bool) $flex->allownormallogin, $allowwidening);
+            $p->allownormallogin,
+            (bool) $flex->allownormallogin,
+            $allowwidening
+        );
         $p->temporarylifetime = (int) $flex->temporarylifetime;
         $p->provisionallifetime = (int) $flex->provisionallifetime;
         $p->availablefrom = (int) $flex->availablefrom;
@@ -139,9 +163,18 @@ final class policy_assembler {
         $p->maxparticipants = (int) $flex->maxparticipants;
         $p->participantvisibility = policy_resolver::participant_visibility(
             in_array($p->participantvisibility, ['show', 'hide'], true) ? $p->participantvisibility : 'show',
-            in_array($flex->participantvisibility, ['inherit', 'show', 'hide'], true) ? $flex->participantvisibility : 'inherit');
+            in_array($flex->participantvisibility, ['inherit', 'show', 'hide'], true) ? $flex->participantvisibility : 'inherit'
+        );
         $mode = in_array($flex->temporaryaccesskeymode, ['inherit', 'course'], true) ? $flex->temporaryaccesskeymode : 'inherit';
         $p->temporaryaccesskeyscope = policy_resolver::temporary_access_key_scope($p->temporaryaccesskeyrequired, $mode);
+
+        // Quick-registration gate: an instance value overrides the system default when set.
+        $instancegate = (string) ($flex->quickreggatemode ?? 'inherit');
+        if (in_array($instancegate, ['none', 'password', 'domain'], true)) {
+            $p->quickreggatemode = $instancegate;
+            $p->quickreggatepasswordhash = (string) ($flex->quickreggatepasswordhash ?? '');
+            $p->quickreggatedomains = (string) ($flex->quickreggatedomains ?? '');
+        }
         return $p;
     }
 
@@ -153,6 +186,12 @@ final class policy_assembler {
      */
     public static function assemble(int $courseid): policy {
         global $DB;
+        $cache = \cache::make('enrol_flexaccess', 'policy');
+        $cached = $cache->get($courseid);
+        if ($cached instanceof policy) {
+            // Return a clone so callers (e.g. per-user restriction) never mutate the cached base.
+            return clone $cached;
+        }
         $allowwidening = self::allow_widening();
         $p = self::system_policy();
         $p = self::apply_categories($p, $courseid, $allowwidening);
@@ -172,7 +211,26 @@ final class policy_assembler {
         if ($p->temporaryaccesskeyscope === 'none' && $p->temporaryaccesskeyrequired) {
             $p->temporaryaccesskeyscope = 'system';
         }
-        return $p;
+        $cache->set($courseid, $p);
+        return clone $p;
+    }
+
+    /**
+     * Invalidate the cached base policy for one course, or all courses.
+     *
+     * Called by the write paths (instance/category policy changes) so a change made earlier in the
+     * same request is reflected by a later resolution within that request.
+     *
+     * @param int|null $courseid Course id to purge, or null to purge every course.
+     * @return void
+     */
+    public static function purge_cache(?int $courseid = null): void {
+        $cache = \cache::make('enrol_flexaccess', 'policy');
+        if ($courseid === null) {
+            $cache->purge();
+        } else {
+            $cache->delete($courseid);
+        }
     }
 
     /**

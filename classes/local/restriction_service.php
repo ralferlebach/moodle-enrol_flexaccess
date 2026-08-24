@@ -27,9 +27,15 @@
 
 namespace enrol_flexaccess\local;
 
-/** Resolves whether a user is permitted by course restrictions. */
+/**
+ * Resolves whether a user is permitted by course restrictions.
+ *
+ * @package    enrol_flexaccess
+ */
 final class restriction_service {
-    /** Restriction table. */
+    /**
+     * Restriction table.
+     */
     private const TABLE = 'enrol_flexaccess_restrict';
 
     /**
@@ -87,8 +93,10 @@ final class restriction_service {
         $context = \context_course::instance($courseid);
         $roles = get_user_roles($context, $userid, true);
         $roleids = array_values(array_unique(array_map(static fn($r) => (int) $r->roleid, $roles)));
-        $cohortids = array_map('intval',
-            $DB->get_fieldset_select('cohort_members', 'cohortid', 'userid = ?', [$userid]));
+        $cohortids = array_map(
+            'intval',
+            $DB->get_fieldset_select('cohort_members', 'cohortid', 'userid = ?', [$userid])
+        );
         return [$roleids, $cohortids];
     }
 }

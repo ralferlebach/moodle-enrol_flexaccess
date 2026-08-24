@@ -33,7 +33,11 @@ use enrol_flexaccess\local\policy;
 use enrol_flexaccess\local\policy_assembler;
 use enrol_flexaccess\local\capacity_service;
 
-/** Read-only cross-plugin facade. */
+/**
+ * Read-only cross-plugin facade.
+ *
+ * @package    enrol_flexaccess
+ */
 final class api {
     /**
      * Whether the course has an enabled FlexAccess enrolment instance.
@@ -48,6 +52,95 @@ final class api {
             'courseid' => $courseid,
             'status' => ENROL_INSTANCE_ENABLED,
         ]);
+    }
+
+    /**
+     * Whether the course currently offers an anonymous FlexAccess entry method.
+     *
+     * True only when a FlexAccess enrolment method is enabled, the access window is open and at
+     * least one anonymous method (temporary, quick registration or guest) is permitted. Used to
+     * decide whether to advertise or serve the anonymous entry page, avoiding course enumeration.
+     *
+     * @param int $courseid Course id.
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function offers_anonymous_entry(int $courseid, ?int $now = null): bool {
+        $now = $now ?? time();
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        $policy = self::get_effective_policy($courseid);
+        if (!local\access_gate::is_flexaccess_open($policy, $now)) {
+            return false;
+        }
+        return $policy->allowtemporary || $policy->allowquick || $policy->allowguest;
+    }
+
+    /**
+     * Whether the course currently offers guest access through FlexAccess.
+     *
+     * Guest access is an anonymous entry method, so it is subject to the availability window.
+     *
+     * @param int $courseid Course id.
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function offers_guest_access(int $courseid, ?int $now = null): bool {
+        $now = $now ?? time();
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        $policy = self::get_effective_policy($courseid);
+        if (!local\access_gate::is_flexaccess_open($policy, $now)) {
+            return false;
+        }
+        return $policy->allowguest;
+    }
+
+    /**
+     * Whether the entry page should offer a link to normal Moodle login.
+     *
+     * Normal login is a fallback for people who already have an account, so it is not tied to the
+     * anonymous-access window.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    public static function offers_normal_login(int $courseid): bool {
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        return self::get_effective_policy($courseid)->allownormallogin;
+    }
+
+    /**
+     * Whether the course currently offers quick registration.
+     *
+     * @param int $courseid Course id.
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function offers_quick_registration(int $courseid, ?int $now = null): bool {
+        $now = $now ?? time();
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        $policy = self::get_effective_policy($courseid);
+        if (!local\access_gate::is_flexaccess_open($policy, $now)) {
+            return false;
+        }
+        return $policy->allowquick;
+    }
+
+    /**
+     * Whether temporary access for the course is gated by a shared access key.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    public static function requires_temporary_access_key(int $courseid): bool {
+        return self::get_effective_policy($courseid)->temporaryaccesskeyscope !== 'none';
     }
 
     /**

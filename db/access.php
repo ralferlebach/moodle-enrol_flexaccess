@@ -17,6 +17,7 @@
 /**
  * Capabilities for enrol_flexaccess.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,11 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 $capabilities = [
     'enrol/flexaccess:config' => [
         'riskbitmask' => RISK_CONFIG,
-        'captype' => 'write', 'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => ['editingteacher' => CAP_ALLOW, 'manager' => CAP_ALLOW],
-    ],
-    'enrol/flexaccess:manage' => [
-        'riskbitmask' => RISK_PERSONAL,
         'captype' => 'write', 'contextlevel' => CONTEXT_COURSE,
         'archetypes' => ['editingteacher' => CAP_ALLOW, 'manager' => CAP_ALLOW],
     ],

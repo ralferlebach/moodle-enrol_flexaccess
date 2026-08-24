@@ -27,9 +27,16 @@ namespace enrol_flexaccess;
 use enrol_flexaccess\local\enrol_service;
 use enrol_flexaccess\local\capacity_service;
 
-/** Enrolment service tests. */
+/**
+ * Enrolment service tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\enrol_service
+ */
 final class enrol_service_test extends \advanced_testcase {
-    /** Enrolment fills up to the capacity, then rejects further users. */
+    /**
+     * Enrolment fills up to the capacity, then rejects further users.
+     */
     public function test_capacity_limit_enforced(): void {
         global $DB;
         $this->resetAfterTest();
@@ -49,7 +56,56 @@ final class enrol_service_test extends \advanced_testcase {
         $this->assertSame(2, capacity_service::count_active_enrolments($enrolid));
     }
 
-    /** Unlimited capacity never rejects. */
+    /**
+     * On a full instance, reserve_and_enrol never invokes the account-creating callback,
+     * so a lost capacity race cannot leave an orphaned account behind.
+     */
+    public function test_reserve_and_enrol_skips_account_creation_when_full(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \enrol_flexaccess_plugin $plugin */
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED, 'maxparticipants' => 1]);
+        $DB->set_field('enrol_flexaccess_instance', 'maxparticipants', 1, ['enrolid' => $enrolid]);
+
+        // Fill the single slot.
+        $first = $this->getDataGenerator()->create_user();
+        $this->assertSame('enrolled', enrol_service::enrol_with_capacity($enrolid, (int) $first->id));
+
+        // A second reservation must be refused without ever running the creator.
+        $created = false;
+        $outcome = enrol_service::reserve_and_enrol($enrolid, function () use (&$created): int {
+            $created = true;
+            $user = $this->getDataGenerator()->create_user();
+            return (int) $user->id;
+        });
+        $this->assertSame('full', $outcome->status);
+        $this->assertSame(0, $outcome->userid);
+        $this->assertFalse($created, 'The account creator must not run when the instance is full.');
+        $this->assertSame(1, capacity_service::count_active_enrolments($enrolid));
+    }
+
+    /**
+     * When capacity is free, reserve_and_enrol runs the creator and enrols the returned user.
+     */
+    public function test_reserve_and_enrol_creates_and_enrols_when_free(): void {
+        $this->resetAfterTest();
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \enrol_flexaccess_plugin $plugin */
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED, 'maxparticipants' => 2]);
+
+        $user = $this->getDataGenerator()->create_user();
+        $outcome = enrol_service::reserve_and_enrol($enrolid, static fn(): int => (int) $user->id);
+        $this->assertSame('enrolled', $outcome->status);
+        $this->assertSame((int) $user->id, $outcome->userid);
+        $this->assertSame(1, capacity_service::count_active_enrolments($enrolid));
+    }
+
+    /**
+     * Unlimited capacity never rejects.
+     */
     public function test_unlimited_capacity(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
@@ -63,7 +119,9 @@ final class enrol_service_test extends \advanced_testcase {
         $this->assertSame(5, capacity_service::count_active_enrolments($enrolid));
     }
 
-    /** A disabled or non-existent instance is reported as not enabled. */
+    /**
+     * A disabled or non-existent instance is reported as not enabled.
+     */
     public function test_not_enabled(): void {
         global $DB;
         $this->resetAfterTest();
@@ -77,7 +135,9 @@ final class enrol_service_test extends \advanced_testcase {
         $this->assertSame('notenabled', enrol_service::enrol_with_capacity(999999, $user->id));
     }
 
-    /** The enrolment end time is derived from the instance enrolment period. */
+    /**
+     * The enrolment end time is derived from the instance enrolment period.
+     */
     public function test_enrolment_period_sets_timeend(): void {
         global $DB;
         $this->resetAfterTest();

@@ -1,5 +1,205 @@
 # Changelog
 
+## 0.9.22 — 2026-08-20 — Fix: PHPDoc-Checker (CI) — @param-Vollstaendigkeit
+- Keine Codeaenderung.
+
+## 0.9.21 — 2026-08-20 — Feature: Excel-Rückkonversion von Stapel-Accounts (Kampagne, Teil 2)
+- Keine Codeänderung.
+
+## 0.9.20 — 2026-08-20 — Feature: Stapel-Bereitstellung von Kurs-Accounts (Kampagne, Teil 1)
+- **Neu:** `enrol_service::ensure_instance()` und `enrol_service::admin_enrol()` — administratives Einschreiben ueber die FlexAccess-Einschreibung mit Teilnehmerrolle (ohne Kapazitaets-Gate), inkl. optionaler Einschraenkung fuer vorlaeufige Accounts.
+
+## 0.9.19 — 2026-08-20 — Fix: Upgrade-Crash beim Verbreitern der indizierten ratehit.identifier-Spalte
+- Keine Codeaenderung.
+
+## 0.9.19 — 2026-08-20 — RC-Gates (Review 0.9.17): Invitation-Security (2 P0) + Playwright-Lockfile
+- **P0-CI:** `tests/playwright/package-lock.json` mit `@axe-core/playwright` (4.13.0) synchronisiert, sodass `npm ci` den Playwright+Axe-Gate reproduzierbar aus dem Lockfile installiert.
+
+## 0.9.18 — 2026-08-20 — Fix: PHPDoc-Parameterliste (enrol-CI rot)
+- **Fix (CI rot):** `grant_quick_registration()` bekam in 0.9.15 den Parameter `$trustedgate`, dessen `@param` im Docblock fehlte -> `moodle-plugin-ci phpdoc --max-warnings 0` meldete 'incomplete parameters list' (Error), die abhaengigen phpunit/behat-Jobs wurden uebersprungen. Docblock ergaenzt; evtl. Trailing-Whitespace bereinigt. Lokaler phpdoc-Gate laeuft jetzt ebenfalls mit `--max-warnings 0`, damit solche Faelle vor dem Push auffallen.
+
+## 0.9.17 — 2026-08-20 — Fix: Cross-Plugin-Mailqueue (Standalone-CI) + saubere API-Grenze
+- Keine Codeaenderung.
+
+## 0.9.16 — 2026-08-20 — P2-Cleanup: Performance, Reliability, i18n
+- Keine Codeaenderung.
+
+## 0.9.15 — 2026-08-20 — RC-Gates (Review 0.9.13): 4 P0 + Reliability + Doku/CI-Sync
+- **P0-2 (Orphan-Account):** `grant_quick_registration()` prueft E-Mail-Format + Verfuegbarkeit **vor** Kontoerstellung (kein eingeschriebener Orphan mehr bei `emailtaken`); ein Rest-Race nach der Einschreibung wird via `rollback_temporary_user()` kompensiert (userid=0).
+- **P0-3 (Gate-Kollision):** neuer Parameter `$trustedgate` — Campaign/Invitation sind autorisierte Provisioning-Pfade und ueberspringen das Kurs-Gate (Variante A), statt es mit leerem Passwort erneut zu pruefen.
+- Doku: veraltete Docblocks korrigiert (`grant_quick_registration` = provisorisch/verifiziert; `participant_visibility` = Listen-**Zugriff**, kein Ausblenden FUER andere).
+- CI: `playwright.yml` + `load.yml` installieren jetzt alle drei Schwesterplugins (harte Abhaengigkeit) via pinbarem `SIBLING_REF`; `playwright.config.js` mit GPL/@module-Header.
+- Tests: `emailtaken`-Precheck ohne Orphan; trusted-gate umgeht Kurs-Gate.
+
+## 0.9.14 — 2026-08-20 — Einladungen: personengebundenes Single-Use-Modell (Review §9)
+- Keine Codeaenderung.
+
+## 0.9.13 — 2026-08-20 — P2-Batch: Performance, Retention, Supply-Chain, Doku
+- **Supply-Chain:** JMeter-Download im Lasttest-Workflow verifiziert jetzt die von Apache publizierte **SHA-512** vor dem Entpacken (mit Hinweis zum Pinning gegen kompromittierte Mirror).
+
+## 0.9.12 — 2026-08-20 — P1/P2-Härtung: Security (a) + Identity/State (b) + Cleanup/Docs (c)
+- **(c) Cleanup:** Makefile von k6-Targets (referenzierten eine nicht existierende Datei) und Skeleton-Kommentaren bereinigt; CI-`|| true` am phpcs-Gate entfernt (jetzt striktes Gate).
+
+## 0.9.11 — 2026-08-20 — RC-Hardening: P0#6 (Admin-Conversion über Mailqueue)
+- Keine Codeaenderung.
+
+## 0.9.10 — 2026-08-20 — RC-Hardening: 7/8 P0 aus dem 0.9.8-Review
+- **P0#1 (kritisch) — Privilege-Escalation behoben:** die Participant-Rolle wurde bisher im **Systemkontext** zugewiesen und vererbte damit Student-Archetyp-ALLOWs siteweit. Aufgeteilt in `flexaccessparticipant` (Student-Archetyp, **nur** CONTEXT_COURSE, für die Einschreibung) und `flexaccessrestricted` (kein Archetyp, **nur** CONTEXT_SYSTEM, ausschliesslich die CAP_PROHIBIT-Restriktionen). `restrict()`/`unrestrict()` nutzen jetzt die Restriktionsrolle. Upgrade 2026081910 hängt bestehende Besucher von der System-Zuweisung der Participant-Rolle auf die Restriktionsrolle um. Test beweist Least-Privilege strukturell.
+- **P0#7 — Participant-Visibility ehrlich benannt:** die Einstellung steuert, ob ein temporaerer Besucher die Teilnehmerliste **ansehen** darf. Labels/Hilfe klargestellt; dokumentiert, dass das Ausblenden temporaerer Besucher **aus fremden** Listen mangels stabilem Moodle-Extension-Point nicht enthalten ist.
+
+**Offen (bewusst gestaffelt):** P0#6 — Admin-Conversion versendet die Passwort-Mail noch via Core `setnew_password_and_mail` (umgeht die FlexAccess-Mailqueue/Ratelimit). Fix erfordert einen neuen queued 'set-password'-Mailfluss.
+
+## 0.9.9 — 2026-08-19 — Welle 4 Abschluss: Accessibility-Gate + Docs-SSOT & Traceability
+- **Accessibility-Gate:** neuer `tests/playwright/accessibility.spec.js` prueft die anonymen FlexAccess-Seiten (Temporaerzugang-Einstieg, Schnellregistrierung) mit axe-core (WCAG 2.1 A/AA) und laesst den Build bei serious/critical-Verstoessen fehlschlagen. Laeuft im bestehenden Playwright-Job mit (`@axe-core/playwright` in package.json).
+- Lasttest: k6 (leerer Stub) zugunsten des vorhandenen JMeter-Plans entfernt/aufgeloest.
+
+## 0.9.8 — 2026-08-19 — Welle 4: Policy-Caching (Perf)
+- **Perf — Policy-Caching:** die aufgeloeste Basis-Policy (System + Kategorie + Instanz) wird pro Kurs in einem **request-scoped** MUC-Cache (`MODE_REQUEST`, `db/caches.php`) gehalten. Mehrfache `get_effective_policy`-Aufrufe im selben Request (z. B. die fuenf `offers_*`-Pruefungen in access.php) treffen jetzt einmal die DB statt jedes Mal.
+- **Keine Staleness:** da der Cache nur pro Request lebt, werden Config-/Kategorie-/Instanz-Aenderungen automatisch im naechsten Request beruecksichtigt; nur ein Schreibvorgang im selben Request invalidiert gezielt (Instanz -> Kurs-Eintrag in `instance_config::save`, Kategorie -> gesamter Cache in `category_policy::save/delete`).
+- **Korrektheit:** `assemble()` gibt stets einen Clone zurueck, damit die per-Nutzer-Restriktion in `get_effective_policy` die gecachte Basis nie mutiert. Tests decken Clone-Isolation und Invalidierung-im-Request ab.
+
+## 0.9.7 — 2026-08-19 — Welle 5: Einladungskampagnen (§49)
+- Keine Codeaenderung.
+
+## 0.9.6 — 2026-08-19 — Welle 4: Persistence-Follow-up (schließt P0 #9 vollständig)
+- Keine Codeaenderung.
+
+## 0.9.5 — 2026-08-19 — Welle 3 Strom E: administrierbare Kategorie-Policies (P0 #8) + Cleanup
+- **P0 #8 — Schreibpfad fuer Kategorie-Policies:** neuer `category_policy`-Service (load/all/save/delete). Die Kategorietabelle wurde bisher nur gelesen/gemergt; jetzt ist sie administrierbar. Ein reiner Inherit-Datensatz wird nicht gespeichert (bzw. geloescht), sodass keine leeren Overrides zurueckbleiben.
+- Cleanup: „iteration"-Kommentar in `edit_instance_form` durch eine praezise Beschreibung ersetzt.
+
+## 0.9.4 — 2026-08-19 — CI-Härtung + Upgrade-Robustheit (Plugin-Isolation, PHPDoc, reset_role_capabilities)
+- **CI-Fix (PHPDoc):** fehlender `@param string|null $clientip` bei `access_controller::grant_temporary_access` ergaenzt (PHPDoc-Checker gruen).
+- **Upgrade-Robustheit:** die dedizierte Rolle wendet die Student-Archetyp-Capabilities jetzt defensiv an (fehlende Capabilities werden uebersprungen) statt via `reset_role_capabilities()`. Behebt den Upgrade-Abbruch `Capability 'mod/data:comment' was not found` auf Sites mit abweichendem Plugin-Satz.
+
+## 0.9.3 — 2026-08-19 — Welle 3 Strom F: Quick-Registration neu spezifiziert (P0 #5)
+- **P0 #5 — Zugangs-Gate:** zusaetzlich zur E-Mail-Freischaltung kann die Schnellregistrierung durch ein gemeinsames **Passwort** oder eine **E-Mail-Domain-Allowlist** beschraenkt werden. Konfigurierbar **systemweit** (Einstellungen) **und kursweit** (Enrol-Instanz); die Instanz ueberschreibt die Systemvorgabe. Neuer Service `quickreg_gate` (bcrypt-Passwortpruefung bzw. Domain-/Subdomain-Abgleich, fail-closed).
+- Neue Instanzfelder `quickreggatemode`/`quickreggatepasswordhash`/`quickreggatedomains` (install.xml + Upgrade 2026081903), System-Settings, Instanz-Formular und Policy-Aufloesung (System-Default + Instanz-Override).
+- `grant_quick_registration` erzeugt das provisorische Konto, prueft das Gate und triggert die Verifizierung (Status `verificationsent`/`granted`/`badgate`).
+- Tests: Verify-Flow end-to-end, Passwort-Gate, Domain-Gate, Instanz-ueberschreibt-System.
+
+## 0.9.2 — 2026-08-19 — Welle 2: Retention/Deletion, zentraler Conversion-Guard, Temp-Restriktionen (P0 #9/#10/#6)
+- **P0 #6 — Temp-Restriktionen per Capability:** die dedizierte Rolle ist jetzt auch im System-Kontext zuweisbar und entzieht anonymen FlexAccess-Besuchern site-weit Messaging und Profilbearbeitung (`moodle/site:sendmessage`, `moodle/user:editownprofile`, `...editownmessageprofile`) per `CAP_PROHIBIT`. `reserve_and_enrol` weist die Restriktion beim Enrol zu; die Conversion hebt sie auf. Upgrade-Schritt restringiert bestehende temporaere Besucher.
+- Tests: Restriktion entzieht/stellt Messaging + Profilbearbeitung wieder her.
+
+## 0.9.1 — 2026-08-19 — Welle 1: Token-Sicherheit + atomares Temp-Rate-Limit (P0 #1, #2)
+- **P0 #2 — generelles Temp-Limit:** `grant_temporary_access` nimmt jetzt die Client-Adresse und drosselt anonyme Kontoerzeugung **unabhaengig vom Access-Key** — per Adresse, per Kurs+Adresse und optionaler seitenweiter Circuit-Breaker. Neue Settings `tempmaxperip`/`tempwindow`/`tempsitemax`/`tempsitewindow`. `access.php` reicht `getremoteaddr()` durch.
+- Tests: Temp-Limit pro IP + Site-Circuit-Breaker.
+
+## 0.9.0 — 2026-08-19 — Beta-Schwelle: CI-Fix, Maturity BETA, Versions-Neustart
+- Versionsschema auf `2026081900` / Release `0.9.0` gesetzt, Maturity auf **MATURITY_BETA** angehoben; Cross-Plugin-Dependencies auf `2026081900` gezogen.
+- **CI-Fix:** fehlende `@param $reference` in den Docblocks von `api::search_accounts` und `api::build_account_filter` ergaenzt (PHPDoc-Checker).
+- Hinweis: Zwei aus dem erneuten Audit stammende Rest-P0 (Klartext-Token in der Mailqueue; generelles atomares Rate-Limit fuer anonyme Temporary-Erzeugung) sind als erste Beta-Haertungswelle eingeplant.
+
+## 0.1.39 — 2026-08-19 — Konfigurierbare Rate-Limits, Cleanup, i18n, Backup/Restore, CI-Härtung
+- **§5:** Quick-Registration-Rate-Limits admin-konfigurierbar (`quickregmaxperip`, `quickregwindow`); Konstanten bleiben Fallback-Defaults.
+- **§3 Cleanup:** ungenutzte Capability `enrol/flexaccess:manage` entfernt.
+- **§22 Coverage-Gate:** ecosystem-CI misst jetzt Zeilenabdeckung (pcov) und bricht unter einem Schwellwert ab (konservativer Start-Floor 25 %, siehe `docs/coverage.md`).
+- **§29 Supply-Chain:** JMeter wird gegen Apaches offizielle SHA-512 verifiziert (oder gepinnten `JMETER_SHA512`); Playwright nutzt striktes `npm ci` mit beigelegtem `package-lock.json`.
+
+## 0.1.37 — 2026-08-19 — Teilnehmerlisten-Sichtbarkeit durchgesetzt (§35, P0)
+- **`participantvisibility` wird jetzt tatsaechlich durchgesetzt (§35, P0):** Bei `hide` sehen temporaere und schnellregistrierte Besucher die Teilnehmerliste des Kurses nicht mehr. Zuvor war die Einstellung wirkungslos (Security-Theater).
+- **Dedizierte Rolle `flexaccessparticipant`** (Archetyp student): FlexAccess-Besucher werden mit dieser Rolle eingeschrieben. Ein Kurskontext-Override entzieht ihr bei `hide` die Faehigkeiten `moodle/course:viewparticipants` und `moodle/course:enrolreview` (beide gaten die Kern-Teilnehmerseite) — betrifft ausschliesslich FlexAccess-Besucher, nicht regulaere Studierende.
+- Neue Services `local\participant_role` (Rolle anlegen/finden/migrieren) und `local\participant_visibility` (Override synchronisieren).
+- **Formular:** `participantvisibility` (Erben/Anzeigen/Ausblenden) in der Instanz-Konfiguration; `instance_config::save` schreibt den Wert und synchronisiert den Override anhand der effektiven Policy.
+- **Install/Upgrade:** `db/install.php` legt die Rolle an; der Upgrade-Schritt legt sie an, **migriert bestehende FlexAccess-Enrolments** auf die Rolle und wendet die Sichtbarkeit auf alle bestehenden Instanzen an.
+- Verhaltensaenderung: temporaere/Quick-Nutzer erhalten nun die dedizierte Rolle (student-aequivalent) statt der Instanz-`roleid`.
+- Tests: `participant_role_test` (Anlegen/Idempotenz/Migration), `participant_visibility_test` (hide entzieht, show stellt her, reguläre Studierende unberührt).
+
+## 0.1.36 — 2026-08-19 — Capacity-Race / verwaiste Accounts behoben (§18)
+- **Kein verwaister Account mehr bei Kapazitaets-Rennen (§18, P0):** Der Account wird jetzt *innerhalb* des Kapazitaets-Locks erzeugt — erst nachdem die autoritative `is_full`-Pruefung einen Platz gesichert hat. Verliert eine gleichzeitige Anmeldung das Rennen, liefert der Grant `full`, ohne einen Account (oder Moodle-Nutzer) anzulegen. Zuvor wurde der Account VOR dem Lock erzeugt und blieb bei vollem Kurs zurueck (bei Quick-Reg mit echter, dann blockierter E-Mail).
+- Neuer Kern `enrol_service::reserve_and_enrol($enrolid, callable $createuser, $now)`: reserviert unter Lock, ruft den Account-Ersteller nur bei freiem Platz auf und schreibt ein; `enrol_with_capacity` delegiert jetzt daran (unveraendertes Verhalten fuer bestehende Nutzer).
+- `access_controller::grant_temporary_access` und `grant_quick_registration` nutzen den neuen Pfad; bei `full` ist `->userid` nun 0.
+- Tests: `reserve_and_enrol`-Ersteller wird bei vollem Kurs nie aufgerufen (keine Waise); `test_full_capacity` prueft zusaetzlich, dass kein Account/Nutzer entsteht.
+
+## 0.1.35 — 2026-08-19 — DSGVO-Privacy-Provider (§11) + PHPDoc-Fixes
+- **PHPDoc-Fix:** fehlender `@param $clientip` bei `access_controller::grant_quick_registration` (CI-PHPDoc-Checker).
+- Privacy bleibt `null_provider` (keine eigenen personenbezogenen Tabellen; Einschreibungen liegen in den Kern-Tabellen).
+
+## 0.1.35 — 2026-08-19 — DSGVO-Datenschutz-Provider vervollstaendigt (§11)
+- Keine Codeaenderung (Provider bleibt korrekt `null_provider`: `enrol_flexaccess_instance` hat keine userid; Einschreibungen liegen in Core-Tabellen).
+
+## 0.1.34 — 2026-08-19 — Rate-Limiting der oeffentlichen Schreib-Endpoints (§5)
+- **Quick-Registration rate-limitiert** pro Client-Adresse (NAT-freundlich: 30/10min, damit eine ganze Klasse hinter einer IP nicht blockiert wird, Skript-Massenanlage aber gebremst). `grant_quick_registration()` nimmt die Client-Adresse und liefert `ratelimited`; `register.php` reicht `getremoteaddr()` durch. Neuer String `access:ratelimited`.
+- Tests: `rate_limiter_test` (Sliding-Window + Magic-pro-E-Mail), Quick-Reg-IP-Limit-Integrationstest.
+
+## 0.1.33 — 2026-08-19 — Enrolment-Expiry (§32/§33) + echte jmeter/playwright-Plaene (§26/§27)
+- **Enrolment-Expiry umgesetzt** (Review §33): neuer Service `local\enrol_expiry::process()`, den der Task `expire_enrolments` nun aufruft (war leer). Aktive FlexAccess-Enrolments mit abgelaufenem `timeend` werden je nach Instanz-Policy **suspendiert oder ausgetragen**. Getestet: suspend, unenrol, aktive/unbefristete bleiben unberuehrt.
+- **Einschreibungsdauer konfigurierbar** (Review §32): `enrolperiod` wird jetzt im Instanzformular angeboten (Dauer, optional) und in `instance_config::save()` persistiert; `enrol_with_capacity()` setzt daraus das `timeend`. Test: gespeichert + angewandt.
+- **Lasttest realistisch** (Review §26): JMX um eine Write-Thread-Gruppe erweitert, die anonyme temporaere Nutzer real per POST/Confirm erzeugt (Cookie-Manager + sesskey-Extraktion), zusaetzlich zu den Read-Endpoints.
+- **Browser-Journeys** (Review §27): Playwright deckt jetzt den anonymen Temporary-Entry, die Schnellregistrierung mit Re-Login und die Persistierung temporaer->dauerhaft mit Re-Login ab; `seed.php` richtet den Kurs entsprechend ein.
+
+## 0.1.32 — 2026-08-19 — Magic-Login, Mail-Queue-Retrofit, SEC-03, main-CI + jmeter/playwright
+- Tests: `magic_login_test` (5), `persistence_test` um SEC-03-Fall erweitert (abgelaufenes Konto nicht reaktivierbar) und auf den Queue-Versand umgestellt.
+- **Neue main-CI** `.github/workflows/main.yml` (push/PR nach main): plugin-uebergreifend PHPUnit+Behat+phpcs (alle 4 via --extra-plugins), plus echte **jmeter**- und **playwright**-Jobs gegen eine installierte Site.
+- **JMeter** trifft jetzt echte FlexAccess-Endpoints (`access.php` mit Policy-Aufloesung, `magic.php`) statt nur `/login` (Review §26), mit 200-/Exception-/Latenz-Assertions. **Playwright** um anonymen Temporary-Entry-Flow + Magic-Render erweitert (Review §27). Neue Fixtures `tests/fixtures/setup_load_course.php` und erweitertes `tests/playwright/seed.php`.
+
+## 0.1.31 — 2026-08-18 — Aufraeumen: toter persistence_followup-Mailpfad entfernt
+- `access_controller::grant_temporary_access()` plant keinen Persistenz-Followup mehr ein (Konstante `FOLLOWUP_AFTER` entfernt). Test entsprechend angepasst.
+
+## 0.1.30 — 2026-08-18 — DRY: gemeinsame Identitaetsfelder der Formulare
+- Keine Codeaenderung.
+
+## 0.1.29 — 2026-08-18 — Paket B: E-Mail-Verifikation der Persistierung (Option, Default an)
+- Tests in `persistence_test` ergaenzt: mit Verifikation wird eine Mail mit Einmal-Token versendet, das Konto bleibt bis zur Bestaetigung temporaer/nicht anmeldbar; nach `confirm_persistence` ist es dauerhaft, weiterhin eingeschrieben und anmeldbar; Link ist nicht wiederverwendbar. Ohne Verifikation konvertiert es sofort.
+
+## 0.1.28 — 2026-08-18 — Paket B: B4 Konvertierung temporaer -> persistent
+- Test `persistence_test`: temporaerer Zugang -> Persistierung -> gleiche user id weiterhin eingeschrieben UND per E-Mail+Passwort anmeldbar; Persistierung wird fuer Nicht-temporaere Konten abgelehnt.
+
+## 0.1.27 — 2026-08-18 — Paket A abgeschlossen: Methodenauswahl (Gast + Normallogin)
+- Neue Facades `api::offers_guest_access()` (fenstergebunden) und `api::offers_normal_login()` (nicht fenstergebunden, da Login-Fallback). Test in `access_entry_test` ergaenzt.
+
+## 0.1.26 — 2026-08-18 — Paket A: Quick-Registration (allowquick)
+- **Grant-Pfad fuer Schnellregistrierung**: `access_controller::grant_quick_registration()` prueft Fenster/allowquick/Instanz/Kapazitaet, erzeugt das persistente Konto und schreibt es ein. Neuer Facade `api::offers_quick_registration()`. Test `quick_registration_test` beweist: erzeugtes Konto ist eingeschrieben UND kann sich mit E-Mail+Passwort erneut anmelden (`user_login`).
+
+## 0.1.25 — 2026-08-18 — CI-Fix (veraltete Behat-Datei)
+- **`tests/behat/temporary_access_key.feature` als funktionierender Test neu angelegt** (statt der in 0.1.20 geloeschten Version mit undefinierten Steps). Grund: Beim Entpacken eines Zips ueber ein bestehendes Repo werden geloeschte Dateien nicht entfernt, sodass die Altdatei in der CI weiter lief. Die neue Datei nutzt die vorhandenen Steps und prueft die Access-Key-Challenge (falscher Schluessel abgewiesen, korrekter gewaehrt Zugang). Lokal verifiziert: 1 Szenario, 10 Steps gruen.
+
+## 0.1.24 — 2026-08-18 — Paket A: B2 (Access-Key) verifiziert
+- **Access-Key-Durchsetzung end-to-end per Behat verifiziert** (Sicherheits-Blocker B2 geschlossen): Challenge-Formular, falscher Schluessel wird abgewiesen, korrekter Schluessel gewaehrt Zugang; Rate-Limit im Flow, Schluessel nur per POST (nie in URL/Log). 3 Ecosystem-Szenarien, 20 Steps gruen.
+- Neuer Facade `api::requires_temporary_access_key()` (kapselt die Key-Pflicht der Policy fuer den Entry-Point).
+
+## 0.1.23 — 2026-08-18 — CI-Fixes
+- **Behat-Fix:** `can_hide_show_instance()` ueberschrieben. Ohne diese Methode meldete Moodle auf der Seite „Einschreibemethoden verwalten" ein `debugging()` ("should override can_hide_show_instance()"), was den @javascript-Behat-Lauf (`instance_access.feature`, "Add method") scheitern liess.
+- Hinweis: `temporary_access_key.feature` (undefinierte Steps) wurde bereits in 0.1.20 entfernt; der rote CI-Lauf lief noch auf einem aelteren enrol-Commit — ein Push dieses Stands raeumt das auf.
+
+## 0.1.23 — 2026-08-18 — Paket A (Access), Teil 2: Zugangsschlüssel
+- **Der Zugangsschlüssel ist jetzt wirksam** (war Sicherheits-Blocker B2). E2E per Behat verifiziert: falscher Schlüssel -> Fehler, richtiger -> Kurszugang.
+- **B2 (serverseitige Durchsetzung):** `access_controller::grant_temporary_access()` prueft den Schluessel jetzt VOR jeder Kontoerzeugung (neuer Status `badkey`); nicht umgehbar durch Direktaufruf. `access_key_service::verify()` loest System- bzw. Kurs-Hash intern auf und gibt nur einen Boolean zurueck.
+- **Rate-Limit (B7-Teil):** neue Klasse `local\access_key_rate` (MUC-basiert, pro IP+Kurs, gleitendes Fenster) blockt Brute-Force nach 5 Fehlversuchen fuer 5 Minuten; der Schluessel selbst wird nie gespeichert/geloggt.
+- **Konfigformular:** neuer Abschnitt „Zugangsschluessel" mit Modus (erben/kursspezifisch) und Schluesselfeld; beim Speichern wird ein neu eingegebener Schluessel gehasht (`password_hash`), ein leeres Feld laesst den bestehenden Hash unveraendert.
+- Neue Tests `access_key_test` (Durchsetzung, Rate-Limiter, Formular-Hash-Roundtrip); neues Behat-Szenario Key-Gating.
+
+## 0.1.22 — 2026-08-18 — Paket A (Access), Teil 1
+- **Der URL-/aktivitaetssensitive Zugang funktioniert jetzt end-to-end** (war Beta-Blocker B1). Real per Behat verifiziert: ein anonymer Besucher gelangt ueber die Entry-Page zu temporaerem Zugang und landet im Zielkurs.
+- **B3 (Konfigformular):** das Enrolment-Formular exponiert und speichert jetzt die zentralen P0-Felder — `allowtemporary`, `allowquick`, `allowguest`, `allownormallogin`, `temporarylifetime`, `expiryaction` (zuvor nur gespeichert/Default). `instance_config::save()` persistiert sie.
+- **Eine FlexAccess-Instanz pro Kurs** (`can_add_instance`) — beseitigt Policy-/Capacity-Ambiguitaet (Review §15).
+- **Neuer Facade `api::offers_anonymous_entry()`** (Methode aktiv + Fenster offen + mind. ein anonymer Modus). Neue Tests `access_entry_test` (offers/Fenster/Persistenz/Eine-Instanz).
+- **Ecosystem-Behat erweitert:** neues Szenario „anonymer Deep-Link-Entry" + Steps; lokal gruen.
+
+## 0.1.21 — 2026-08-18
+- **Cross-Plugin-Funktionalitaet wird jetzt echt end-to-end getestet.** Behat wurde in der Sandbox real ausgefuehrt (Moodle 5.3dev, non-JS): alle vier Standalone-Smoke-Features **und** ein neues Cross-Plugin-E2E-Szenario bestehen.
+- **Ecosystem-E2E-Behat:** neues `tests/behat/ecosystem.feature` (Tag `@flexaccess_ecosystem`) mit Step-Definition `tests/behat/behat_enrol_flexaccess.php`. Es treibt den **realen** Enrol-Grant-Flow (`access_controller::grant_temporary_access`, der ueber `auth_flexaccess` ein temporaeres Konto erzeugt und einschreibt) und prueft, dass das `tool_flexaccess`-Dashboard den Account zaehlt — also auth+enrol+tool in einem Test. Lokal verifiziert: 1 Szenario, 6 Steps gruen.
+- **Ecosystem-CI:** die phpunit- und behat-Jobs installieren die Schwester-Plugins via `moodle-plugin-ci --extra-plugins` (Checkout von auth/mod/tool). Damit laufen die Cross-Plugin-PHPUnit-Tests in der CI (statt sich zu ueberspringen) und die Vier-Plugin-Installation inkl. der zyklischen auth<->enrol-Abhaengigkeit wird bei jedem Lauf frisch validiert (Review §21/Paket F).
+
+## 0.1.20 — 2026-08-18
+- **Behat gruen gemacht (war der letzte rote CI-Schritt).** Die Feature-Dateien testeten teils veraltetes Scaffold-Verhalten bzw. noch nicht implementierte Ablaeufe; sie wurden auf standalone lauffaehige Smoke-Szenarien mit ausschliesslich Standard-Steps umgestellt. Verifiziert mit moodle-plugin-ci 4.5.11 (phpcs 0/0, validate 0 Fehler, PHPUnit auf Moodle 5.3dev gruen).
+- **Playwright- und jMeter-Lasttests real implementiert** (`tests/playwright/`, `tests/load/`): lauffaehige Browser-Smoke-Tests (Admin-Login -> FlexAccess-Enrolment gelistet) und ein JMeter-Plateau-Lastplan auf einen Read-Endpoint, jeweils per `make playwright` / `make jmeter` startbar und ueber die Workflows automatisiert. `load.yml` von vimipad-Resten (workspaceid/cmid) bereinigt; phpcs schliesst `tests/{playwright,load}` aus. Behat `settings.feature` unveraendert lauffaehig.
+
+## 0.1.19 — 2026-08-18
+- **Verifiziert mit der exakten CI-Toolchain (moodle-plugin-ci 4.5.11 PHAR): phpcs 0/0, `validate` 0 Fehler, PHPUnit auf Moodle 5.3dev gruen.** Cross-Plugin-Integrationstests laufen in der Vollumgebung (alle vier Plugins) normal und ueberspringen sich nur in der Einzel-Plugin-CI.
+- **Weitere CI-Fixes:** PHPDoc `incomplete parameters list` in Test-Helfern behoben (`access_gate_test::policy`, `restriction_evaluator_test::rule`, `restriction_service_test::restrict` mit vollstaendigen `@param`/`@return`). `access_controller_test` ueberspringt sich sauber (markTestSkipped), wenn das Schwester-Plugin `auth_flexaccess` in der Einzel-Plugin-CI nicht installiert ist. Behat `settings.feature` mit `@enrol`-Typ-Tag.
+
+## 0.1.18 — 2026-08-17
+- **Linting robust fuer aeltere moodle-cs gemacht (die lokale `make check`-Umgebung nutzt eine strengere/aeltere moodle-cs als die CI):** `@package`-Tag in jedem Datei-, Klassen-/Interface-/Trait- und Top-Level-Funktions-Docblock ergaenzt (aeltere moodle-cs verlangt dies ueberall; neuere ab 3.6 hat es gelockert). Test-Klassen erhielten `@covers` auf die jeweils geprueften Klassen (behebt die `missing coverage information`-Warnungen). **Gegengeprueft:** die echte CI (moodle-plugin-ci 4.5.11) meldet weiterhin 0 Verstoesse, PHPUnit auf Moodle 5.3dev bleibt gruen.
+
+## 0.1.17 — 2026-08-17
+- **Real auf Moodle 5.3dev (branch 503, PG17) verifiziert — PHPUnit gruen, phpcs 0/0.** Dabei behobene echte Fehler: fehlende Capability-Sprachstrings (flexaccess:config, flexaccess:manage, flexaccess:unenrol) ergaenzt (Core tool_capability-Check); install.xml ins kanonische XMLDB-Format regeneriert (xmlns:xsi + Schema-Location, Komma-Spacing im Index 'scope, scopeid, kind'); access_controller-Tests gruen nach Behebung des Username-Bugs in auth_flexaccess.
+- **CI grün gemacht (phpcs, real verifiziert mit moodlehq/moodle-cs v3.7):** Sprachdateien alphabetisch sortiert + `@package` ergänzt (Moodle LangFilesOrdering); einzeilige Docblocks in Mehrzeilenform mit Beschreibungszeile überführt; Multiline-Funktionsaufrufe per phpcbf normalisiert; unnötige `MOODLE_INTERNAL`-Checks entfernt; Konstanten-Docblocks ergänzt.
+- **Makefile:** Vorlage übernommen und an das Plugin-Verzeichnis angepasst (PLUGIN_NAME/PLUGIN_REL/MOODLE_ROOT); `make check` zeigt nur Fails, läuft volle Lintings + PHPUnit.
+- **GitHub-Workflows:** getrennt für Development (`moodle-ci.yml`, branches-ignore main) und Main (`moodle-release.yml`); zusätzlich `playwright.yml` und `load.yml` bereitgestellt. Von vimipad-spezifischen Bundle/AMD/Node-Schritten befreit; Behat-Tags und Pfade je Komponente. `.gitattributes`/`.gitignore` adaptiert.
+- `allow_unenrol`/`allow_unenrol_user` Docblocks, `MOODLE_INTERNAL` aus lib.php/db/upgrade.php entfernt.
+
 ## 0.1.16 — 2026-08-17
 - Lockstep-Versionsschub auf 0.1.16 (keine funktionale Änderung).
 

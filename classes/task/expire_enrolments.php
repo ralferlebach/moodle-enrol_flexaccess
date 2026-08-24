@@ -17,18 +17,31 @@
 /**
  * Scheduled task applying FlexAccess enrolment expiry.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace enrol_flexaccess\task;
 
-/** Expire course enrolments independently from account lifetime. */
+/**
+ * Expire course enrolments independently from account lifetime.
+ *
+ * @package    enrol_flexaccess
+ */
 final class expire_enrolments extends \core\task\scheduled_task {
-    /** @return string */
-    public function get_name(): string { return get_string('task:expireenrolments', 'enrol_flexaccess'); }
-    /** Execute task. */
+    /**
+     * Get the task name.
+     *
+     * @return string
+     */
+    public function get_name(): string {
+        return get_string('task:expireenrolments', 'enrol_flexaccess');
+    }
+    /**
+     * Execute task.
+     */
     public function execute(): void {
-        // Phase 2: suspend or unenrol due user_enrolments according to instance policy.
+        \enrol_flexaccess\local\enrol_expiry::process(time());
     }
 }

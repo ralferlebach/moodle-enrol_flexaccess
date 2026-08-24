@@ -22,14 +22,22 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
 
 use enrol_flexaccess\local\access_window;
 use enrol_flexaccess\local\instance_config;
 
-/** FlexAccess enrolment plugin. */
+/**
+ * FlexAccess enrolment plugin.
+ *
+ * @package    enrol_flexaccess
+ */
 class enrol_flexaccess_plugin extends enrol_plugin {
-    /** @param stdClass $instance Enrolment instance. @return string */
+    /**
+     * Return the display name of an enrolment instance.
+     *
+     * @param stdClass $instance Enrolment instance.
+     * @return string
+     */
     public function get_instance_name($instance): string {
         if (empty($instance->name)) {
             return get_string('pluginname', 'enrol_flexaccess');
@@ -37,24 +45,51 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         return format_string($instance->name);
     }
 
-    /** @param int $courseid Course ID. @return bool */
+    /**
+     * Whether an instance may be added to the course.
+     *
+     * @param int $courseid Course ID.
+     * @return bool
+     */
     public function can_add_instance($courseid): bool {
+        global $DB;
         $context = context_course::instance($courseid);
-        return has_capability('moodle/course:enrolconfig', $context)
-            && has_capability('enrol/flexaccess:config', $context);
+        if (
+            !has_capability('moodle/course:enrolconfig', $context)
+                || !has_capability('enrol/flexaccess:config', $context)
+        ) {
+            return false;
+        }
+        // Exactly one FlexAccess enrolment method per course keeps policy and capacity deterministic.
+        return !$DB->record_exists('enrol', ['enrol' => 'flexaccess', 'courseid' => $courseid]);
     }
 
-    /** @return bool */
+    /**
+     * Whether assigned roles are protected.
+     *
+     * @return bool
+     */
     public function roles_protected(): bool {
         return false;
     }
 
-    /** @param stdClass $instance Enrolment instance. @return bool */
+    /**
+     * Whether unenrolment is allowed for the instance.
+     *
+     * @param stdClass $instance Enrolment instance.
+     * @return bool
+     */
     public function allow_unenrol(stdClass $instance): bool {
         return has_capability('enrol/flexaccess:unenrol', context_course::instance($instance->courseid));
     }
 
-    /** @param stdClass $instance Enrolment instance. @param stdClass $ue User enrolment. @return bool */
+    /**
+     * Whether a specific user enrolment may be unenrolled.
+     *
+     * @param stdClass $instance Enrolment instance.
+     * @param stdClass $ue User enrolment.
+     * @return bool
+     */
     public function allow_unenrol_user(stdClass $instance, stdClass $ue): bool {
         return has_capability('enrol/flexaccess:unenrol', context_course::instance($instance->courseid));
     }
@@ -79,6 +114,17 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     }
 
     /**
+     * Whether the given instance can be hidden or shown from the enrolment methods page.
+     *
+     * @param \stdClass $instance Enrol instance.
+     * @return bool
+     */
+    public function can_hide_show_instance($instance): bool {
+        $context = context_course::instance($instance->courseid);
+        return has_capability('enrol/flexaccess:config', $context);
+    }
+
+    /**
      * Default values for the add-instance form.
      *
      * @return array
@@ -95,8 +141,8 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     /**
      * Add the instance configuration form elements.
      *
-     * This iteration exposes the access window and participant capacity; other extended
-     * configuration keeps its stored/default values until later iterations expose it.
+     * Exposes the access methods, lifecycle, access-key gate, quick-registration gate, participant
+     * visibility, access window and capacity for the instance; unset fields keep their stored values.
      *
      * @param stdClass $instance Enrolment instance (or defaults object for a new instance).
      * @param MoodleQuickForm $mform The form being built.
@@ -115,18 +161,123 @@ class enrol_flexaccess_plugin extends enrol_plugin {
 
         $mform->addElement('header', 'flexaccess_access', get_string('settings:access', 'enrol_flexaccess'));
 
-        $mform->addElement('date_time_selector', 'availablefrom',
-            get_string('availablefrom', 'enrol_flexaccess'), ['optional' => true]);
+        $mform->addElement(
+            'date_time_selector',
+            'availablefrom',
+            get_string('availablefrom', 'enrol_flexaccess'),
+            ['optional' => true]
+        );
         $mform->addHelpButton('availablefrom', 'availablefrom', 'enrol_flexaccess');
 
-        $mform->addElement('date_time_selector', 'availableuntil',
-            get_string('availableuntil', 'enrol_flexaccess'), ['optional' => true]);
+        $mform->addElement(
+            'date_time_selector',
+            'availableuntil',
+            get_string('availableuntil', 'enrol_flexaccess'),
+            ['optional' => true]
+        );
         $mform->addHelpButton('availableuntil', 'availableuntil', 'enrol_flexaccess');
 
         $mform->addElement('text', 'maxparticipants', get_string('maxparticipants', 'enrol_flexaccess'));
         $mform->setType('maxparticipants', PARAM_INT);
         $mform->addHelpButton('maxparticipants', 'maxparticipants', 'enrol_flexaccess');
         $mform->setDefault('maxparticipants', 0);
+
+        $mform->addElement('select', 'participantvisibility', get_string('participantvisibility', 'enrol_flexaccess'), [
+            'inherit' => get_string('participantvisibility:inherit', 'enrol_flexaccess'),
+            'show' => get_string('show', 'enrol_flexaccess'),
+            'hide' => get_string('hide', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('participantvisibility', 'participantvisibility', 'enrol_flexaccess');
+        $mform->setDefault('participantvisibility', 'inherit');
+
+        // Access methods offered by this instance.
+        $mform->addElement('header', 'flexaccess_methods', get_string('settings:methods', 'enrol_flexaccess'));
+
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+            $mform->addElement('advcheckbox', $flag, get_string($flag, 'enrol_flexaccess'));
+            $mform->addHelpButton($flag, $flag, 'enrol_flexaccess');
+        }
+        $mform->setDefault('allownormallogin', 1);
+
+        // Lifetimes and expiry behaviour.
+        $mform->addElement('header', 'flexaccess_lifecycle', get_string('settings:lifecycle', 'enrol_flexaccess'));
+
+        $mform->addElement('duration', 'temporarylifetime', get_string('temporarylifetime', 'enrol_flexaccess'));
+        $mform->addHelpButton('temporarylifetime', 'temporarylifetime', 'enrol_flexaccess');
+        $mform->setDefault('temporarylifetime', 6 * HOURSECS);
+
+        $mform->addElement(
+            'duration',
+            'enrolperiod',
+            get_string('enrolperiod', 'enrol_flexaccess'),
+            ['optional' => true, 'defaultunit' => DAYSECS]
+        );
+        $mform->addHelpButton('enrolperiod', 'enrolperiod', 'enrol_flexaccess');
+        $mform->setDefault('enrolperiod', 0);
+
+        $mform->addElement('select', 'expiryaction', get_string('expiryaction', 'enrol_flexaccess'), [
+            'suspend' => get_string('expiryaction:suspend', 'enrol_flexaccess'),
+            'unenrol' => get_string('expiryaction:unenrol', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('expiryaction', 'expiryaction', 'enrol_flexaccess');
+        $mform->setDefault('expiryaction', 'suspend');
+
+        // Access key gating for temporary entry.
+        $mform->addElement('header', 'flexaccess_key', get_string('settings:accesskeygate', 'enrol_flexaccess'));
+
+        $mform->addElement('select', 'temporaryaccesskeymode', get_string('temporaryaccesskeymode', 'enrol_flexaccess'), [
+            'inherit' => get_string('temporaryaccesskeymode:inherit', 'enrol_flexaccess'),
+            'course' => get_string('temporaryaccesskeymode:course', 'enrol_flexaccess'),
+        ]);
+        $mform->addHelpButton('temporaryaccesskeymode', 'temporaryaccesskeymode', 'enrol_flexaccess');
+        $mform->setDefault('temporaryaccesskeymode', 'inherit');
+
+        $mform->addElement('passwordunmask', 'temporaryaccesskey', get_string('temporaryaccesskey', 'enrol_flexaccess'));
+        $mform->setType('temporaryaccesskey', PARAM_RAW);
+        $mform->addHelpButton('temporaryaccesskey', 'temporaryaccesskey', 'enrol_flexaccess');
+        $mform->hideIf('temporaryaccesskey', 'temporaryaccesskeymode', 'neq', 'course');
+
+        $mform->addElement('header', 'flexaccess_quickreggate', get_string('settings:quickreggate', 'enrol_flexaccess'));
+
+        $mform->addElement('select', 'quickreggatemode', get_string('instance:quickreggatemode', 'enrol_flexaccess'), [
+            'inherit' => get_string('gate:inherit', 'enrol_flexaccess'),
+            'none' => get_string('gate:none', 'enrol_flexaccess'),
+            'password' => get_string('gate:password', 'enrol_flexaccess'),
+            'domain' => get_string('gate:domain', 'enrol_flexaccess'),
+        ]);
+        $mform->setDefault('quickreggatemode', 'inherit');
+
+        $mform->addElement(
+            'passwordunmask',
+            'quickreggatepassword',
+            get_string('instance:quickreggatepassword', 'enrol_flexaccess')
+        );
+        $mform->setType('quickreggatepassword', PARAM_RAW);
+        $mform->hideIf('quickreggatepassword', 'quickreggatemode', 'neq', 'password');
+
+        $mform->addElement(
+            'textarea',
+            'quickreggatedomains',
+            get_string('instance:quickreggatedomains', 'enrol_flexaccess')
+        );
+        $mform->setType('quickreggatedomains', PARAM_RAW);
+        $mform->hideIf('quickreggatedomains', 'quickreggatemode', 'neq', 'domain');
+
+        // Populate the extended fields from stored configuration when editing an existing instance.
+        if (!empty($instance->id)) {
+            $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
+            if ($config) {
+                foreach (
+                    ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
+                        'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
+                        'participantvisibility', 'quickreggatemode', 'quickreggatedomains'] as $field
+                ) {
+                    if (isset($config->$field)) {
+                        $mform->setDefault($field, $config->$field);
+                    }
+                }
+            }
+        }
     }
 
     /**

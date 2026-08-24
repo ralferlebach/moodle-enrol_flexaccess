@@ -26,9 +26,16 @@ namespace enrol_flexaccess;
 
 use enrol_flexaccess\local\capacity_service;
 
-/** Capacity service tests. */
+/**
+ * Capacity service tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\capacity_service
+ */
 final class capacity_service_test extends \advanced_testcase {
-    /** The pure predicate treats 0/negative maximum as unlimited. */
+    /**
+     * The pure predicate treats 0/negative maximum as unlimited.
+     */
     public function test_has_free_capacity_predicate(): void {
         $this->assertTrue(capacity_service::has_free_capacity(1000, 0));   // Unlimited.
         $this->assertTrue(capacity_service::has_free_capacity(1000, -1));  // Unlimited.
@@ -75,7 +82,9 @@ final class capacity_service_test extends \advanced_testcase {
         $this->assertTrue(capacity_service::is_full($instanceid, 2, $now));    // 3 > 2.
     }
 
-    /** The lock wrapper executes the critical section and returns its result. */
+    /**
+     * The lock wrapper executes the critical section and returns its result.
+     */
     public function test_run_with_lock_executes_callback(): void {
         $this->resetAfterTest();
         $ran = false;

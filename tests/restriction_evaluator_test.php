@@ -26,33 +26,53 @@ namespace enrol_flexaccess;
 
 use enrol_flexaccess\local\restriction_evaluator;
 
-/** Restriction evaluator tests. */
+/**
+ * Restriction evaluator tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\restriction_evaluator
+ */
 final class restriction_evaluator_test extends \advanced_testcase {
-    /** Build a restriction row. */
+    /**
+     * Build a restriction row.
+     *
+     * @param string $kind Restriction kind (role or cohort).
+     * @param int $refid Reference id (role id or cohort id).
+     * @param string $effect Effect, either allow or deny.
+     * @return \stdClass
+     */
     private function rule(string $kind, int $refid, string $effect): \stdClass {
         return (object) ['kind' => $kind, 'refid' => $refid, 'effect' => $effect];
     }
 
-    /** No restrictions means permitted. */
+    /**
+     * No restrictions means permitted.
+     */
     public function test_no_restrictions(): void {
         $this->assertTrue(restriction_evaluator::permit([], [3], [5]));
     }
 
-    /** A matching deny blocks, a non-matching deny does not. */
+    /**
+     * A matching deny blocks, a non-matching deny does not.
+     */
     public function test_deny(): void {
         $deny = [$this->rule('cohort', 5, 'deny')];
         $this->assertFalse(restriction_evaluator::permit($deny, [], [5]));
         $this->assertTrue(restriction_evaluator::permit($deny, [], [9]));
     }
 
-    /** With allow rules present, the user must match at least one. */
+    /**
+     * With allow rules present, the user must match at least one.
+     */
     public function test_allowlist(): void {
         $allow = [$this->rule('role', 3, 'allow'), $this->rule('role', 4, 'allow')];
         $this->assertTrue(restriction_evaluator::permit($allow, [4], []));
         $this->assertFalse(restriction_evaluator::permit($allow, [7], []));
     }
 
-    /** Deny wins over a matching allow. */
+    /**
+     * Deny wins over a matching allow.
+     */
     public function test_deny_wins(): void {
         $rules = [$this->rule('role', 3, 'allow'), $this->rule('cohort', 5, 'deny')];
         $this->assertFalse(restriction_evaluator::permit($rules, [3], [5]));

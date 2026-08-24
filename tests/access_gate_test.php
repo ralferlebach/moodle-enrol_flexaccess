@@ -27,9 +27,21 @@ namespace enrol_flexaccess;
 use enrol_flexaccess\local\access_gate;
 use enrol_flexaccess\local\policy;
 
-/** Access-gate tests. */
+/**
+ * Access-gate tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\access_gate
+ */
 final class access_gate_test extends \advanced_testcase {
-    /** Build a policy enabling all methods with the given window/capacity. */
+    /**
+     * Build a policy enabling all methods with the given window/capacity.
+     *
+     * @param int $from Available-from timestamp.
+     * @param int $until Available-until timestamp.
+     * @param int $max Maximum number of participants.
+     * @return policy
+     */
     private function policy(int $from, int $until, int $max): policy {
         $p = new policy();
         $p->allowtemporary = true;
@@ -42,7 +54,9 @@ final class access_gate_test extends \advanced_testcase {
         return $p;
     }
 
-    /** Inside the window with free capacity, all enabled methods are offerable. */
+    /**
+     * Inside the window with free capacity, all enabled methods are offerable.
+     */
     public function test_open_and_free_offers_all(): void {
         $o = access_gate::offerable($this->policy(1000, 3000, 10), 2000, 5);
         $this->assertTrue($o->temporary);
@@ -51,7 +65,9 @@ final class access_gate_test extends \advanced_testcase {
         $this->assertTrue($o->normallogin);
     }
 
-    /** Outside the window, FlexAccess methods are blocked but normal login remains. */
+    /**
+     * Outside the window, FlexAccess methods are blocked but normal login remains.
+     */
     public function test_closed_window_blocks_flex_not_login(): void {
         $o = access_gate::offerable($this->policy(1000, 3000, 10), 3000, 0);
         $this->assertFalse($o->temporary);
@@ -60,7 +76,9 @@ final class access_gate_test extends \advanced_testcase {
         $this->assertTrue($o->normallogin);
     }
 
-    /** When full, enrolment-creating methods are blocked; guest and login remain. */
+    /**
+     * When full, enrolment-creating methods are blocked; guest and login remain.
+     */
     public function test_full_blocks_enrolling_methods(): void {
         $o = access_gate::offerable($this->policy(0, 0, 5), 2000, 5);
         $this->assertFalse($o->temporary);
@@ -69,14 +87,18 @@ final class access_gate_test extends \advanced_testcase {
         $this->assertTrue($o->normallogin);
     }
 
-    /** Unlimited capacity never blocks on capacity. */
+    /**
+     * Unlimited capacity never blocks on capacity.
+     */
     public function test_unlimited_capacity(): void {
         $o = access_gate::offerable($this->policy(0, 0, 0), 2000, 999999);
         $this->assertTrue($o->temporary);
         $this->assertTrue($o->quick);
     }
 
-    /** has_any_method reflects at least one offerable path. */
+    /**
+     * has_any_method reflects at least one offerable path.
+     */
     public function test_has_any_method(): void {
         $loginonly = new policy();
         $loginonly->allowtemporary = false;

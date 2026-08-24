@@ -28,9 +28,15 @@
 
 namespace enrol_flexaccess\local;
 
-/** Counts active enrolments and guards capacity with the Moodle Lock API. */
+/**
+ * Counts active enrolments and guards capacity with the Moodle Lock API.
+ *
+ * @package    enrol_flexaccess
+ */
 final class capacity_service {
-    /** Lock factory type used to serialise capacity checks. */
+    /**
+     * Lock factory type used to serialise capacity checks.
+     */
     private const LOCK_TYPE = 'enrol_flexaccess_capacity';
 
     /**

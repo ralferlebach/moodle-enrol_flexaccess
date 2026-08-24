@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="enrol/flexaccess/db" VERSION="2026081730" COMMENT="XMLDB file for enrol_flexaccess">
+<XMLDB PATH="enrol/flexaccess/db" VERSION="2026081730" COMMENT="XMLDB file for enrol_flexaccess"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
   <TABLES>
     <TABLE NAME="enrol_flexaccess_instance" COMMENT="Extended configuration for a FlexAccess enrolment instance">
       <FIELDS>
@@ -21,6 +24,9 @@
         <FIELD NAME="participantvisibility" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeymode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeyhash" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatemode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatepasswordhash" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="quickreggatedomains" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="profilefieldsjson" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -56,8 +62,12 @@
         <FIELD NAME="refid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="effect" TYPE="char" LENGTH="8" NOTNULL="true" DEFAULT="allow" SEQUENCE="false"/>
       </FIELDS>
-      <KEYS><KEY NAME="primary" TYPE="primary" FIELDS="id"/></KEYS>
-      <INDEXES><INDEX NAME="scope_ix" UNIQUE="false" FIELDS="scope,scopeid,kind"/></INDEXES>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="scope_ix" UNIQUE="false" FIELDS="scope, scopeid, kind"/>
+      </INDEXES>
     </TABLE>
   </TABLES>
 </XMLDB>

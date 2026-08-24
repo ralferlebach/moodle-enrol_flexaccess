@@ -28,7 +28,11 @@
 
 namespace enrol_flexaccess\local;
 
-/** Stateless helpers evaluating a time-based access window. */
+/**
+ * Stateless helpers evaluating a time-based access window.
+ *
+ * @package    enrol_flexaccess
+ */
 final class access_window {
     /**
      * Whether the window is open at the given time.

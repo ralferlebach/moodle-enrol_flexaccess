@@ -17,14 +17,25 @@
 /**
  * Privacy provider for enrol_flexaccess configuration.
  *
+ * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 namespace enrol_flexaccess\privacy;
 
-/** Policy/configuration tables do not themselves store personal user data. */
+/**
+ * Policy/configuration tables do not themselves store personal user data.
+ *
+ * @package    enrol_flexaccess
+ */
 final class provider implements \core_privacy\local\metadata\null_provider {
-    /** @return string */
-    public static function get_reason(): string { return 'privacy:metadata'; }
+    /**
+     * Get the reason there is no personal data.
+     *
+     * @return string
+     */
+    public static function get_reason(): string {
+        return 'privacy:metadata';
+    }
 }

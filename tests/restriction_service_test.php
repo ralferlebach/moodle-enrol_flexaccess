@@ -24,9 +24,23 @@
 
 namespace enrol_flexaccess;
 
-/** Restriction service / facade integration tests. */
+/**
+ * Restriction service / facade integration tests.
+ *
+ * @package    enrol_flexaccess
+ * @covers     \enrol_flexaccess\local\restriction_service
+ */
 final class restriction_service_test extends \advanced_testcase {
-    /** Insert a restriction row. */
+    /**
+     * Insert a restriction row.
+     *
+     * @param string $scope Scope level (system/category/instance).
+     * @param int $scopeid Scope instance id.
+     * @param string $kind Restriction kind (role or cohort).
+     * @param int $refid Reference id (role id or cohort id).
+     * @param string $effect Effect, either allow or deny.
+     * @return void
+     */
     private function restrict(string $scope, int $scopeid, string $kind, int $refid, string $effect): void {
         global $DB;
         $DB->insert_record('enrol_flexaccess_restrict', (object) [
@@ -34,7 +48,9 @@ final class restriction_service_test extends \advanced_testcase {
         ]);
     }
 
-    /** No restrictions permits any user. */
+    /**
+     * No restrictions permits any user.
+     */
     public function test_permits_when_no_restrictions(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
@@ -42,7 +58,9 @@ final class restriction_service_test extends \advanced_testcase {
         $this->assertTrue(\enrol_flexaccess\api::is_user_permitted((int) $course->id, (int) $user->id));
     }
 
-    /** A course-scoped cohort deny blocks members only. */
+    /**
+     * A course-scoped cohort deny blocks members only.
+     */
     public function test_cohort_deny(): void {
         $this->resetAfterTest();
         $course = $this->getDataGenerator()->create_course();
@@ -57,7 +75,9 @@ final class restriction_service_test extends \advanced_testcase {
         $this->assertTrue(\enrol_flexaccess\api::is_user_permitted((int) $course->id, (int) $outsider->id));
     }
 
-    /** An allow role restriction restricts access to holders of that role. */
+    /**
+     * An allow role restriction restricts access to holders of that role.
+     */
     public function test_role_allowlist(): void {
         global $DB;
         $this->resetAfterTest();
@@ -75,7 +95,9 @@ final class restriction_service_test extends \advanced_testcase {
         $this->assertFalse(\enrol_flexaccess\api::is_user_permitted((int) $course->id, (int) $outsider->id));
     }
 
-    /** get_effective_policy withdraws FlexAccess methods for a restricted user. */
+    /**
+     * get_effective_policy withdraws FlexAccess methods for a restricted user.
+     */
     public function test_effective_policy_withdraws_methods(): void {
         global $DB;
         $this->resetAfterTest();
@@ -95,6 +117,7 @@ final class restriction_service_test extends \advanced_testcase {
         $this->assertTrue(\enrol_flexaccess\api::get_effective_policy((int) $course->id)->allowtemporary);
         // For the blocked user, FlexAccess methods are withdrawn.
         $this->assertFalse(
-            \enrol_flexaccess\api::get_effective_policy((int) $course->id, (int) $blocked->id)->allowtemporary);
+            \enrol_flexaccess\api::get_effective_policy((int) $course->id, (int) $blocked->id)->allowtemporary
+        );
     }
 }

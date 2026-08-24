@@ -28,7 +28,11 @@
 
 namespace enrol_flexaccess\local;
 
-/** Runtime decision helper for offerable access methods. */
+/**
+ * Runtime decision helper for offerable access methods.
+ *
+ * @package    enrol_flexaccess
+ */
 final class access_gate {
     /**
      * Whether FlexAccess methods are within their access window.
