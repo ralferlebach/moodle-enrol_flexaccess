@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.32 — 2026-08-25 — Versions-Gleichschritt (D3 im auth) + Behat angepasst
+- Keine Produktivcode-Änderung. Behat-Szenario an den neuen Inline-Login angepasst (Feld „Username" statt Link „Already have an account? Log in"). Versions-Gleichschritt auf `2026082409`.
+
 ## 0.9.31 — 2026-08-25 — UX: Warnung „Zugangsmethode neutralisiert" präzisiert
 - Die Instanz-Warnung erscheint jetzt **nur noch für Methoden, die die Instanz tatsächlich aktiviert hat** und die eine höhere Ebene blockiert (echter, stiller Override) — nicht mehr für ohnehin nicht gewählte Methoden. Das beseitigt irritierende Warnungen zu z. B. Gastzugang, den man gar nicht nutzen wollte.
 - Meldung `methodneutralised` handlungsleitend umformuliert: nennt Ursache (systemweite/Kursbereichs-Vorgabe), Ort (*Website-Administration → Plugins → Einschreibung → FlexAccess* bzw. Kursbereichs-Richtlinie) und Abhilfe (Methode oder „Aufweiten durch untere Ebenen erlauben" aktivieren).

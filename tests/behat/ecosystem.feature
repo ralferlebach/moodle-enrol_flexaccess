@@ -56,7 +56,7 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     Given a FlexAccess enrolment method offering guest access and normal login exists in course "Course 1"
     When I open the FlexAccess entry page for course "Course 1"
     Then I should see "Continue as a guest"
-    And I should see "Already have an account? Log in"
+    And I should see "Username"
     And I press "Continue as a guest"
     Then I should see "Course 1"
 
