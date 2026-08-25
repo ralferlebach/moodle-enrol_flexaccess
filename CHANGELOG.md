@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.9.27 — 2026-08-24 — CI-Fix: fehlerhafte Workflow-Ausdrücke (${ } → ${{ }})
+- **Fix:** Im `lint-jsamd`-Job standen GitHub-Actions-Ausdrücke mit einfachen Klammern (`${ always() }`, `${ runner.os }` …) — GitHub lehnte die Datei als „Invalid workflow file" ab. Alle betroffenen Ausdrücke auf `${{ … }}` korrigiert (Ursache: doppelte Klammer-Kollabierung bei der Generierung).
+- **Neu im Prüf-Setup:** `actionlint` validiert nun alle Workflows lokal (0 Findings) — fängt genau solche Ausdruck-/Kontextfehler wie GitHub selbst.
+- Kein PHP-Code geändert; Versions-Gleichschritt auf `2026082404`.
+
+## 0.9.26 — 2026-08-24 — CI: JS/AMD/Mustache-Job wiederhergestellt (catquiz-Form 1:1)
+- **Fix meiner eigenen Fehlentscheidung:** Ich hatte den Job `lint-jsamd` („JS / AMD / Mustache", grunt + mustache) mit der Begründung „PHP-only" entfernt. Das war nicht der Auftrag — die Vorgabe war die **catquiz-Form 1:1**. Job in `moodle-plugin-ci-dev.yml` wiederhergestellt; in `moodle-plugin-ci-main.yml` die Steps **Mustache Lint** + **Cache npm** + **Grunt** in der catquiz-Reihenfolge ergänzt.
+- Dev-Abhängigkeitsgraph jetzt deckungsgleich mit catquiz: `phpunit` needs `lint-php`; `behat` needs `lint-php, lint-jsamd`; `ci-complete` needs `lint-php, codeanalysis, quality, phpunit, behat`.
+- Bewusste (nötige) Abweichungen von catquiz: DB-Service `postgres:16` / `mariadb:10.11` (Moodle 5.x verlangt das) und Matrix über **4.5/5.0/5.2** statt nur 4.5 (Support-Spanne der Plugins); jede Pipeline installiert alle drei Geschwister (Ökosystem-Tests).
+- Kein PHP-Code geändert; Versions-Gleichschritt auf `2026082403`.
+
+## 0.9.25 — 2026-08-24 — CI-Fixes: DB-Versionen, vollständige Geschwister, eine Main-Pipeline
+- **CI-Fix (rote Läufe):** DB-Service-Images gehoben — `postgres:13 → 16` (Moodle 5.2 verlangt PG 16) und `mariadb:10.8 → 10.11` (Moodle 5.0 verlangt 10.11). Zuvor scheiterte auf jedem 5.x-Cell bereits der Install-Step, was PHPUnit mit „missing plugin" nach sich zog.
+- **CI-Fix (Behat 404):** Jede Pipeline installiert jetzt **alle drei** Geschwister-Plugins (nicht nur die version.php-Abhängigkeiten). Die Ökosystem-Behat-Feature (`ecosystem.feature`) ruft `/admin/tool/flexaccess/index.php` auf; ohne installiertes `tool_flexaccess` gab es 404 → „Dashboard" nicht gefunden.
+- **CI-Struktur:** genau **eine** Main-Pipeline; `moodle-release.yml` entfernt (die „zweite Main/Release-CI"). Behaltenes Set: `moodle-plugin-ci-dev.yml`, `moodle-plugin-ci-main.yml`, `playwright.yml` (+ `load-jmeter.yml`/`load-k6.yml` nur im Hub `enrol`).
+- Kein PHP-Code geändert; Versions-Gleichschritt auf `2026082402`.
+
+## 0.9.24 — 2026-08-24 — P1 L3: Kurs-Einstieg für eingeloggte Nutzer + Load-Pläne + CI-Konsolidierung
+- **P1 (L3):** `enrol_page_hook()` bietet eingeloggten, noch nicht eingeschriebenen Nutzern auf der Einschreibeseite einen echten Kurs-Einstieg, wenn die effektive Policy `normallogin` erlaubt — Einschreibung über `enrol_service::enrol_with_capacity` (kapazitätssicher), dann Redirect in den Kurs. Schließt die Lücke, dass `access.php` eingeloggte Nutzer nur hinausleitet (kein Loop). Neue Strings `access:enter`/`access:enterintro`. Test `enrol_page_hook_test` (Zahn-Test).
+- **Load-Pläne:** k6-Plan `tests/load/flexaccess-read-endpoints.js` als Zwilling der vorhandenen `.jmx` angelegt (access.php + magic.php, Plateau-Last, Schwellen als Baseline). Beide Load-Workflows (`load-jmeter.yml`, `load-k6.yml`) sauber neu geschrieben mit **kohärenter `BASE_URL`/`COURSEID`-Verdrahtung** passend zu `seed_large.php` (behob die alte `TOKEN/WORKSPACEID/CMID`-Inkohärenz).
+- **CI:** genau **eine** Main-Pipeline (`moodle-plugin-ci-main.yml`); das frühere Ökosystem-`main.yml` entfernt. `load.yml` → `load-jmeter.yml` (catquiz-Namensschema). Load-Workflows nur noch im Hub `enrol_flexaccess` (auth/mod/tool hatten keinen eigenen Seed/Plan).
+- Versions-Gleichschritt auf `2026082401`.
+
+## 0.9.23 — 2026-08-24 — Fix: Zugangs-Blocker (Methoden-Ceiling) + Feature: Auth/Enrol-Kopplungscheck
+- **P0-Fix (Zugangs-Blocker):** Instanz-Zugangsmethoden wurden durch das systemweite Policy-Ceiling still auf `false` überschrieben (`system_policy()` setzte die vier Methoden-Flags nicht aus der Config; mit `allowwidening=aus` konnte eine Instanz sie nicht wieder aktivieren). Dadurch lieferte `offers_anonymous_entry()` `false` und der Login-Einstieg (`loginpage_idp_list`) blieb leer. **Neu:** systemweite Default-Settings `allowtemporary`/`allowquick`/`allowguest`/`allownormallogin` (Defaults 0/0/0/1), von `system_policy()` gelesen. Damit greifen die Instanz-Häkchen wieder.
+- **P0-UX:** Das Instanz-Bearbeitungsformular warnt jetzt sichtbar, wenn ein Methoden-Häkchen durch eine höhere Policy-Ebene neutralisiert ist und `allowwidening` aus ist (neuer Hinweis `methodneutralised`). Neue öffentliche Methode `policy_assembler::ceiling()` (System + Kursbereich ohne Instanz) als Grundlage der Erkennung.
+- **P1-Feature (C2):** `\enrol_flexaccess\check\coupling` als `\core\check`-Statuscheck (Website-Admin → Berichte → Sicherheit/Health), registriert über `enrol_flexaccess_status_checks()`. Meldet widersprüchliche Enable-Zustände: `enrol aktiv ohne auth` → ERROR (provisioniert Konten, die sich nicht anmelden können), `auth aktiv ohne enrol` → WARNING (inert), beide aus → NA, beide an → OK.
+- **Tests:** `method_defaults_test` (Zahn-Test der Ceiling-/Widening-Propagation) und `coupling_check_test` (Statuscheck je Enable-Zustand + Registrierung).
+- Versions-Gleichschritt der vier Plugins auf `2026082400`.
+- **CI-Fix:** Falsches `@package local_instantcoursecompletion` in `tools/mustache_check.php` und `tools/fix_phpdoc.php` auf die jeweilige Komponente korrigiert (Copy-Paste-Rest; `moodle.Commenting.Package.Incorrect`). `accounts.php`: mehrzeiligen `html_writer`-Aufruf CI-konform umgestellt (PSR2.Methods.FunctionCallSignature).
+- **CI-Pipeline:** getrennte Dev-/Main-Workflows (paralleler Dev-Fluss + sequenzielle Main-Vollmatrix `MOODLE_405_STABLE × {8.1,8.2,8.3} × {pgsql,mariadb}`) sowie dispatch-only JMeter-/k6-Lastworkflows, adaptiert vom catquiz-Vorbild (externe Abhängigkeiten entfernt, FlexAccess-Geschwister als `add-plugin`).
+
 ## 0.9.22 — 2026-08-20 — Fix: PHPDoc-Checker (CI) — @param-Vollstaendigkeit
 - Keine Codeaenderung.
 

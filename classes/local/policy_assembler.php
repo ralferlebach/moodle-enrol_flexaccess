@@ -36,12 +36,37 @@ namespace enrol_flexaccess\local;
  */
 final class policy_assembler {
     /**
+     * Resolve the policy ceiling above the instance: system defaults merged with any category
+     * overrides, but without applying the course's own enrol instance. A method that is false in the
+     * ceiling while widening is disabled cannot be re-enabled by an instance checkbox, so the edit
+     * form uses this to warn the teacher that such a checkbox has no effect.
+     *
+     * @param int $courseid Course id.
+     * @return policy The effective ceiling policy (system + categories).
+     */
+    public static function ceiling(int $courseid): policy {
+        $p = self::system_policy();
+        return self::apply_categories($p, $courseid, self::allow_widening());
+    }
+
+    /**
      * Read the system-default policy from plugin configuration.
      *
      * @return policy
      */
     public static function system_policy(): policy {
         $p = new policy();
+
+        // System-wide default ceiling for the four access methods. When a setting is unconfigured
+        // (get_config returns false) the class default on the policy object is kept, so behaviour is
+        // unchanged on sites that never touched these settings.
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+            $value = get_config('enrol_flexaccess', $flag);
+            if ($value !== false) {
+                $p->$flag = (bool) $value;
+            }
+        }
+
         $vis = get_config('enrol_flexaccess', 'participantvisibilitydefault');
         $p->participantvisibility = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
         $p->temporaryaccesskeyrequired = (bool) get_config('enrol_flexaccess', 'temporaryaccesskeyrequired');

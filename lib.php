@@ -199,6 +199,29 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         }
         $mform->setDefault('allownormallogin', 1);
 
+        // Warn when a method checkbox has no effect because a higher-level policy (system or category)
+        // forbids it and widening is disabled: the "narrow-only" resolver would silently override it.
+        $courseid = ($context->contextlevel == CONTEXT_COURSE)
+            ? (int) $context->instanceid
+            : (int) ($instance->courseid ?? 0);
+        if ($courseid > 0 && !\enrol_flexaccess\local\policy_assembler::allow_widening()) {
+            $ceiling = \enrol_flexaccess\local\policy_assembler::ceiling($courseid);
+            $blocked = [];
+            foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+                if (!$ceiling->$flag) {
+                    $blocked[] = get_string($flag, 'enrol_flexaccess');
+                }
+            }
+            if ($blocked) {
+                global $OUTPUT;
+                $mform->addElement('static', 'flexaccess_methods_neutralised', '', $OUTPUT->notification(
+                    get_string('methodneutralised', 'enrol_flexaccess', implode(', ', $blocked)),
+                    \core\output\notification::NOTIFY_WARNING,
+                    false
+                ));
+            }
+        }
+
         // Lifetimes and expiry behaviour.
         $mform->addElement('header', 'flexaccess_lifecycle', get_string('settings:lifecycle', 'enrol_flexaccess'));
 
@@ -328,6 +351,64 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     }
 
     /**
+     * Course-side entry on the enrolment page for a logged-in, not-yet-enrolled user.
+     *
+     * Anonymous entry is handled by the target-aware login-page link (loginpage_idp_list ->
+     * access.php). A logged-in real user, however, is redirected straight back out by access.php,
+     * so without this hook they hit a dead end on enrol/index.php. When the effective policy offers
+     * normal login, this renders a button that enrols them through the capacity-aware service and
+     * redirects into the course.
+     *
+     * @param stdClass $instance Enrol instance.
+     * @return string HTML for the enrolment page (empty when nothing is offered).
+     */
+    public function enrol_page_hook($instance) {
+        global $USER, $OUTPUT;
+
+        if (!isloggedin() || isguestuser()) {
+            return '';
+        }
+        $courseid = (int) $instance->courseid;
+        $context = context_course::instance($courseid);
+        if (is_enrolled($context, $USER, '', true)) {
+            return '';
+        }
+        if (
+            (int) $instance->status !== ENROL_INSTANCE_ENABLED
+                || !\enrol_flexaccess\api::offers_normal_login($courseid)
+        ) {
+            return '';
+        }
+
+        if (
+            ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+                && optional_param('flexaccessenrol', 0, PARAM_BOOL) && confirm_sesskey()
+        ) {
+            $status = \enrol_flexaccess\local\enrol_service::enrol_with_capacity((int) $instance->id, (int) $USER->id);
+            if ($status === 'enrolled') {
+                redirect(new moodle_url('/course/view.php', ['id' => $courseid]));
+            }
+            $message = $status === 'full'
+                ? get_string('coursefull', 'enrol_flexaccess')
+                : get_string('access:unavailable', 'auth_flexaccess');
+            return $OUTPUT->box($OUTPUT->notification($message, \core\output\notification::NOTIFY_WARNING, false));
+        }
+
+        $button = html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'sesskey', 'value' => sesskey()]);
+        $button .= html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'flexaccessenrol', 'value' => 1]);
+        $button .= html_writer::empty_tag('input', [
+            'type' => 'submit',
+            'value' => get_string('access:enter', 'enrol_flexaccess'),
+            'class' => 'btn btn-primary',
+        ]);
+        $form = html_writer::tag('form', $button, [
+            'method' => 'post',
+            'action' => (new moodle_url('/enrol/index.php', ['id' => $courseid]))->out(false),
+        ]);
+        return $OUTPUT->box(html_writer::tag('p', get_string('access:enterintro', 'enrol_flexaccess')) . $form);
+    }
+
+    /**
      * Delete an instance and its extended FlexAccess configuration.
      *
      * @param stdClass $instance Enrol instance.
@@ -337,4 +418,15 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         instance_config::delete((int) $instance->id);
         parent::delete_instance($instance);
     }
+}
+
+/**
+ * Register plugin status checks (Site administration > Reports > Health).
+ *
+ * @return \core\check\check[]
+ */
+function enrol_flexaccess_status_checks(): array {
+    return [
+        new \enrol_flexaccess\check\coupling(),
+    ];
 }
