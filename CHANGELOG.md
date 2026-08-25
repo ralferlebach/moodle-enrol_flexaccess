@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.35 — 2026-08-25 — CI-Fix: robust gegen ältere tool-Geschwister
+- **Fatal behoben:** `get_action_icons()` rief `tool_flexaccess\local\batch::can_request()` nur mit `class_exists`-Guard auf. Da enrol nicht von tool abhängt, kann im CI ein älteres tool-Sibling ohne diese Methode installiert sein → Fatal. Jetzt zusätzlich `method_exists`-Guard.
+- Versions-Gleichschritt auf `2026082412`.
+
 ## 0.9.34 — 2026-08-25 — Neue Zugangsmethode: E-Mail-Link-Login (pro Instanz)
 - **Neue Methode `allowmagiclogin`** durch den gesamten Policy-Stack: Instanz-Formular (Zugangsmethoden), System-Vorgabe (`setting:allowmagiclogin`, Standard an), Ceiling/Widening, Kursbereichs-Richtlinie, `api::offers_magic_login()`. Neue DB-Spalten in `enrol_flexaccess_instance` und `enrol_flexaccess_policy` (Upgrade 2026082411, additiv). Damit lässt sich der E-Mail-Link-Login pro Kurs getrennt vom Passwort-Login schalten.
 - Tests: `access_entry_test::test_offers_magic_login_is_independent_of_credentials_login`.

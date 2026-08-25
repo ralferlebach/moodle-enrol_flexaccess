@@ -74,9 +74,11 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $icons[] = html_writer::span($badge, 'flexaccess-modes mr-2');
 
         // D1: entry point into the access-list manager (create or request), if tool_flexaccess is
-        // installed and the user may manage or request lists for this course.
+        // installed and recent enough to expose can_request(), and the user may manage or request
+        // lists here. method_exists guards against an out-of-step sibling version.
         if (
             class_exists(\tool_flexaccess\local\batch::class)
+                && method_exists(\tool_flexaccess\local\batch::class, 'can_request')
                 && \tool_flexaccess\local\batch::can_request($courseid)
         ) {
             $icons[] = $OUTPUT->action_icon(
