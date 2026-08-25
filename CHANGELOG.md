@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.30 — 2026-08-25 — Discoverability D1/D4
+- **D1:** Auf der Seite *Einschreibemethoden* je FlexAccess-Instanz ein Einstieg in die kurs-interne Zugangslisten-Verwaltung (`coursebatches.php`) — sichtbar für alle mit Erstell- oder Beantragungsrecht (guarded via `class_exists` gegen tool_flexaccess).
+- **D4:** Klartext-Badge je Instanz, welche Zugangswege aktiv sind (temporär/Schnellregistrierung/Gast/Login) über neues `get_action_icons()`. Neue Strings `accesslists`, `mode:*`.
+- Versions-Gleichschritt auf `2026082407`.
+
 ## 0.9.29 — 2026-08-25 — P2: PHPUnit-11-Migration (Doc-Metadaten → Attribute) + Pakete ohne .git
 - **PHPUnit 11:** Alle `@covers`-Doc-Annotationen in den Testklassen auf Attribute umgestellt (`#[CoversClass(...)]`, eine `#[CoversMethod(...)]`) — 49 Vorkommen über 46 Testdateien. Damit verschwinden die „PHPUnit Deprecations"-Meldungen (Doc-Metadaten sind ab PHPUnit 12 nicht mehr unterstützt). Alle Suiten laufen jetzt als glattes „OK".
 - **Pakete:** `.git`-Verzeichnisse aus dem Auslieferungsstand entfernt (verursachten Git-Durcheinander beim Import). `.gitignore`/`.gitattributes`/`.github` bleiben.

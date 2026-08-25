@@ -46,6 +46,48 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     }
 
     /**
+     * Action icons on the "Enrolment methods" page: a plain-text badge of the active access modes
+     * (D4) and, for anyone who may manage or request access lists, a link into the course-scoped
+     * access-list manager (D1).
+     *
+     * @param stdClass $instance Enrol instance.
+     * @return array HTML fragments.
+     */
+    public function get_action_icons(stdClass $instance) {
+        global $OUTPUT;
+        $icons = parent::get_action_icons($instance);
+        $courseid = (int) $instance->courseid;
+
+        // D4: which access modes are live, in plain language, right on the methods page.
+        $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
+        $modes = [];
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+            if ($config !== null && !empty($config->$flag)) {
+                $modes[] = get_string('mode:' . $flag, 'enrol_flexaccess');
+            }
+        }
+        $badge = html_writer::span(
+            $modes ? implode(', ', $modes) : get_string('mode:none', 'enrol_flexaccess'),
+            'badge ' . ($modes ? 'badge-info bg-info' : 'badge-secondary bg-secondary'),
+            ['title' => get_string('mode:label', 'enrol_flexaccess')]
+        );
+        $icons[] = html_writer::span($badge, 'flexaccess-modes mr-2');
+
+        // D1: entry point into the access-list manager (create or request), if tool_flexaccess is
+        // installed and the user may manage or request lists for this course.
+        if (
+            class_exists(\tool_flexaccess\local\batch::class)
+                && \tool_flexaccess\local\batch::can_request($courseid)
+        ) {
+            $icons[] = $OUTPUT->action_icon(
+                new moodle_url('/admin/tool/flexaccess/coursebatches.php', ['courseid' => $courseid]),
+                new pix_icon('i/users', get_string('accesslists', 'enrol_flexaccess'))
+            );
+        }
+        return $icons;
+    }
+
+    /**
      * Whether an instance may be added to the course.
      *
      * @param int $courseid Course ID.
