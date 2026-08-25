@@ -477,3 +477,15 @@ function enrol_flexaccess_status_checks(): array {
         new \enrol_flexaccess\check\coupling(),
     ];
 }
+
+/**
+ * Re-apply FlexAccess participant-list visibility to all courses with a FlexAccess instance.
+ *
+ * Registered as the update callback for the system-level visibility default and the widening
+ * switch, so changing either immediately reaches existing instances (no per-instance re-save).
+ *
+ * @return void
+ */
+function enrol_flexaccess_resync_participant_visibility() {
+    \enrol_flexaccess\local\participant_visibility::resync_all();
+}

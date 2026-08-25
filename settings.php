@@ -24,15 +24,23 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+// Ensure the resync callback below is defined when settings are written (post_write_settings only
+// fires callables), not just when the settings page renders.
+require_once(__DIR__ . '/lib.php');
+
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading('enrol_flexaccess/defaults', get_string('settings:defaults', 'enrol_flexaccess'), ''));
-    $settings->add(new admin_setting_configselect(
+    $visibilitysetting = new admin_setting_configselect(
         'enrol_flexaccess/participantvisibilitydefault',
         get_string('participantvisibilitydefault', 'enrol_flexaccess'),
         get_string('participantvisibilitydefault_desc', 'enrol_flexaccess'),
         'show',
         ['show' => get_string('show', 'enrol_flexaccess'), 'hide' => get_string('hide', 'enrol_flexaccess')]
-    ));
+    );
+    // Re-apply to existing courses when the default changes, so it takes effect without re-saving
+    // each instance.
+    $visibilitysetting->set_updatedcallback('enrol_flexaccess_resync_participant_visibility');
+    $settings->add($visibilitysetting);
     // System-wide default ceiling for the access methods. Instances (and categories) may only
     // narrow this ceiling unless "allowwidening" is enabled below. Without an explicit ceiling the
     // anonymous methods stay off, so an instance checkbox alone has no effect - these settings are
@@ -45,12 +53,14 @@ if ($ADMIN->fulltree) {
             $default
         ));
     }
-    $settings->add(new admin_setting_configcheckbox(
+    $wideningsetting = new admin_setting_configcheckbox(
         'enrol_flexaccess/allowwidening',
         get_string('allowwidening', 'enrol_flexaccess'),
         get_string('allowwidening_desc', 'enrol_flexaccess'),
         0
-    ));
+    );
+    $wideningsetting->set_updatedcallback('enrol_flexaccess_resync_participant_visibility');
+    $settings->add($wideningsetting);
     $settings->add(new admin_setting_heading(
         'enrol_flexaccess/accesskey',
         get_string('settings:accesskey', 'enrol_flexaccess'),

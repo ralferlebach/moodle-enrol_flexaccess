@@ -78,4 +78,43 @@ final class participant_visibility_test extends \advanced_testcase {
         // A real student (not on the FlexAccess role) still sees participants.
         $this->assertTrue(has_capability('moodle/course:viewparticipants', $context, $student));
     }
+
+    /**
+     * Changing the system-level default must reach an existing instance without a re-save: a visitor
+     * enrolled while the default was "show" must lose roster access after it flips to "hide".
+     *
+     * @return void
+     */
+    public function test_system_default_change_resyncs_existing_instance(): void {
+        $this->resetAfterTest();
+        set_config('participantvisibilitydefault', 'show', 'enrol_flexaccess');
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \enrol_flexaccess_plugin $plugin */
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance($course, [
+            'status' => ENROL_INSTANCE_ENABLED,
+            'allowtemporary' => 1,
+            'participantvisibility' => 'inherit',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        \enrol_flexaccess\local\enrol_service::enrol_with_capacity((int) $enrolid, (int) $user->id);
+        $context = \context_course::instance((int) $course->id);
+
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertTrue(
+            has_capability('moodle/course:viewparticipants', $context, $user),
+            'Baseline: visible while the default is show.'
+        );
+
+        // Flip the system default only, then resync (as the settings update callback does).
+        set_config('participantvisibilitydefault', 'hide', 'enrol_flexaccess');
+        participant_visibility::resync_all();
+
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertFalse(
+            has_capability('moodle/course:viewparticipants', $context, $user),
+            'The system default change must reach the existing instance.'
+        );
+        $this->assertFalse(has_capability('moodle/course:enrolreview', $context, $user));
+    }
 }

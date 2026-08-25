@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.33 — 2026-08-25 — Fix: Teilnehmerlisten-Sichtbarkeit für temporäre Besucher
+- **Bug behoben (reproduziert):** Wurde die System-Vorgabe „Teilnehmerlisten-Zugriff" auf „Ausblenden" gestellt, nachdem eine Kurs-Instanz bereits existierte (Instanz auf „erben"), wirkte die Sperre nicht — der CAP_PREVENT-Override wurde nur beim Instanz-Speichern gesetzt. Temporäre Besucher konnten die Teilnehmerliste weiterhin sehen.
+- **Fix 1 (Settings-Callback):** Änderung von `participantvisibilitydefault` oder `allowwidening` synchronisiert jetzt **alle** FlexAccess-Kurse (`participant_visibility::resync_all()`), ohne dass jede Instanz neu gespeichert werden muss. `settings.php` lädt `lib.php`, damit der Callback beim Speichern auch wirklich callable ist.
+- **Fix 2 (Enrol-Zeit-Sync):** Bei jeder Einschreibung eines FlexAccess-Besuchers wird die Sichtbarkeit an die aktuelle effektive Policy angeglichen (Selbstheilung für neue Zutritte).
+- Test `participant_visibility_test::test_system_default_change_resyncs_existing_instance`.
+- Versions-Gleichschritt auf `2026082410`.
+
 ## 0.9.32 — 2026-08-25 — Versions-Gleichschritt (D3 im auth) + Behat angepasst
 - Keine Produktivcode-Änderung. Behat-Szenario an den neuen Inline-Login angepasst (Feld „Username" statt Link „Already have an account? Log in"). Versions-Gleichschritt auf `2026082409`.
 
