@@ -115,6 +115,19 @@ final class api {
     }
 
     /**
+     * Whether the course offers the email-link (magic) login as a FlexAccess entry method.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    public static function offers_magic_login(int $courseid): bool {
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        return self::get_effective_policy($courseid)->allowmagiclogin;
+    }
+
+    /**
      * Whether the course currently offers quick registration.
      *
      * @param int $courseid Course id.

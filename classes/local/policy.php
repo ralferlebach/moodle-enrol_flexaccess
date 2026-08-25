@@ -34,6 +34,8 @@ final class policy {
     /** @var bool */ public bool $allowquick = false;
     /** @var bool */ public bool $allowguest = false;
     /** @var bool */ public bool $allownormallogin = true;
+
+    /** @var bool */ public bool $allowmagiclogin = true;
     /** @var int */ public int $temporarylifetime = 21600;
     /** @var int */ public int $provisionallifetime = 172800;
     /** @var string */ public string $participantvisibility = 'show';

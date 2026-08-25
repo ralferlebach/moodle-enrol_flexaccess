@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.34 — 2026-08-25 — Neue Zugangsmethode: E-Mail-Link-Login (pro Instanz)
+- **Neue Methode `allowmagiclogin`** durch den gesamten Policy-Stack: Instanz-Formular (Zugangsmethoden), System-Vorgabe (`setting:allowmagiclogin`, Standard an), Ceiling/Widening, Kursbereichs-Richtlinie, `api::offers_magic_login()`. Neue DB-Spalten in `enrol_flexaccess_instance` und `enrol_flexaccess_policy` (Upgrade 2026082411, additiv). Damit lässt sich der E-Mail-Link-Login pro Kurs getrennt vom Passwort-Login schalten.
+- Tests: `access_entry_test::test_offers_magic_login_is_independent_of_credentials_login`.
+- Versions-Gleichschritt auf `2026082411`.
+
 ## 0.9.33 — 2026-08-25 — Fix: Teilnehmerlisten-Sichtbarkeit für temporäre Besucher
 - **Bug behoben (reproduziert):** Wurde die System-Vorgabe „Teilnehmerlisten-Zugriff" auf „Ausblenden" gestellt, nachdem eine Kurs-Instanz bereits existierte (Instanz auf „erben"), wirkte die Sperre nicht — der CAP_PREVENT-Override wurde nur beim Instanz-Speichern gesetzt. Temporäre Besucher konnten die Teilnehmerliste weiterhin sehen.
 - **Fix 1 (Settings-Callback):** Änderung von `participantvisibilitydefault` oder `allowwidening` synchronisiert jetzt **alle** FlexAccess-Kurse (`participant_visibility::resync_all()`), ohne dass jede Instanz neu gespeichert werden muss. `settings.php` lädt `lib.php`, damit der Callback beim Speichern auch wirklich callable ist.

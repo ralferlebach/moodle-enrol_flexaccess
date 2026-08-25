@@ -68,6 +68,7 @@ final class instance_config {
         $allowquick = !empty($data['allowquick']) ? 1 : 0;
         $allowguest = !empty($data['allowguest']) ? 1 : 0;
         $allownormallogin = isset($data['allownormallogin']) ? (!empty($data['allownormallogin']) ? 1 : 0) : 1;
+        $allowmagiclogin = isset($data['allowmagiclogin']) ? (!empty($data['allowmagiclogin']) ? 1 : 0) : 1;
         $temporarylifetime = max(0, (int) ($data['temporarylifetime'] ?? 0));
         $enrolperiod = max(0, (int) ($data['enrolperiod'] ?? 0));
         $expiryactionraw = (string) ($data['expiryaction'] ?? 'suspend');
@@ -88,6 +89,7 @@ final class instance_config {
             'allowquick' => $allowquick,
             'allowguest' => $allowguest,
             'allownormallogin' => $allownormallogin,
+            'allowmagiclogin' => $allowmagiclogin,
             'expiryaction' => $expiryaction,
             'enrolperiod' => $enrolperiod,
             'temporaryaccesskeymode' => $keymode,

@@ -60,7 +60,7 @@ final class policy_assembler {
         // System-wide default ceiling for the four access methods. When a setting is unconfigured
         // (get_config returns false) the class default on the policy object is kept, so behaviour is
         // unchanged on sites that never touched these settings.
-        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
             $value = get_config('enrol_flexaccess', $flag);
             if ($value !== false) {
                 $p->$flag = (bool) $value;
@@ -152,6 +152,11 @@ final class policy_assembler {
             self::flag((int) $row->allownormallogin),
             $allowwidening
         );
+        $p->allowmagiclogin = policy_resolver::merge_permission(
+            $p->allowmagiclogin,
+            self::flag((int) $row->allowmagiclogin),
+            $allowwidening
+        );
         if ($row->temporarylifetime !== null) {
             $p->temporarylifetime = (int) $row->temporarylifetime;
         }
@@ -179,6 +184,11 @@ final class policy_assembler {
         $p->allownormallogin = policy_resolver::merge_permission(
             $p->allownormallogin,
             (bool) $flex->allownormallogin,
+            $allowwidening
+        );
+        $p->allowmagiclogin = policy_resolver::merge_permission(
+            $p->allowmagiclogin,
+            (bool) $flex->allowmagiclogin,
             $allowwidening
         );
         $p->temporarylifetime = (int) $flex->temporarylifetime;

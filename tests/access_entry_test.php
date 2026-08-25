@@ -91,6 +91,20 @@ final class access_entry_test extends \advanced_testcase {
         $this->assertFalse(api::offers_normal_login((int) $bare->id));
     }
 
+    public function test_offers_magic_login_is_independent_of_credentials_login(): void {
+        $this->resetAfterTest();
+
+        // Email-link login on, credentials login off: only the magic method is offered.
+        [$magic] = $this->course_with_instance(['allowmagiclogin' => 1, 'allownormallogin' => 0]);
+        $this->assertTrue(api::offers_magic_login((int) $magic->id));
+        $this->assertFalse(api::offers_normal_login((int) $magic->id));
+
+        // Email-link login off, credentials login on: the reverse.
+        [$creds] = $this->course_with_instance(['allowmagiclogin' => 0, 'allownormallogin' => 1]);
+        $this->assertFalse(api::offers_magic_login((int) $creds->id));
+        $this->assertTrue(api::offers_normal_login((int) $creds->id));
+    }
+
     /**
      * A closed access window suppresses anonymous entry even with a method enabled.
      *

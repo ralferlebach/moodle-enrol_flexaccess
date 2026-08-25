@@ -45,7 +45,14 @@ if ($ADMIN->fulltree) {
     // narrow this ceiling unless "allowwidening" is enabled below. Without an explicit ceiling the
     // anonymous methods stay off, so an instance checkbox alone has no effect - these settings are
     // the site-level lever that makes those checkboxes take effect.
-    foreach (['allowtemporary' => 0, 'allowquick' => 0, 'allowguest' => 0, 'allownormallogin' => 1] as $flag => $default) {
+    $methoddefaults = [
+        'allowtemporary' => 0,
+        'allowquick' => 0,
+        'allowguest' => 0,
+        'allownormallogin' => 1,
+        'allowmagiclogin' => 1,
+    ];
+    foreach ($methoddefaults as $flag => $default) {
         $settings->add(new admin_setting_configcheckbox(
             'enrol_flexaccess/' . $flag,
             get_string('setting:' . $flag, 'enrol_flexaccess'),

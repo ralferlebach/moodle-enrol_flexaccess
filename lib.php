@@ -61,7 +61,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         // D4: which access modes are live, in plain language, right on the methods page.
         $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
         $modes = [];
-        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
             if ($config !== null && !empty($config->$flag)) {
                 $modes[] = get_string('mode:' . $flag, 'enrol_flexaccess');
             }
@@ -235,7 +235,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         // Access methods offered by this instance.
         $mform->addElement('header', 'flexaccess_methods', get_string('settings:methods', 'enrol_flexaccess'));
 
-        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
             $mform->addElement('advcheckbox', $flag, get_string($flag, 'enrol_flexaccess'));
             $mform->addHelpButton($flag, $flag, 'enrol_flexaccess');
         }
@@ -250,7 +250,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             $ceiling = \enrol_flexaccess\local\policy_assembler::ceiling($courseid);
             $config = \enrol_flexaccess\local\instance_config::load((int) ($instance->id ?? 0));
             $blocked = [];
-            foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
+            foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
                 // Only warn about methods this instance actually asks for (saved on) that the higher
                 // level forbids - i.e. a real, silent override. Methods the instance leaves off are
                 // simply unavailable and need no warning.
@@ -338,7 +338,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
             if ($config) {
                 foreach (
-                    ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin',
+                    ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin',
                         'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
                         'participantvisibility', 'quickreggatemode', 'quickreggatedomains'] as $field
                 ) {

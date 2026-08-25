@@ -12,6 +12,7 @@
         <FIELD NAME="allowquick" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="allowguest" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
         <FIELD NAME="allownormallogin" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="allowmagiclogin" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
         <FIELD NAME="temporarylifetime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="21600" SEQUENCE="false"/>
         <FIELD NAME="provisionallifetime" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="172800" SEQUENCE="false"/>
         <FIELD NAME="enrolperiod" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
@@ -43,6 +44,7 @@
         <FIELD NAME="allowquick" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
         <FIELD NAME="allowguest" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
         <FIELD NAME="allownormallogin" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
+        <FIELD NAME="allowmagiclogin" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
         <FIELD NAME="temporarylifetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="provisionallifetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="participantvisibility" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>

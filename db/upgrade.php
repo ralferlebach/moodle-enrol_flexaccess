@@ -170,5 +170,27 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         upgrade_plugin_savepoint(true, 2026081910, 'enrol', 'flexaccess');
     }
 
+    if ($oldversion < 2026082411) {
+        $dbman = $DB->get_manager();
+        // Independent email-link (magic) login as a per-instance access method.
+        foreach (['enrol_flexaccess_instance' => 1, 'enrol_flexaccess_policy' => -1] as $tablename => $default) {
+            $table = new xmldb_table($tablename);
+            $length = ($tablename === 'enrol_flexaccess_policy') ? '2' : '1';
+            $field = new xmldb_field(
+                'allowmagiclogin',
+                XMLDB_TYPE_INTEGER,
+                $length,
+                null,
+                XMLDB_NOTNULL,
+                null,
+                (string) $default,
+                'allownormallogin'
+            );
+            if (!$dbman->field_exists($table, $field)) {
+                $dbman->add_field($table, $field);
+            }
+        }
+        upgrade_plugin_savepoint(true, 2026082411, 'enrol', 'flexaccess');
+    }
     return true;
 }
