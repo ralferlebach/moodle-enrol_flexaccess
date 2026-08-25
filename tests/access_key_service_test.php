@@ -24,12 +24,14 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
+
 /**
  * Access-key service tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\access_key_service
  */
+#[CoversClass(\enrol_flexaccess\local\access_key_service::class)]
 final class access_key_service_test extends \advanced_testcase {
     /**
      * Verify matching and non-matching candidates.

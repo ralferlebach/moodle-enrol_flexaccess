@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\instance_config;
 
 /**
@@ -24,8 +25,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\api
  */
+#[CoversClass(\enrol_flexaccess\api::class)]
 final class access_entry_test extends \advanced_testcase {
     /**
      * Create a course with an enabled FlexAccess instance and return [course, enrolid].

@@ -24,6 +24,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\access_gate;
 use enrol_flexaccess\local\policy;
 
@@ -31,8 +32,8 @@ use enrol_flexaccess\local\policy;
  * Access-gate tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\access_gate
  */
+#[CoversClass(\enrol_flexaccess\local\access_gate::class)]
 final class access_gate_test extends \advanced_testcase {
     /**
      * Build a policy enabling all methods with the given window/capacity.

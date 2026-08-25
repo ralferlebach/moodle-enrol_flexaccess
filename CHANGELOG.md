@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.29 — 2026-08-25 — P2: PHPUnit-11-Migration (Doc-Metadaten → Attribute) + Pakete ohne .git
+- **PHPUnit 11:** Alle `@covers`-Doc-Annotationen in den Testklassen auf Attribute umgestellt (`#[CoversClass(...)]`, eine `#[CoversMethod(...)]`) — 49 Vorkommen über 46 Testdateien. Damit verschwinden die „PHPUnit Deprecations"-Meldungen (Doc-Metadaten sind ab PHPUnit 12 nicht mehr unterstützt). Alle Suiten laufen jetzt als glattes „OK".
+- **Pakete:** `.git`-Verzeichnisse aus dem Auslieferungsstand entfernt (verursachten Git-Durcheinander beim Import). `.gitignore`/`.gitattributes`/`.github` bleiben.
+- Kein Produktivcode geändert; Versions-Gleichschritt auf `2026082406`.
+
 ## 0.9.28 — 2026-08-25 — Versions-Gleichschritt (P1 T2 im tool, P2 Login im auth)
 - Keine Codeänderung in diesem Plugin. Siehe tool_flexaccess (T2: kurs-interne Zugangslisten) und auth_flexaccess (L5/L6: Login-Einstieg).
 - Versions-Gleichschritt auf `2026082405`.

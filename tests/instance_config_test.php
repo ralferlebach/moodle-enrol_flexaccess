@@ -24,14 +24,15 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\instance_config;
 
 /**
  * Instance-config persistence tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\instance_config
  */
+#[CoversClass(\enrol_flexaccess\local\instance_config::class)]
 final class instance_config_test extends \advanced_testcase {
     /**
      * Adding an instance persists the access window and capacity; delete removes it.

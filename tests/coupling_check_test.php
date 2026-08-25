@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use core\check\result;
 use enrol_flexaccess\check\coupling;
 
@@ -25,8 +26,8 @@ use enrol_flexaccess\check\coupling;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\check\coupling
  */
+#[CoversClass(\enrol_flexaccess\check\coupling::class)]
 final class coupling_check_test extends \advanced_testcase {
     /**
      * Set the site enable state of the auth and enrol FlexAccess plugins.

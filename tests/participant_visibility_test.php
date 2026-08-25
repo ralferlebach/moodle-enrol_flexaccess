@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\participant_role;
 use enrol_flexaccess\local\participant_visibility;
 
@@ -25,8 +26,8 @@ use enrol_flexaccess\local\participant_visibility;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\local\participant_visibility
  */
+#[CoversClass(\enrol_flexaccess\local\participant_visibility::class)]
 final class participant_visibility_test extends \advanced_testcase {
     /**
      * Hiding prevents a FlexAccess participant from viewing the roster; showing restores it.

@@ -24,14 +24,15 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\capacity_service;
 
 /**
  * Capacity service tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\capacity_service
  */
+#[CoversClass(\enrol_flexaccess\local\capacity_service::class)]
 final class capacity_service_test extends \advanced_testcase {
     /**
      * The pure predicate treats 0/negative maximum as unlimited.

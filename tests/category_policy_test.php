@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\category_policy;
 
 /**
@@ -24,8 +25,8 @@ use enrol_flexaccess\local\category_policy;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\local\category_policy
  */
+#[CoversClass(\enrol_flexaccess\local\category_policy::class)]
 final class category_policy_test extends \advanced_testcase {
     /**
      * Saving an override persists it and it folds into the effective policy of a course in that category.
