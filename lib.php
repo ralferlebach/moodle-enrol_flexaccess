@@ -248,9 +248,14 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             : (int) ($instance->courseid ?? 0);
         if ($courseid > 0 && !\enrol_flexaccess\local\policy_assembler::allow_widening()) {
             $ceiling = \enrol_flexaccess\local\policy_assembler::ceiling($courseid);
+            $config = \enrol_flexaccess\local\instance_config::load((int) ($instance->id ?? 0));
             $blocked = [];
             foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin'] as $flag) {
-                if (!$ceiling->$flag) {
+                // Only warn about methods this instance actually asks for (saved on) that the higher
+                // level forbids - i.e. a real, silent override. Methods the instance leaves off are
+                // simply unavailable and need no warning.
+                $wanted = $config !== null ? !empty($config->$flag) : ($flag === 'allownormallogin');
+                if ($wanted && !$ceiling->$flag) {
                     $blocked[] = get_string($flag, 'enrol_flexaccess');
                 }
             }

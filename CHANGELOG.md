@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.9.31 — 2026-08-25 — UX: Warnung „Zugangsmethode neutralisiert" präzisiert
+- Die Instanz-Warnung erscheint jetzt **nur noch für Methoden, die die Instanz tatsächlich aktiviert hat** und die eine höhere Ebene blockiert (echter, stiller Override) — nicht mehr für ohnehin nicht gewählte Methoden. Das beseitigt irritierende Warnungen zu z. B. Gastzugang, den man gar nicht nutzen wollte.
+- Meldung `methodneutralised` handlungsleitend umformuliert: nennt Ursache (systemweite/Kursbereichs-Vorgabe), Ort (*Website-Administration → Plugins → Einschreibung → FlexAccess* bzw. Kursbereichs-Richtlinie) und Abhilfe (Methode oder „Aufweiten durch untere Ebenen erlauben" aktivieren).
+- Versions-Gleichschritt auf `2026082408`.
+
 ## 0.9.30 — 2026-08-25 — Discoverability D1/D4
 - **D1:** Auf der Seite *Einschreibemethoden* je FlexAccess-Instanz ein Einstieg in die kurs-interne Zugangslisten-Verwaltung (`coursebatches.php`) — sichtbar für alle mit Erstell- oder Beantragungsrecht (guarded via `class_exists` gegen tool_flexaccess).
 - **D4:** Klartext-Badge je Instanz, welche Zugangswege aktiv sind (temporär/Schnellregistrierung/Gast/Login) über neues `get_action_icons()`. Neue Strings `accesslists`, `mode:*`.
