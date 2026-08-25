@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.28 — 2026-08-25 — Versions-Gleichschritt (P1 T2 im tool, P2 Login im auth)
+- Keine Codeänderung in diesem Plugin. Siehe tool_flexaccess (T2: kurs-interne Zugangslisten) und auth_flexaccess (L5/L6: Login-Einstieg).
+- Versions-Gleichschritt auf `2026082405`.
+
 ## 0.9.27 — 2026-08-24 — CI-Fix: fehlerhafte Workflow-Ausdrücke (${ } → ${{ }})
 - **Fix:** Im `lint-jsamd`-Job standen GitHub-Actions-Ausdrücke mit einfachen Klammern (`${ always() }`, `${ runner.os }` …) — GitHub lehnte die Datei als „Invalid workflow file" ab. Alle betroffenen Ausdrücke auf `${{ … }}` korrigiert (Ursache: doppelte Klammer-Kollabierung bei der Generierung).
 - **Neu im Prüf-Setup:** `actionlint` validiert nun alle Workflows lokal (0 Findings) — fängt genau solche Ausdruck-/Kontextfehler wie GitHub selbst.
