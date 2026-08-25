@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.37 — 2026-08-25 — CI: Dev-Pipeline zieht Geschwister aus develop
+- Die **Dev-Pipeline** (`moodle-plugin-ci-dev.yml`) holt die Geschwister-Plugins jetzt per `add-plugin … --branch develop` aus dem **develop-Branch** statt aus `main`. Damit testet die beschleunigte Pipeline den echten Entwicklungsstand aller vier Plugins gemeinsam — kein Skew mehr durch hinterherhängendes `main`. Die **Main-Pipeline** zieht weiterhin aus `main` (Release-Stand).
+- Versions-Gleichschritt auf `2026082414`.
+
+## 0.9.36 — 2026-08-25 — CI-Fix: Ökosystem-Behat von auth-Markup entkoppelt
+- **Behat-Fail behoben (Skew):** Das Szenario „entry page offers guest access and normal login" prüfte mit `I should see "Username"` das **Login-Markup der auth-`access.php`**. Zog das enrol-CI ein älteres auth-Geschwister (mit der alten Link-Variante „Already have an account? Log in"), schlug die Assertion fehl. Das Szenario prüft jetzt nur noch den (versionsstabilen) Gast-Zugang und den Integrations-Fluss; der Login-Flow ist weiterhin über das Site-Login-Szenario abgedeckt.
+- Versions-Gleichschritt auf `2026082413`.
+
 ## 0.9.35 — 2026-08-25 — CI-Fix: robust gegen ältere tool-Geschwister
 - **Fatal behoben:** `get_action_icons()` rief `tool_flexaccess\local\batch::can_request()` nur mit `class_exists`-Guard auf. Da enrol nicht von tool abhängt, kann im CI ein älteres tool-Sibling ohne diese Methode installiert sein → Fatal. Jetzt zusätzlich `method_exists`-Guard.
 - Versions-Gleichschritt auf `2026082412`.

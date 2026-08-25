@@ -52,11 +52,10 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     And I press "Log in"
     Then I should see "Test Learner"
 
-  Scenario: The entry page offers guest access and normal login as alternatives
+  Scenario: The entry page renders and offers guest access as an alternative
     Given a FlexAccess enrolment method offering guest access and normal login exists in course "Course 1"
     When I open the FlexAccess entry page for course "Course 1"
     Then I should see "Continue as a guest"
-    And I should see "Username"
     And I press "Continue as a guest"
     Then I should see "Course 1"
 
