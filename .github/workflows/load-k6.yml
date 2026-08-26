@@ -1,15 +1,8 @@
-name: Load test (JMeter)
+name: Load test (k6)
 
-# Read-endpoint load test (AP6). Manual only. Two modes:
-#
-#   mode=selfcontained (default) — the job builds a fresh Moodle, installs the
-#     plugin, seeds a large map and load-tests its own localhost. Nothing has to
-#     be entered; no token is exposed.
-#
-#   mode=external — load-test a Moodle you already run and seeded. Enter its
-#     base_url, workspaceid and cmid below; the REST token is NOT an input, it is
-#     read from the repository secret FLEXACCESS_LOAD_TOKEN so it never appears in
-#     the run log.
+# Read-endpoint load test (AP6) - k6 twin of load-jmeter.yml. Manual only.
+#   selfcontained (default): build a fresh Moodle + FlexAccess siblings, seed and load-test here.
+#   external: point at a Moodle you already run and seeded (enter base_url + courseid).
 on:
   workflow_dispatch:
     inputs:
@@ -19,32 +12,24 @@ on:
         options: [selfcontained, external]
         default: selfcontained
         required: true
-      threads:
-        description: Concurrent virtual users (plateau)
-        default: '25'
+      base_url:
+        description: '[external mode] Base URL of your seeded Moodle'
         required: false
-      rampup:
-        description: Ramp-up seconds
-        default: '10'
+      courseid:
+        description: '[external mode] Course id of a FlexAccess course offering anonymous entry'
+        required: false
+      vus:
+        description: Concurrent virtual users
+        default: '25'
         required: false
       duration:
         description: Plateau duration seconds
         default: '90'
         required: false
-      base_url:
-        description: '[external mode] Base URL of your seeded Moodle'
-        required: false
-      workspaceid:
-        description: '[external mode] Seeded workspace id (large profile)'
-        required: false
-      cmid:
-        description: '[external mode] Course-module id of the activity'
-        required: false
 
 jobs:
-  jmeter:
+  k6:
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:16
@@ -67,7 +52,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: plugin
-
       - name: Set up PHP
         if: ${{ github.event.inputs.mode == 'selfcontained' }}
         uses: shivammathur/setup-php@v2
@@ -75,7 +59,6 @@ jobs:
           php-version: '8.2'
           extensions: pgsql, gd, intl, zip, soap, mbstring, curl, xml, exif
           ini-values: max_input_vars=5000
-
       - name: Build, install and seed a self-contained site
         id: selfcontained
         if: ${{ github.event.inputs.mode == 'selfcontained' }}
@@ -97,8 +80,6 @@ jobs:
             cp -a "/tmp/sib_${sib}" "moodle/${dest}"
             rm -rf "moodle/${dest}/.git"
           done
-          # install.php writes config.php itself and needs an existing dataroot
-          # that lives outside the code tree.
           mkdir -p /tmp/moodledata
           cd moodle
           php admin/cli/install.php \
@@ -108,85 +89,51 @@ jobs:
             --wwwroot="$MOODLE_WWWROOT" --dataroot=/tmp/moodledata \
             --fullname="CI" --shortname="CI" \
             --adminpass="Admin!23" --adminemail=ci@example.invalid
-          # Serve with multiple workers so parallel REST calls don't serialise.
-          PHP_CLI_SERVER_WORKERS=8 php -S localhost:8000 -t . \
-            >/tmp/moodle-server.log 2>&1 &
+          # Serve with multiple workers so parallel requests don't serialise.
+          PHP_CLI_SERVER_WORKERS=8 php -S localhost:8000 -t . >/tmp/moodle-server.log 2>&1 &
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
               http://localhost:8000/login/index.php || true)
             [ "$code" = "200" ] && break
             sleep 3
           done
-          # seed_large.php prints "export KEY='value'" lines; expose the ones
-          # the JMeter plan needs as step outputs.
+          # seed_large.php prints "export KEY='value'" lines (BASE_URL, COURSEID, INSTANCEID);
+          # expose the ones the load plan needs as step outputs.
           php enrol/flexaccess/tests/load/seed_large.php > /tmp/seed.env
           get() { sed -n "s/^export $1='\(.*\)'$/\1/p" /tmp/seed.env; }
           {
             echo "base_url=$(get BASE_URL)"
-            echo "token=$(get TOKEN)"
-            echo "workspaceid=$(get WORKSPACEID)"
-            echo "cmid=$(get CMID)"
+            echo "courseid=$(get COURSEID)"
           } >> "$GITHUB_OUTPUT"
-
       - name: Resolve run parameters
         id: params
-        env:
-          # In external mode the token comes from a secret, never an input.
-          EXT_TOKEN: ${{ secrets.FLEXACCESS_LOAD_TOKEN }}
         run: |
           if [ "${{ github.event.inputs.mode }}" = "external" ]; then
-            if [ -z "$EXT_TOKEN" ]; then
-              echo "::error::external mode needs the repository secret FLEXACCESS_LOAD_TOKEN"
-              exit 1
-            fi
             echo "base_url=${{ github.event.inputs.base_url }}" >> "$GITHUB_OUTPUT"
-            echo "workspaceid=${{ github.event.inputs.workspaceid }}" >> "$GITHUB_OUTPUT"
-            echo "cmid=${{ github.event.inputs.cmid }}" >> "$GITHUB_OUTPUT"
-            echo "::add-mask::$EXT_TOKEN"
-            echo "token=$EXT_TOKEN" >> "$GITHUB_OUTPUT"
+            echo "courseid=${{ github.event.inputs.courseid }}" >> "$GITHUB_OUTPUT"
           else
-            echo "::add-mask::${{ steps.selfcontained.outputs.token }}"
             echo "base_url=${{ steps.selfcontained.outputs.base_url }}" >> "$GITHUB_OUTPUT"
-            echo "token=${{ steps.selfcontained.outputs.token }}" >> "$GITHUB_OUTPUT"
-            echo "workspaceid=${{ steps.selfcontained.outputs.workspaceid }}" >> "$GITHUB_OUTPUT"
-            echo "cmid=${{ steps.selfcontained.outputs.cmid }}" >> "$GITHUB_OUTPUT"
+            echo "courseid=${{ steps.selfcontained.outputs.courseid }}" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Set up JMeter
-        run: |
-          # Supply-chain hardening: verify the download against Apache's published SHA-512 before
-          # extracting, so a corrupted or truncated download is rejected. For protection against a
-          # compromised mirror, pin KNOWN_SHA512 below to a value verified out-of-band and compare
-          # against it instead of (or in addition to) the fetched checksum.
-          curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz -o jmeter.tgz
-          curl -sSL https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512 \
-            || curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512
-          echo "$(cat jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
-          tar xzf jmeter.tgz
-
-      # A plateau run: threads ramp up, then stay concurrently active for
-      # `duration` seconds (scheduler + continue_forever in the plan), instead of
-      # a fixed small loop count where early threads finish before the last start.
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
       - name: Run load plan
         run: |
-          apache-jmeter-5.6.3/bin/jmeter -n \
-            -t plugin/tests/load/flexaccess-read-endpoints.jmx \
-            -Jbase_url='${{ steps.params.outputs.base_url }}' \
-            -Jtoken='${{ steps.params.outputs.token }}' \
-            -Jthreads='${{ github.event.inputs.threads }}' \
-            -Jrampup='${{ github.event.inputs.rampup }}' \
-            -Jduration='${{ github.event.inputs.duration }}' \
-            -l results.jtl
-
+          k6 run \
+            -e BASE_URL='${{ steps.params.outputs.base_url }}' \
+            -e COURSEID='${{ steps.params.outputs.courseid }}' \
+            -e VUS='${{ github.event.inputs.vus }}' \
+            -e DURATION='${{ github.event.inputs.duration }}s' \
+            --summary-export=k6-summary.json \
+            plugin/tests/load/flexaccess-read-endpoints.js
       - name: Show Moodle server log on failure
         if: failure() && github.event.inputs.mode == 'selfcontained'
         run: tail -100 /tmp/moodle-server.log || true
-
       - name: Upload results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: jmeter-results
-          path: results.jtl
+          name: k6-summary
+          path: k6-summary.json
           retention-days: 7
           if-no-files-found: ignore

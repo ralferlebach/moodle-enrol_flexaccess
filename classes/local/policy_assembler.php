@@ -36,14 +36,39 @@ namespace enrol_flexaccess\local;
  */
 final class policy_assembler {
     /**
+     * Resolve the policy ceiling above the instance: system defaults merged with any category
+     * overrides, but without applying the course's own enrol instance. A method that is false in the
+     * ceiling while widening is disabled cannot be re-enabled by an instance checkbox, so the edit
+     * form uses this to warn the teacher that such a checkbox has no effect.
+     *
+     * @param int $courseid Course id.
+     * @return policy The effective ceiling policy (system + categories).
+     */
+    public static function ceiling(int $courseid): policy {
+        $p = self::system_policy();
+        return self::apply_categories($p, $courseid, self::allow_widening());
+    }
+
+    /**
      * Read the system-default policy from plugin configuration.
      *
      * @return policy
      */
     public static function system_policy(): policy {
         $p = new policy();
-        $vis = get_config('enrol_flexaccess', 'participantvisibilitydefault');
-        $p->participantvisibility = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
+
+        // System-wide default ceiling for the four access methods. When a setting is unconfigured
+        // (get_config returns false) the class default on the policy object is kept, so behaviour is
+        // unchanged on sites that never touched these settings.
+        foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
+            $value = get_config('enrol_flexaccess', $flag);
+            if ($value !== false) {
+                $p->$flag = (bool) $value;
+            }
+        }
+
+        $vis = get_config('enrol_flexaccess', 'participantlistaccessdefault');
+        $p->participantlistaccess = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
         $p->temporaryaccesskeyrequired = (bool) get_config('enrol_flexaccess', 'temporaryaccesskeyrequired');
 
         $gatemode = (string) get_config('enrol_flexaccess', 'quickreggatemode');
@@ -127,14 +152,19 @@ final class policy_assembler {
             self::flag((int) $row->allownormallogin),
             $allowwidening
         );
+        $p->allowmagiclogin = policy_resolver::merge_permission(
+            $p->allowmagiclogin,
+            self::flag((int) $row->allowmagiclogin),
+            $allowwidening
+        );
         if ($row->temporarylifetime !== null) {
             $p->temporarylifetime = (int) $row->temporarylifetime;
         }
         if ($row->provisionallifetime !== null) {
             $p->provisionallifetime = (int) $row->provisionallifetime;
         }
-        if (in_array($row->participantvisibility, ['show', 'hide'], true)) {
-            $p->participantvisibility = $row->participantvisibility;
+        if (in_array($row->participantlistaccess, ['show', 'hide'], true)) {
+            $p->participantlistaccess = $row->participantlistaccess;
         }
         return $p;
     }
@@ -156,14 +186,19 @@ final class policy_assembler {
             (bool) $flex->allownormallogin,
             $allowwidening
         );
+        $p->allowmagiclogin = policy_resolver::merge_permission(
+            $p->allowmagiclogin,
+            (bool) $flex->allowmagiclogin,
+            $allowwidening
+        );
         $p->temporarylifetime = (int) $flex->temporarylifetime;
         $p->provisionallifetime = (int) $flex->provisionallifetime;
         $p->availablefrom = (int) $flex->availablefrom;
         $p->availableuntil = (int) $flex->availableuntil;
         $p->maxparticipants = (int) $flex->maxparticipants;
-        $p->participantvisibility = policy_resolver::participant_visibility(
-            in_array($p->participantvisibility, ['show', 'hide'], true) ? $p->participantvisibility : 'show',
-            in_array($flex->participantvisibility, ['inherit', 'show', 'hide'], true) ? $flex->participantvisibility : 'inherit'
+        $p->participantlistaccess = policy_resolver::participant_list_access(
+            in_array($p->participantlistaccess, ['show', 'hide'], true) ? $p->participantlistaccess : 'show',
+            in_array($flex->participantlistaccess, ['inherit', 'show', 'hide'], true) ? $flex->participantlistaccess : 'inherit'
         );
         $mode = in_array($flex->temporaryaccesskeymode, ['inherit', 'course'], true) ? $flex->temporaryaccesskeymode : 'inherit';
         $p->temporaryaccesskeyscope = policy_resolver::temporary_access_key_scope($p->temporaryaccesskeyrequired, $mode);

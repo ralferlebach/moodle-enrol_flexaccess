@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\instance_config;
 
 /**
@@ -24,8 +25,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\api
  */
+#[CoversClass(\enrol_flexaccess\api::class)]
 final class access_entry_test extends \advanced_testcase {
     /**
      * Create a course with an enabled FlexAccess instance and return [course, enrolid].
@@ -79,15 +80,35 @@ final class access_entry_test extends \advanced_testcase {
         $this->assertTrue(api::offers_normal_login((int) $default->id));
         $this->assertFalse(api::offers_guest_access((int) $default->id));
 
-        // Guest enabled: offered. Normal login disabled: not offered.
+        // Guest enabled in policy but NO core guest enrolment in the course: not offered, because
+        // "enter as guest" would fail at the course.
         [$guest] = $this->course_with_instance(['allowguest' => 1, 'allownormallogin' => 0]);
-        $this->assertTrue(api::offers_guest_access((int) $guest->id));
+        $this->assertFalse(api::offers_guest_access((int) $guest->id));
         $this->assertFalse(api::offers_normal_login((int) $guest->id));
+
+        // Once a usable core guest enrolment exists, the guest button is offered.
+        enrol_get_plugin('guest')->add_instance($guest, ['status' => ENROL_INSTANCE_ENABLED]);
+        \cache::make('enrol_flexaccess', 'policy')->purge();
+        $this->assertTrue(api::offers_guest_access((int) $guest->id));
 
         // A course without any FlexAccess instance offers neither.
         $bare = $this->getDataGenerator()->create_course();
         $this->assertFalse(api::offers_guest_access((int) $bare->id));
         $this->assertFalse(api::offers_normal_login((int) $bare->id));
+    }
+
+    public function test_offers_magic_login_is_independent_of_credentials_login(): void {
+        $this->resetAfterTest();
+
+        // Email-link login on, credentials login off: only the magic method is offered.
+        [$magic] = $this->course_with_instance(['allowmagiclogin' => 1, 'allownormallogin' => 0]);
+        $this->assertTrue(api::offers_magic_login((int) $magic->id));
+        $this->assertFalse(api::offers_normal_login((int) $magic->id));
+
+        // Email-link login off, credentials login on: the reverse.
+        [$creds] = $this->course_with_instance(['allowmagiclogin' => 0, 'allownormallogin' => 1]);
+        $this->assertFalse(api::offers_magic_login((int) $creds->id));
+        $this->assertTrue(api::offers_normal_login((int) $creds->id));
     }
 
     /**

@@ -95,7 +95,27 @@ final class api {
         if (!local\access_gate::is_flexaccess_open($policy, $now)) {
             return false;
         }
-        return $policy->allowguest;
+        // Only offer the guest button when the course really has a usable core guest enrolment;
+        // otherwise "enter as guest" would land on a course that refuses guest entry.
+        return $policy->allowguest && self::has_usable_guest_enrolment($courseid);
+    }
+
+    /**
+     * Whether the course has an enabled core guest enrolment instance and the guest plugin is on.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    private static function has_usable_guest_enrolment(int $courseid): bool {
+        global $DB;
+        if (!enrol_is_enabled('guest')) {
+            return false;
+        }
+        return $DB->record_exists('enrol', [
+            'enrol' => 'guest',
+            'courseid' => $courseid,
+            'status' => ENROL_INSTANCE_ENABLED,
+        ]);
     }
 
     /**
@@ -112,6 +132,19 @@ final class api {
             return false;
         }
         return self::get_effective_policy($courseid)->allownormallogin;
+    }
+
+    /**
+     * Whether the course offers the email-link (magic) login as a FlexAccess entry method.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    public static function offers_magic_login(int $courseid): bool {
+        if (!self::is_target_enabled($courseid)) {
+            return false;
+        }
+        return self::get_effective_policy($courseid)->allowmagiclogin;
     }
 
     /**
@@ -140,7 +173,9 @@ final class api {
      * @return bool
      */
     public static function requires_temporary_access_key(int $courseid): bool {
-        return self::get_effective_policy($courseid)->temporaryaccesskeyscope !== 'none';
+        $policy = self::get_effective_policy($courseid);
+        return $policy->temporaryaccesskeyscope !== 'none'
+            && \enrol_flexaccess\local\access_key_service::has_configured_key($courseid, $policy);
     }
 
     /**

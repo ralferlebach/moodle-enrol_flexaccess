@@ -28,6 +28,7 @@
 define('CLI_SCRIPT', true);
 require(__DIR__ . '/../../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
+require_once($CFG->dirroot . '/user/lib.php');
 
 $coursename = 'FlexAccess Load Test';
 $category = \core_course_category::get_default();
@@ -59,3 +60,27 @@ if (!in_array('flexaccess', $enabledauths, true)) {
 echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";
 echo "export FLEXACCESS_COURSE_ID='" . $course->id . "'\n";
 echo "export FLEXACCESS_COURSE_NAME='" . $coursename . "'\n";
+// Credentials for the authenticated accessibility checks of the administrative pages. These are
+// created on a throwaway CI site only; the specs skip when the variables are absent.
+$adminuser = $DB->get_record('user', ['username' => 'flexa11y'], '*', IGNORE_MISSING);
+if (!$adminuser) {
+    $adminuser = \core_user::get_user(
+        user_create_user((object) [
+            'username' => 'flexa11y',
+            'password' => 'Flex-A11y-Pass!1',
+            'firstname' => 'Access',
+            'lastname' => 'Checker',
+            'email' => 'flexa11y@example.invalid',
+            'confirmed' => 1,
+            'mnethostid' => $CFG->mnet_localhost_id,
+        ], true, false)
+    );
+}
+role_assign(
+    $DB->get_field('role', 'id', ['shortname' => 'manager']),
+    $adminuser->id,
+    \context_system::instance()->id
+);
+
+echo "export FLEXACCESS_ADMIN_USER='flexa11y'\n";
+echo "export FLEXACCESS_ADMIN_PASS='Flex-A11y-Pass!1'\n";

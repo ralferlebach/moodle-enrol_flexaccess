@@ -76,7 +76,7 @@ final class category_policy {
         if ($data['temporarylifetime'] !== null || $data['provisionallifetime'] !== null) {
             return false;
         }
-        if ($data['participantvisibility'] !== 'inherit') {
+        if ($data['participantlistaccess'] !== 'inherit') {
             return false;
         }
         return true;
@@ -100,8 +100,8 @@ final class category_policy {
             'allownormallogin' => self::flag($data['allownormallogin'] ?? -1),
             'temporarylifetime' => self::nullable_int($data['temporarylifetime'] ?? null),
             'provisionallifetime' => self::nullable_int($data['provisionallifetime'] ?? null),
-            'participantvisibility' => in_array($data['participantvisibility'] ?? 'inherit', ['inherit', 'show', 'hide'], true)
-                ? $data['participantvisibility'] : 'inherit',
+            'participantlistaccess' => in_array($data['participantlistaccess'] ?? 'inherit', ['inherit', 'show', 'hide'], true)
+                ? $data['participantlistaccess'] : 'inherit',
         ];
 
         if (self::is_empty($normalised)) {

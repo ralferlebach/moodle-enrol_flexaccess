@@ -24,24 +24,25 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\policy_assembler;
 
 /**
  * Policy assembler and API facade tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\policy_assembler
  */
+#[CoversClass(\enrol_flexaccess\local\policy_assembler::class)]
 final class policy_assembler_test extends \advanced_testcase {
     /**
      * System policy reads participant-visibility and access-key defaults from config.
      */
     public function test_system_policy_from_config(): void {
         $this->resetAfterTest();
-        set_config('participantvisibilitydefault', 'hide', 'enrol_flexaccess');
+        set_config('participantlistaccessdefault', 'hide', 'enrol_flexaccess');
         set_config('temporaryaccesskeyrequired', 1, 'enrol_flexaccess');
         $p = policy_assembler::system_policy();
-        $this->assertSame('hide', $p->participantvisibility);
+        $this->assertSame('hide', $p->participantlistaccess);
         $this->assertTrue($p->temporaryaccesskeyrequired);
     }
 

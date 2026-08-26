@@ -16,8 +16,9 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\participant_role;
-use enrol_flexaccess\local\participant_visibility;
+use enrol_flexaccess\local\participant_list_access;
 
 /**
  * Tests that participant-list visibility is actually enforced on the dedicated role.
@@ -25,9 +26,9 @@ use enrol_flexaccess\local\participant_visibility;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\local\participant_visibility
  */
-final class participant_visibility_test extends \advanced_testcase {
+#[CoversClass(\enrol_flexaccess\local\participant_list_access::class)]
+final class participant_list_access_test extends \advanced_testcase {
     /**
      * Hiding prevents a FlexAccess participant from viewing the roster; showing restores it.
      *
@@ -42,18 +43,18 @@ final class participant_visibility_test extends \advanced_testcase {
         role_assign($roleid, (int) $user->id, $context->id, 'enrol_flexaccess', 1);
 
         // Default (show): the participant may view the roster, matching the core page gate.
-        participant_visibility::sync((int) $course->id, 'show');
+        participant_list_access::sync((int) $course->id, 'show');
         accesslib_clear_all_caches_for_unit_testing();
         $this->assertTrue(has_capability('moodle/course:viewparticipants', $context, $user));
 
         // Hide: both roster-gating capabilities are prevented, so the core gate refuses.
-        participant_visibility::sync((int) $course->id, 'hide');
+        participant_list_access::sync((int) $course->id, 'hide');
         accesslib_clear_all_caches_for_unit_testing();
         $this->assertFalse(has_capability('moodle/course:viewparticipants', $context, $user));
         $this->assertFalse(has_capability('moodle/course:enrolreview', $context, $user));
 
         // Back to show: the override is removed and viewing works again.
-        participant_visibility::sync((int) $course->id, 'show');
+        participant_list_access::sync((int) $course->id, 'show');
         accesslib_clear_all_caches_for_unit_testing();
         $this->assertTrue(has_capability('moodle/course:viewparticipants', $context, $user));
     }
@@ -71,10 +72,49 @@ final class participant_visibility_test extends \advanced_testcase {
         $context = \context_course::instance($course->id);
         $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
 
-        participant_visibility::sync((int) $course->id, 'hide');
+        participant_list_access::sync((int) $course->id, 'hide');
         accesslib_clear_all_caches_for_unit_testing();
 
         // A real student (not on the FlexAccess role) still sees participants.
         $this->assertTrue(has_capability('moodle/course:viewparticipants', $context, $student));
+    }
+
+    /**
+     * Changing the system-level default must reach an existing instance without a re-save: a visitor
+     * enrolled while the default was "show" must lose roster access after it flips to "hide".
+     *
+     * @return void
+     */
+    public function test_system_default_change_resyncs_existing_instance(): void {
+        $this->resetAfterTest();
+        set_config('participantlistaccessdefault', 'show', 'enrol_flexaccess');
+        $course = $this->getDataGenerator()->create_course();
+        /** @var \enrol_flexaccess_plugin $plugin */
+        $plugin = enrol_get_plugin('flexaccess');
+        $enrolid = $plugin->add_instance($course, [
+            'status' => ENROL_INSTANCE_ENABLED,
+            'allowtemporary' => 1,
+            'participantlistaccess' => 'inherit',
+        ]);
+        $user = $this->getDataGenerator()->create_user();
+        \enrol_flexaccess\local\enrol_service::enrol_with_capacity((int) $enrolid, (int) $user->id);
+        $context = \context_course::instance((int) $course->id);
+
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertTrue(
+            has_capability('moodle/course:viewparticipants', $context, $user),
+            'Baseline: visible while the default is show.'
+        );
+
+        // Flip the system default only, then resync (as the settings update callback does).
+        set_config('participantlistaccessdefault', 'hide', 'enrol_flexaccess');
+        participant_list_access::resync_all();
+
+        accesslib_clear_all_caches_for_unit_testing();
+        $this->assertFalse(
+            has_capability('moodle/course:viewparticipants', $context, $user),
+            'The system default change must reach the existing instance.'
+        );
+        $this->assertFalse(has_capability('moodle/course:enrolreview', $context, $user));
     }
 }

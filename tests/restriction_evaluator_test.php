@@ -24,14 +24,15 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\restriction_evaluator;
 
 /**
  * Restriction evaluator tests.
  *
  * @package    enrol_flexaccess
- * @covers     \enrol_flexaccess\local\restriction_evaluator
  */
+#[CoversClass(\enrol_flexaccess\local\restriction_evaluator::class)]
 final class restriction_evaluator_test extends \advanced_testcase {
     /**
      * Build a restriction row.

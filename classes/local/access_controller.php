@@ -125,7 +125,10 @@ final class access_controller {
         }
         // Server-side access-key enforcement: verified before any account is created, so it cannot
         // be bypassed by calling the controller directly. The key is never persisted or logged here.
-        if ($policy->temporaryaccesskeyscope !== 'none') {
+        if (
+            $policy->temporaryaccesskeyscope !== 'none'
+                && access_key_service::has_configured_key($courseid, $policy)
+        ) {
             if (
                 $accesskey === null || $accesskey === ''
                     || !access_key_service::verify($courseid, $policy, $accesskey)

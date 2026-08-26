@@ -31,6 +31,21 @@ namespace enrol_flexaccess\local;
  */
 final class access_key_service {
     /**
+     * Whether a usable access key is actually configured at the policy's effective scope.
+     *
+     * A key gate must never be enforced when no key exists: requiring a key that cannot be verified
+     * would lock every temporary user out (and contradicts "no key set"). Callers gate on this in
+     * addition to the scope, so an unset system/course key simply means "no key required".
+     *
+     * @param int $courseid Course id.
+     * @param policy $policy Effective policy.
+     * @return bool
+     */
+    public static function has_configured_key(int $courseid, policy $policy): bool {
+        return self::resolve_hash($courseid, $policy) !== null;
+    }
+
+    /**
      * Verify a clear-text candidate against a stored hash.
      *
      * This low-level helper exists for unit testing and internal use. Public cross-plugin APIs must resolve the

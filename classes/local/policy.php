@@ -34,9 +34,11 @@ final class policy {
     /** @var bool */ public bool $allowquick = false;
     /** @var bool */ public bool $allowguest = false;
     /** @var bool */ public bool $allownormallogin = true;
+
+    /** @var bool */ public bool $allowmagiclogin = true;
     /** @var int */ public int $temporarylifetime = 21600;
     /** @var int */ public int $provisionallifetime = 172800;
-    /** @var string */ public string $participantvisibility = 'show';
+    /** @var string */ public string $participantlistaccess = 'show';
     /** @var bool */ public bool $temporaryaccesskeyrequired = false;
     /** @var string */ public string $temporaryaccesskeyscope = 'none';
     /** @var int Access window start; 0 = no lower bound. */ public int $availablefrom = 0;

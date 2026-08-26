@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\access_controller;
 use enrol_flexaccess\local\access_key_rate;
 use enrol_flexaccess\local\instance_config;
@@ -26,8 +27,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\local\access_key_service
  */
+#[CoversClass(\enrol_flexaccess\local\access_key_service::class)]
 final class access_key_test extends \advanced_testcase {
     /**
      * Create a course with a temporary-access instance protected by a course access key.

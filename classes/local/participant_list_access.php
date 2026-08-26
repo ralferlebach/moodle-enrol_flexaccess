@@ -32,7 +32,7 @@ namespace enrol_flexaccess\local;
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-final class participant_visibility {
+final class participant_list_access {
     /**
      * Capabilities that expose the participant roster; both gate the core participants page.
      */
@@ -59,5 +59,23 @@ final class participant_visibility {
             }
         }
         $context->mark_dirty();
+    }
+
+    /**
+     * Re-apply the effective participant-list visibility to every course that has a FlexAccess
+     * enrol instance. Called when a higher-level policy changes (system default or widening), since
+     * those changes must reach existing instances without needing each one to be re-saved.
+     *
+     * @return void
+     */
+    public static function resync_all(): void {
+        global $DB;
+        $courseids = $DB->get_fieldset_select('enrol', 'DISTINCT courseid', 'enrol = :e', ['e' => 'flexaccess']);
+        foreach ($courseids as $courseid) {
+            $courseid = (int) $courseid;
+            policy_assembler::purge_cache($courseid);
+            $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
+            self::sync($courseid, $policy->participantlistaccess);
+        }
     }
 }

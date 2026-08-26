@@ -57,7 +57,7 @@ final class policy_resolver {
      * @param string $coursevalue inherit|show|hide.
      * @return string
      */
-    public static function participant_visibility(string $systemdefault, string $coursevalue): string {
+    public static function participant_list_access(string $systemdefault, string $coursevalue): string {
         if (!in_array($systemdefault, ['show', 'hide'], true)) {
             throw new \coding_exception('Invalid system participant visibility.');
         }

@@ -16,6 +16,7 @@
 
 namespace enrol_flexaccess;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\category_policy;
 
 /**
@@ -24,8 +25,8 @@ use enrol_flexaccess\local\category_policy;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \enrol_flexaccess\local\category_policy
  */
+#[CoversClass(\enrol_flexaccess\local\category_policy::class)]
 final class category_policy_test extends \advanced_testcase {
     /**
      * Saving an override persists it and it folds into the effective policy of a course in that category.
@@ -45,7 +46,7 @@ final class category_policy_test extends \advanced_testcase {
             'allownormallogin' => -1,
             'temporarylifetime' => 3600,
             'provisionallifetime' => null,
-            'participantvisibility' => 'hide',
+            'participantlistaccess' => 'hide',
         ]);
 
         $row = category_policy::load((int) $category->id);
@@ -56,7 +57,7 @@ final class category_policy_test extends \advanced_testcase {
         $policy = \enrol_flexaccess\api::get_effective_policy((int) $course->id);
         $this->assertTrue($policy->allowtemporary);
         $this->assertFalse($policy->allowquick);
-        $this->assertSame('hide', $policy->participantvisibility);
+        $this->assertSame('hide', $policy->participantlistaccess);
         $this->assertSame(3600, $policy->temporarylifetime);
     }
 
@@ -72,14 +73,14 @@ final class category_policy_test extends \advanced_testcase {
         // All-inherit: no row created.
         category_policy::save((int) $category->id, [
             'allowtemporary' => -1, 'allowquick' => -1, 'allowguest' => -1, 'allownormallogin' => -1,
-            'temporarylifetime' => null, 'provisionallifetime' => null, 'participantvisibility' => 'inherit',
+            'temporarylifetime' => null, 'provisionallifetime' => null, 'participantlistaccess' => 'inherit',
         ]);
         $this->assertNull(category_policy::load((int) $category->id));
 
         // Create then delete.
         category_policy::save((int) $category->id, [
             'allowtemporary' => 0, 'allowquick' => -1, 'allowguest' => -1, 'allownormallogin' => -1,
-            'temporarylifetime' => null, 'provisionallifetime' => null, 'participantvisibility' => 'inherit',
+            'temporarylifetime' => null, 'provisionallifetime' => null, 'participantlistaccess' => 'inherit',
         ]);
         $this->assertNotNull(category_policy::load((int) $category->id));
         $this->assertArrayHasKey((int) $category->id, category_policy::all());
