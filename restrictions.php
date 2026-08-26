@@ -48,6 +48,10 @@ $PAGE->set_title(get_string('restrictionstitle', 'enrol_flexaccess'));
 $PAGE->set_heading(format_string($course->fullname));
 
 if ($action === 'delete') {
+    // Deleting a restriction changes who may enter the course: POST only, never a GET link.
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        throw new moodle_exception('invalidrequest', 'error');
+    }
     require_sesskey();
     $id = required_param('id', PARAM_INT);
     // Scope-checked deletion: a course admin must not be able to remove a system or category rule.
@@ -98,10 +102,11 @@ if ($restrictions) {
         } else {
             $name = $cohorts[$r->refid] ?? get_string('restrictionsmissingref', 'enrol_flexaccess');
         }
-        $delete = html_writer::link(
-            new moodle_url($pageurl, ['action' => 'delete', 'id' => $r->id, 'sesskey' => sesskey()]),
-            get_string('delete')
-        );
+        $delete = $OUTPUT->render(new single_button(
+            new moodle_url($pageurl, ['action' => 'delete', 'id' => $r->id]),
+            get_string('delete'),
+            'post'
+        ));
         $table->data[] = [
             get_string('restrictionskind' . $r->kind, 'enrol_flexaccess'),
             s($name),
