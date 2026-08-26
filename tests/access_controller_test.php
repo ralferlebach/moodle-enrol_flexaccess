@@ -24,15 +24,14 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\access_controller;
 
 /**
  * Access controller tests.
  *
  * @package    enrol_flexaccess
+ * @covers \enrol_flexaccess\local\access_controller
  */
-#[CoversClass(\enrol_flexaccess\local\access_controller::class)]
 final class access_controller_test extends \advanced_testcase {
     /**
      * Skip when the required sibling plugin is not installed (per-plugin CI).

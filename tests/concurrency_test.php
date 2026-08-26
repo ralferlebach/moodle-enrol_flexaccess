@@ -31,8 +31,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\capacity_service
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\enrol_flexaccess\local\capacity_service::class)]
 final class concurrency_test extends \advanced_testcase {
     /**
      * Create a course with a FlexAccess instance limited to a number of participants.

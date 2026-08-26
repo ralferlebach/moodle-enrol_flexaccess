@@ -24,7 +24,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\enrol_service;
 use enrol_flexaccess\local\capacity_service;
 
@@ -32,8 +31,8 @@ use enrol_flexaccess\local\capacity_service;
  * Enrolment service tests.
  *
  * @package    enrol_flexaccess
+ * @covers \enrol_flexaccess\local\enrol_service
  */
-#[CoversClass(\enrol_flexaccess\local\enrol_service::class)]
 final class enrol_service_test extends \advanced_testcase {
     /**
      * Enrolment fills up to the capacity, then rejects further users.

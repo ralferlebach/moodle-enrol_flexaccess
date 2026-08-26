@@ -24,7 +24,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\access_window;
 use enrol_flexaccess\local\policy;
 
@@ -32,8 +31,8 @@ use enrol_flexaccess\local\policy;
  * Access-window tests.
  *
  * @package    enrol_flexaccess
+ * @covers \enrol_flexaccess\local\access_window
  */
-#[CoversClass(\enrol_flexaccess\local\access_window::class)]
 final class access_window_test extends \advanced_testcase {
     /**
      * An unbounded window (0/0) is always open.

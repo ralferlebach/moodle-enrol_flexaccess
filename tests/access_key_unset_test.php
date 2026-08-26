@@ -26,8 +26,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\access_key_service
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\enrol_flexaccess\local\access_key_service::class)]
 final class access_key_unset_test extends \advanced_testcase {
     /**
      * Create a fresh course-key-mode instance that has no key configured.

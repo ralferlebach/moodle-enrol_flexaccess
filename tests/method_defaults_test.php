@@ -16,7 +16,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\policy_assembler;
 
 /**
@@ -25,8 +24,8 @@ use enrol_flexaccess\local\policy_assembler;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\policy_assembler
  */
-#[CoversClass(\enrol_flexaccess\local\policy_assembler::class)]
 final class method_defaults_test extends \advanced_testcase {
     /**
      * Create an enabled FlexAccess instance offering temporary access in a fresh course.

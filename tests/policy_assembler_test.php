@@ -24,15 +24,14 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\policy_assembler;
 
 /**
  * Policy assembler and API facade tests.
  *
  * @package    enrol_flexaccess
+ * @covers \enrol_flexaccess\local\policy_assembler
  */
-#[CoversClass(\enrol_flexaccess\local\policy_assembler::class)]
 final class policy_assembler_test extends \advanced_testcase {
     /**
      * System policy reads participant-visibility and access-key defaults from config.

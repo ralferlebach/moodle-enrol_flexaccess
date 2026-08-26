@@ -16,7 +16,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\participant_role;
 
 /**
@@ -25,8 +24,8 @@ use enrol_flexaccess\local\participant_role;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\participant_role
  */
-#[CoversClass(\enrol_flexaccess\local\participant_role::class)]
 final class participant_role_test extends \advanced_testcase {
     /**
      * restrict() prevents messaging and profile editing site-wide; unrestrict() restores them.

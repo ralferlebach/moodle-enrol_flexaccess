@@ -16,7 +16,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversMethod;
 
 /**
  * Tests for the course-side entry (enrol_page_hook) offered to logged-in users.
@@ -24,8 +23,8 @@ use PHPUnit\Framework\Attributes\CoversMethod;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess_plugin::enrol_page_hook
  */
-#[CoversMethod(\enrol_flexaccess_plugin::class, 'enrol_page_hook')]
 final class enrol_page_hook_test extends \advanced_testcase {
     /**
      * Build a course with an enabled FlexAccess instance offering normal login.

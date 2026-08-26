@@ -24,8 +24,8 @@ use enrol_flexaccess\local\restriction_service;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\restriction_service
  */
-#[\PHPUnit\Framework\Attributes\CoversClass(\enrol_flexaccess\local\restriction_service::class)]
 final class restriction_crud_test extends \advanced_testcase {
     public function test_add_is_idempotent_and_scoped(): void {
         $this->resetAfterTest();

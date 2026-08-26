@@ -16,7 +16,6 @@
 
 namespace enrol_flexaccess;
 
-use PHPUnit\Framework\Attributes\CoversClass;
 use enrol_flexaccess\local\enrol_expiry;
 use enrol_flexaccess\local\instance_config;
 
@@ -26,8 +25,8 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \enrol_flexaccess\local\enrol_expiry
  */
-#[CoversClass(\enrol_flexaccess\local\enrol_expiry::class)]
 final class enrol_expiry_test extends \advanced_testcase {
     /**
      * Create a course with a FlexAccess instance and enrol a user with a given end time.
