@@ -75,8 +75,8 @@ final class instance_config {
         $expiryaction = in_array($expiryactionraw, ['suspend', 'unenrol'], true) ? $expiryactionraw : 'suspend';
         $keymoderaw = (string) ($data['temporaryaccesskeymode'] ?? 'inherit');
         $keymode = in_array($keymoderaw, ['inherit', 'course'], true) ? $keymoderaw : 'inherit';
-        $visraw = (string) ($data['participantvisibility'] ?? 'inherit');
-        $participantvisibility = in_array($visraw, ['inherit', 'show', 'hide'], true) ? $visraw : 'inherit';
+        $visraw = (string) ($data['participantlistaccess'] ?? 'inherit');
+        $participantlistaccess = in_array($visraw, ['inherit', 'show', 'hide'], true) ? $visraw : 'inherit';
         $gateraw = (string) ($data['quickreggatemode'] ?? 'inherit');
         $quickreggatemode = in_array($gateraw, ['inherit', 'none', 'password', 'domain'], true) ? $gateraw : 'inherit';
         $quickreggatedomains = trim((string) ($data['quickreggatedomains'] ?? ''));
@@ -93,7 +93,7 @@ final class instance_config {
             'expiryaction' => $expiryaction,
             'enrolperiod' => $enrolperiod,
             'temporaryaccesskeymode' => $keymode,
-            'participantvisibility' => $participantvisibility,
+            'participantlistaccess' => $participantlistaccess,
             'quickreggatemode' => $quickreggatemode,
             'quickreggatedomains' => $quickreggatedomains,
         ];
@@ -128,7 +128,7 @@ final class instance_config {
             $DB->insert_record(self::TABLE, $record);
         }
 
-        self::sync_participant_visibility($enrolid);
+        self::sync_participant_list_access($enrolid);
 
         // A change made in this request must be visible to a later resolution in the same request.
         $courseid = $DB->get_field('enrol', 'courseid', ['id' => $enrolid]);
@@ -143,14 +143,14 @@ final class instance_config {
      * @param int $enrolid Core enrol instance id.
      * @return void
      */
-    private static function sync_participant_visibility(int $enrolid): void {
+    private static function sync_participant_list_access(int $enrolid): void {
         global $DB;
         $courseid = (int) $DB->get_field('enrol', 'courseid', ['id' => $enrolid]);
         if ($courseid === 0) {
             return;
         }
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
-        participant_visibility::sync($courseid, $policy->participantvisibility);
+        participant_list_access::sync($courseid, $policy->participantlistaccess);
     }
 
     /**

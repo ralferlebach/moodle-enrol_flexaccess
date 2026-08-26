@@ -104,9 +104,9 @@ final class enrol_service {
         }
         // Keep the participant-list override in step with the current effective policy on every
         // entry, so a later change to a higher-level default reaches the course without a re-save.
-        participant_visibility::sync(
+        participant_list_access::sync(
             (int) $instance->courseid,
-            \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid)->participantvisibility
+            \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid)->participantlistaccess
         );
         return true;
     }
@@ -156,9 +156,9 @@ final class enrol_service {
                 // Apply the site-wide restrictions for anonymous FlexAccess visitors (messaging,
                 // profile editing) via a system-context assignment of the dedicated role.
                 participant_role::restrict($userid);
-                participant_visibility::sync(
+                participant_list_access::sync(
                     (int) $instance->courseid,
-                    \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid)->participantvisibility
+                    \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid)->participantlistaccess
                 );
                 return (object) ['status' => 'enrolled', 'userid' => $userid];
             }

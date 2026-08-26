@@ -22,7 +22,7 @@
         <FIELD NAME="expiryaction" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="suspend" SEQUENCE="false"/>
         <FIELD NAME="roleid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="groupid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="participantvisibility" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
+        <FIELD NAME="participantlistaccess" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeymode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="temporaryaccesskeyhash" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="quickreggatemode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
@@ -47,7 +47,7 @@
         <FIELD NAME="allowmagiclogin" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="-1" SEQUENCE="false"/>
         <FIELD NAME="temporarylifetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="provisionallifetime" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
-        <FIELD NAME="participantvisibility" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
+        <FIELD NAME="participantlistaccess" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="inherit" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>

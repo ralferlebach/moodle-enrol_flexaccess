@@ -94,7 +94,7 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         $instances = $DB->get_records('enrol', ['enrol' => 'flexaccess'], '', 'id, courseid');
         foreach ($instances as $instance) {
             $policy = \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid);
-            \enrol_flexaccess\local\participant_visibility::sync((int) $instance->courseid, $policy->participantvisibility);
+            \enrol_flexaccess\local\participant_list_access::sync((int) $instance->courseid, $policy->participantlistaccess);
         }
 
         upgrade_plugin_savepoint(true, 2026081901, 'enrol', 'flexaccess');
@@ -191,6 +191,28 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
             }
         }
         upgrade_plugin_savepoint(true, 2026082411, 'enrol', 'flexaccess');
+    }
+    if ($oldversion < 2026082428) {
+        $dbman = $DB->get_manager();
+        // Rename the setting and its columns to say what the feature actually does: it controls
+        // whether a temporary visitor may OPEN the participant list, not whether that visitor is
+        // hidden from others. The old name invited exactly that misreading.
+        foreach (['enrol_flexaccess_instance', 'enrol_flexaccess_policy'] as $tablename) {
+            $table = new xmldb_table($tablename);
+            $old = new xmldb_field('participantvisibility', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL, null, 'inherit');
+            if ($dbman->field_exists($table, $old)) {
+                $dbman->rename_field($table, $old, 'participantlistaccess');
+            }
+        }
+        // Carry the configured value over, then drop the old key so nothing reads a stale setting.
+        $existing = get_config('enrol_flexaccess', 'participantvisibilitydefault');
+        if ($existing !== false && get_config('enrol_flexaccess', 'participantlistaccessdefault') === false) {
+            set_config('participantlistaccessdefault', $existing, 'enrol_flexaccess');
+        }
+        if ($existing !== false) {
+            unset_config('participantvisibilitydefault', 'enrol_flexaccess');
+        }
+        upgrade_plugin_savepoint(true, 2026082428, 'enrol', 'flexaccess');
     }
     return true;
 }

@@ -55,8 +55,8 @@ final class policy_resolver_test extends \advanced_testcase {
     /**
      * Test participant visibility inheritance.
      */
-    public function test_participant_visibility_inheritance(): void {
-        $this->assertSame('hide', \enrol_flexaccess\local\policy_resolver::participant_visibility('hide', 'inherit'));
-        $this->assertSame('show', \enrol_flexaccess\local\policy_resolver::participant_visibility('hide', 'show'));
+    public function test_participant_list_access_inheritance(): void {
+        $this->assertSame('hide', \enrol_flexaccess\local\policy_resolver::participant_list_access('hide', 'inherit'));
+        $this->assertSame('show', \enrol_flexaccess\local\policy_resolver::participant_list_access('hide', 'show'));
     }
 }

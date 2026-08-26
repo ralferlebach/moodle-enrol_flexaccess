@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.51 — 2026-08-27 — Behat-Fix, semantische Umbenennung, Coverage-/Maturity-Gate
+- **Behat-Fail behoben.** `Then I should see "Continue as a guest"` prüft sichtbaren Text; der Gast-Button ist aber ein `<input type="submit">`, dessen `value` kein Textinhalt ist. Der Schritt lautet jetzt `Then "Continue as a guest" "button" should exist` — dieselbe Prüfung, nur mit dem passenden Selektor. Die übrigen Assertions wurden gegengeprüft: keine weitere zielt auf eine Button-Beschriftung.
+- **Semantische Umbenennung.** Setting `participantvisibilitydefault` → `participantlistaccessdefault`, Spalte `participantvisibility` → `participantlistaccess` (in `enrol_flexaccess_instance` und `enrol_flexaccess_policy`), Klasse `participant_visibility` → `participant_list_access`. Der Name sagt jetzt, was die Funktion tut: Sie steuert, ob temporäre Besucher die Teilnehmerliste **öffnen** dürfen — nicht, ob sie für andere unsichtbar sind. Der konfigurierte Wert wird beim Upgrade übernommen, der alte Schlüssel entfernt (`2026082428`, Migration mit Altdaten verifiziert).
+- **Coverage:** Neue `tests/coverage.php` definiert den Messumfang (die Klassen; Entry-Point-Skripte werden von Behat abgedeckt und würden die Zahl nur verwässern).
+- **Neue CI-Gates:** `coverage` misst mit pcov und erzwingt eine Mindest-Line-Coverage — fehlt die Kennzahl, schlägt das Gate fehl, statt still durchzuwinken. `maturity-gate` lässt `MATURITY_STABLE` nur zu, wenn alle Release-Gates desselben Builds grün sind und die Scope-Entscheidungen dokumentiert vorliegen. `ci-complete` hängt an beiden.
+- Versions-Gleichschritt `2026082428`.
+
 ## 0.9.50 — 2026-08-26 — Versions-Gleichschritt
 - Keine Codeänderung. Versions-Gleichschritt auf `2026082427`.
 
@@ -82,9 +89,9 @@
 
 ## 0.9.33 — 2026-08-25 — Fix: Teilnehmerlisten-Sichtbarkeit für temporäre Besucher
 - **Bug behoben (reproduziert):** Wurde die System-Vorgabe „Teilnehmerlisten-Zugriff" auf „Ausblenden" gestellt, nachdem eine Kurs-Instanz bereits existierte (Instanz auf „erben"), wirkte die Sperre nicht — der CAP_PREVENT-Override wurde nur beim Instanz-Speichern gesetzt. Temporäre Besucher konnten die Teilnehmerliste weiterhin sehen.
-- **Fix 1 (Settings-Callback):** Änderung von `participantvisibilitydefault` oder `allowwidening` synchronisiert jetzt **alle** FlexAccess-Kurse (`participant_visibility::resync_all()`), ohne dass jede Instanz neu gespeichert werden muss. `settings.php` lädt `lib.php`, damit der Callback beim Speichern auch wirklich callable ist.
+- **Fix 1 (Settings-Callback):** Änderung von `participantlistaccessdefault` oder `allowwidening` synchronisiert jetzt **alle** FlexAccess-Kurse (`participant_list_access::resync_all()`), ohne dass jede Instanz neu gespeichert werden muss. `settings.php` lädt `lib.php`, damit der Callback beim Speichern auch wirklich callable ist.
 - **Fix 2 (Enrol-Zeit-Sync):** Bei jeder Einschreibung eines FlexAccess-Besuchers wird die Sichtbarkeit an die aktuelle effektive Policy angeglichen (Selbstheilung für neue Zutritte).
-- Test `participant_visibility_test::test_system_default_change_resyncs_existing_instance`.
+- Test `participant_list_access_test::test_system_default_change_resyncs_existing_instance`.
 - Versions-Gleichschritt auf `2026082410`.
 
 ## 0.9.32 — 2026-08-25 — Versions-Gleichschritt (D3 im auth) + Behat angepasst
@@ -168,7 +175,7 @@
 ## 0.9.15 — 2026-08-20 — RC-Gates (Review 0.9.13): 4 P0 + Reliability + Doku/CI-Sync
 - **P0-2 (Orphan-Account):** `grant_quick_registration()` prueft E-Mail-Format + Verfuegbarkeit **vor** Kontoerstellung (kein eingeschriebener Orphan mehr bei `emailtaken`); ein Rest-Race nach der Einschreibung wird via `rollback_temporary_user()` kompensiert (userid=0).
 - **P0-3 (Gate-Kollision):** neuer Parameter `$trustedgate` — Campaign/Invitation sind autorisierte Provisioning-Pfade und ueberspringen das Kurs-Gate (Variante A), statt es mit leerem Passwort erneut zu pruefen.
-- Doku: veraltete Docblocks korrigiert (`grant_quick_registration` = provisorisch/verifiziert; `participant_visibility` = Listen-**Zugriff**, kein Ausblenden FUER andere).
+- Doku: veraltete Docblocks korrigiert (`grant_quick_registration` = provisorisch/verifiziert; `participant_list_access` = Listen-**Zugriff**, kein Ausblenden FUER andere).
 - CI: `playwright.yml` + `load.yml` installieren jetzt alle drei Schwesterplugins (harte Abhaengigkeit) via pinbarem `SIBLING_REF`; `playwright.config.js` mit GPL/@module-Header.
 - Tests: `emailtaken`-Precheck ohne Orphan; trusted-gate umgeht Kurs-Gate.
 
@@ -239,13 +246,13 @@
 - **§29 Supply-Chain:** JMeter wird gegen Apaches offizielle SHA-512 verifiziert (oder gepinnten `JMETER_SHA512`); Playwright nutzt striktes `npm ci` mit beigelegtem `package-lock.json`.
 
 ## 0.1.37 — 2026-08-19 — Teilnehmerlisten-Sichtbarkeit durchgesetzt (§35, P0)
-- **`participantvisibility` wird jetzt tatsaechlich durchgesetzt (§35, P0):** Bei `hide` sehen temporaere und schnellregistrierte Besucher die Teilnehmerliste des Kurses nicht mehr. Zuvor war die Einstellung wirkungslos (Security-Theater).
+- **`participantlistaccess` wird jetzt tatsaechlich durchgesetzt (§35, P0):** Bei `hide` sehen temporaere und schnellregistrierte Besucher die Teilnehmerliste des Kurses nicht mehr. Zuvor war die Einstellung wirkungslos (Security-Theater).
 - **Dedizierte Rolle `flexaccessparticipant`** (Archetyp student): FlexAccess-Besucher werden mit dieser Rolle eingeschrieben. Ein Kurskontext-Override entzieht ihr bei `hide` die Faehigkeiten `moodle/course:viewparticipants` und `moodle/course:enrolreview` (beide gaten die Kern-Teilnehmerseite) — betrifft ausschliesslich FlexAccess-Besucher, nicht regulaere Studierende.
-- Neue Services `local\participant_role` (Rolle anlegen/finden/migrieren) und `local\participant_visibility` (Override synchronisieren).
-- **Formular:** `participantvisibility` (Erben/Anzeigen/Ausblenden) in der Instanz-Konfiguration; `instance_config::save` schreibt den Wert und synchronisiert den Override anhand der effektiven Policy.
+- Neue Services `local\participant_role` (Rolle anlegen/finden/migrieren) und `local\participant_list_access` (Override synchronisieren).
+- **Formular:** `participantlistaccess` (Erben/Anzeigen/Ausblenden) in der Instanz-Konfiguration; `instance_config::save` schreibt den Wert und synchronisiert den Override anhand der effektiven Policy.
 - **Install/Upgrade:** `db/install.php` legt die Rolle an; der Upgrade-Schritt legt sie an, **migriert bestehende FlexAccess-Enrolments** auf die Rolle und wendet die Sichtbarkeit auf alle bestehenden Instanzen an.
 - Verhaltensaenderung: temporaere/Quick-Nutzer erhalten nun die dedizierte Rolle (student-aequivalent) statt der Instanz-`roleid`.
-- Tests: `participant_role_test` (Anlegen/Idempotenz/Migration), `participant_visibility_test` (hide entzieht, show stellt her, reguläre Studierende unberührt).
+- Tests: `participant_role_test` (Anlegen/Idempotenz/Migration), `participant_list_access_test` (hide entzieht, show stellt her, reguläre Studierende unberührt).
 
 ## 0.1.36 — 2026-08-19 — Capacity-Race / verwaiste Accounts behoben (§18)
 - **Kein verwaister Account mehr bei Kapazitaets-Rennen (§18, P0):** Der Account wird jetzt *innerhalb* des Kapazitaets-Locks erzeugt — erst nachdem die autoritative `is_full`-Pruefung einen Platz gesichert hat. Verliert eine gleichzeitige Anmeldung das Rennen, liefert der Grant `full`, ohne einen Account (oder Moodle-Nutzer) anzulegen. Zuvor wurde der Account VOR dem Lock erzeugt und blieb bei vollem Kurs zurueck (bei Quick-Reg mit echter, dann blockierter E-Mail).

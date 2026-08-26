@@ -234,13 +234,13 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('maxparticipants', 'maxparticipants', 'enrol_flexaccess');
         $mform->setDefault('maxparticipants', 0);
 
-        $mform->addElement('select', 'participantvisibility', get_string('participantvisibility', 'enrol_flexaccess'), [
-            'inherit' => get_string('participantvisibilityinherit', 'enrol_flexaccess'),
+        $mform->addElement('select', 'participantlistaccess', get_string('participantlistaccess', 'enrol_flexaccess'), [
+            'inherit' => get_string('participantlistaccessinherit', 'enrol_flexaccess'),
             'show' => get_string('show', 'enrol_flexaccess'),
             'hide' => get_string('hide', 'enrol_flexaccess'),
         ]);
-        $mform->addHelpButton('participantvisibility', 'participantvisibility', 'enrol_flexaccess');
-        $mform->setDefault('participantvisibility', 'inherit');
+        $mform->addHelpButton('participantlistaccess', 'participantlistaccess', 'enrol_flexaccess');
+        $mform->setDefault('participantlistaccess', 'inherit');
 
         // Access methods offered by this instance.
         $mform->addElement('header', 'flexaccess_methods', get_string('settingsmethods', 'enrol_flexaccess'));
@@ -350,7 +350,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
                 foreach (
                     ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin',
                         'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
-                        'participantvisibility', 'quickreggatemode', 'quickreggatedomains'] as $field
+                        'participantlistaccess', 'quickreggatemode', 'quickreggatedomains'] as $field
                 ) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);
@@ -496,6 +496,6 @@ function enrol_flexaccess_status_checks(): array {
  *
  * @return void
  */
-function enrol_flexaccess_resync_participant_visibility() {
-    \enrol_flexaccess\local\participant_visibility::resync_all();
+function enrol_flexaccess_resync_participant_list_access() {
+    \enrol_flexaccess\local\participant_list_access::resync_all();
 }

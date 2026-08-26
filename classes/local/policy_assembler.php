@@ -67,8 +67,8 @@ final class policy_assembler {
             }
         }
 
-        $vis = get_config('enrol_flexaccess', 'participantvisibilitydefault');
-        $p->participantvisibility = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
+        $vis = get_config('enrol_flexaccess', 'participantlistaccessdefault');
+        $p->participantlistaccess = in_array($vis, ['show', 'hide'], true) ? $vis : 'show';
         $p->temporaryaccesskeyrequired = (bool) get_config('enrol_flexaccess', 'temporaryaccesskeyrequired');
 
         $gatemode = (string) get_config('enrol_flexaccess', 'quickreggatemode');
@@ -163,8 +163,8 @@ final class policy_assembler {
         if ($row->provisionallifetime !== null) {
             $p->provisionallifetime = (int) $row->provisionallifetime;
         }
-        if (in_array($row->participantvisibility, ['show', 'hide'], true)) {
-            $p->participantvisibility = $row->participantvisibility;
+        if (in_array($row->participantlistaccess, ['show', 'hide'], true)) {
+            $p->participantlistaccess = $row->participantlistaccess;
         }
         return $p;
     }
@@ -196,9 +196,9 @@ final class policy_assembler {
         $p->availablefrom = (int) $flex->availablefrom;
         $p->availableuntil = (int) $flex->availableuntil;
         $p->maxparticipants = (int) $flex->maxparticipants;
-        $p->participantvisibility = policy_resolver::participant_visibility(
-            in_array($p->participantvisibility, ['show', 'hide'], true) ? $p->participantvisibility : 'show',
-            in_array($flex->participantvisibility, ['inherit', 'show', 'hide'], true) ? $flex->participantvisibility : 'inherit'
+        $p->participantlistaccess = policy_resolver::participant_list_access(
+            in_array($p->participantlistaccess, ['show', 'hide'], true) ? $p->participantlistaccess : 'show',
+            in_array($flex->participantlistaccess, ['inherit', 'show', 'hide'], true) ? $flex->participantlistaccess : 'inherit'
         );
         $mode = in_array($flex->temporaryaccesskeymode, ['inherit', 'course'], true) ? $flex->temporaryaccesskeymode : 'inherit';
         $p->temporaryaccesskeyscope = policy_resolver::temporary_access_key_scope($p->temporaryaccesskeyrequired, $mode);

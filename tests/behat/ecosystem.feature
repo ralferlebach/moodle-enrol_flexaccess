@@ -55,7 +55,7 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
   Scenario: The entry page renders and offers guest access as an alternative
     Given a FlexAccess enrolment method offering guest access and normal login exists in course "Course 1"
     When I open the FlexAccess entry page for course "Course 1"
-    Then I should see "Continue as a guest"
+    Then "Continue as a guest" "button" should exist
     And I press "Continue as a guest"
     Then I should see "Course 1"
 

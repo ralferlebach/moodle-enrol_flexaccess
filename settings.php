@@ -31,15 +31,15 @@ require_once(__DIR__ . '/lib.php');
 if ($ADMIN->fulltree) {
     $settings->add(new admin_setting_heading('enrol_flexaccess/defaults', get_string('settingsdefaults', 'enrol_flexaccess'), ''));
     $visibilitysetting = new admin_setting_configselect(
-        'enrol_flexaccess/participantvisibilitydefault',
-        get_string('participantvisibilitydefault', 'enrol_flexaccess'),
-        get_string('participantvisibilitydefault_desc', 'enrol_flexaccess'),
+        'enrol_flexaccess/participantlistaccessdefault',
+        get_string('participantlistaccessdefault', 'enrol_flexaccess'),
+        get_string('participantlistaccessdefault_desc', 'enrol_flexaccess'),
         'show',
         ['show' => get_string('show', 'enrol_flexaccess'), 'hide' => get_string('hide', 'enrol_flexaccess')]
     );
     // Re-apply to existing courses when the default changes, so it takes effect without re-saving
     // each instance.
-    $visibilitysetting->set_updatedcallback('enrol_flexaccess_resync_participant_visibility');
+    $visibilitysetting->set_updatedcallback('enrol_flexaccess_resync_participant_list_access');
     $settings->add($visibilitysetting);
     // System-wide default ceiling for the access methods. Instances (and categories) may only
     // narrow this ceiling unless "allowwidening" is enabled below. Without an explicit ceiling the
@@ -66,7 +66,7 @@ if ($ADMIN->fulltree) {
         get_string('allowwidening_desc', 'enrol_flexaccess'),
         0
     );
-    $wideningsetting->set_updatedcallback('enrol_flexaccess_resync_participant_visibility');
+    $wideningsetting->set_updatedcallback('enrol_flexaccess_resync_participant_list_access');
     $settings->add($wideningsetting);
     $settings->add(new admin_setting_heading(
         'enrol_flexaccess/accesskey',
