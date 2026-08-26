@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.43 — 2026-08-25 — CI: Geschwister aus development
+- **Dev-Pipeline und Playwright-Workflow** ziehen die Geschwister-Plugins jetzt per `--branch development` aus dem gemeinsamen Entwicklungszweig, damit das Ökosystem in seinem echten, gemeinsam entwickelten Stand getestet wird. Die Main-Pipeline bleibt auf `main`.
+- Versions-Gleichschritt `2026082420`.
+
 ## 0.9.42 — 2026-08-25 — Versions-Gleichschritt
 - Keine Codeänderung. Versions-Gleichschritt auf `2026082419`.
 
