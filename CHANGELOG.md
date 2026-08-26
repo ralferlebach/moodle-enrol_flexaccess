@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.50 — 2026-08-26 — Versions-Gleichschritt
+- Keine Codeänderung. Versions-Gleichschritt auf `2026082427`.
+
 ## 0.9.49 — 2026-08-26 — Versions-Gleichschritt (CI-Fix im tool, Persistenz-Fix im auth)
 - Keine Codeänderung. Versions-Gleichschritt auf `2026082426`.
 
