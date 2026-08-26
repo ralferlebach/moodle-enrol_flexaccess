@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.47 — 2026-08-26 — Release-Gate auf dem tatsächlichen Artefakt
+- **Neuer CI-Job `release-artefact`** in der Main-Pipeline: Er baut das Release-Archiv mit `git archive` (nur dieses respektiert `.gitattributes export-ignore`) und prüft die **tatsächlich ausgelieferte Dateiliste** — kein `tools/`, `docs/`, `.github/`, `tests/load/`, `tests/playwright/` und keine CI-Konfiguration; zugleich muss enthalten sein, was Moodle ausführt. `ci-complete` hängt daran. Damit prüft das Gate das Artefakt statt nur identischer Versionsnummern.
+- Versions-Gleichschritt `2026082424`.
+
 ## 0.9.46 — 2026-08-26 — Release-Artefakte ohne Entwicklerwerkzeuge
 - **CLI-Guard** (`PHP_SAPI !== 'cli'` → 403) in allen `tools/`-Skripten, vor jedem Schreibzugriff.
 - Die Release-Pakete respektieren jetzt `.gitattributes export-ignore`: `tools/`, `docs/`, `.github/`, `tests/load/`, `tests/playwright/` und die CI-Konfiguration sind nicht mehr enthalten.
