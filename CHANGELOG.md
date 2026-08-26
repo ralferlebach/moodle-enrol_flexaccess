@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.49 — 2026-08-26 — Versions-Gleichschritt (CI-Fix im tool, Persistenz-Fix im auth)
+- Keine Codeänderung. Versions-Gleichschritt auf `2026082426`.
+
 ## 0.9.48 — 2026-08-26 — POST für Restriktionslöschung, Zielkonsistenz
 - **P1-7:** Das Löschen einer Rollen-/Cohort-Beschränkung ist jetzt eine POST-Aktion (Button statt Link) mit serverseitiger Methodenprüfung — es verändert, wer den Kurs betreten darf.
 - Versions-Gleichschritt `2026082425`.
