@@ -19,3 +19,23 @@ apache-jmeter/bin/jmeter -n -t tests/load/flexaccess-read-endpoints.jmx \
 Smoke-level: it exercises a public read path under concurrency to catch gross regressions. Load
 tests for the account-creation + capacity-lock + mailqueue paths are tracked with the P0 access
 work and will be added as those flows stabilise.
+
+## flexaccess-capacity-race.js (Concurrency-/Write-Gate)
+
+Lässt viele Requests gleichzeitig um den **letzten freien Platz** einer kapazitätsbegrenzten
+FlexAccess-Instanz konkurrieren. Ergänzt die PHPUnit-Concurrency-Tests: Diese können die Exaktheit
+der Kapazitätsgrenze und das saubere Freigeben des Locks nachweisen, **nicht aber die wechselseitige
+Ausschließung** — PostgreSQL-Advisory-Locks sind innerhalb einer DB-Session wiedereintrittsfähig,
+ein einzelner PHP-Prozess kann seine eigene kritische Sektion also immer erneut betreten. Erst echt
+parallele Requests (getrennte Sessions) beanspruchen das Lock.
+
+Der Schwellenwert ist das fachliche Verhalten, nicht nur die Latenz: `flexaccess_enrolled` darf
+`FREE_SEATS` nie überschreiten. Der Schreibpfad läuft korrekt über **POST** mit `confirm=1` und
+`sesskey` (ein GET erzeugt kein Konto).
+
+```
+k6 run -e BASE_URL=https://... -e COURSEID=42 -e FREE_SEATS=1 -e VUS=30 \
+  tests/load/flexaccess-capacity-race.js
+```
+
+Voraussetzung: Die Instanz hat `maxparticipants` gesetzt und ist bis auf `FREE_SEATS` Plätze gefüllt.

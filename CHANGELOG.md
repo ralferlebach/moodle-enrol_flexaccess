@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.52 — 2026-08-27 — CI-Fix: Coverage-Konfiguration war nicht 4.5-kompatibel
+- **Alle PHPUnit- und Behat-Jobs scheiterten an `Class "core\test\phpunit\coverage_info" not found`.** Die in 0.9.51 eingeführte `tests/coverage.php` verwendete den **namespaced** Klassennamen; den gibt es erst ab Moodle 5.x. Auf dem unterstützten Moodle 4.5 heißt die Klasse `phpunit_coverage_info`. Sie wird jetzt über diesen globalen Namen abgeleitet — auf 4.5 ist das die Klasse selbst, auf 5.x ein gepflegter Alias, also für alle unterstützten Versionen korrekt.
+- **Neue Datei `db/removed_files.txt` und neuer CI-Job `stale-files`.** Ein Plugin-Update per ZIP fügt Dateien hinzu und überschreibt sie, **löscht aber nie**. In früheren Releases entfernte Dateien überleben deshalb in einer Installation oder in einem so aktualisierten Repository — mit Folgen wie doppelten Klassen (phpcpd) oder Zugriffen auf nicht mehr existierende Spalten. Der Job schlägt fehl, solange eine gelistete Datei noch vorhanden ist, statt die Ursache in Folgefehlern zu verstecken. In Dev- **und** Main-Pipeline verdrahtet, `ci-complete` hängt daran.
+- Versions-Gleichschritt `2026082429`.
+
+- **Zu löschen in diesem Repository:** `classes/local/participant_visibility.php` und `tests/participant_visibility_test.php` (in 0.9.51 durch `participant_list_access` ersetzt). Genau diese Altdatei hat den phpcpd-Fehler ausgelöst.
+
 ## 0.9.51 — 2026-08-27 — Behat-Fix, semantische Umbenennung, Coverage-/Maturity-Gate
 - **Behat-Fail behoben.** `Then I should see "Continue as a guest"` prüft sichtbaren Text; der Gast-Button ist aber ein `<input type="submit">`, dessen `value` kein Textinhalt ist. Der Schritt lautet jetzt `Then "Continue as a guest" "button" should exist` — dieselbe Prüfung, nur mit dem passenden Selektor. Die übrigen Assertions wurden gegengeprüft: keine weitere zielt auf eine Button-Beschriftung.
 - **Semantische Umbenennung.** Setting `participantvisibilitydefault` → `participantlistaccessdefault`, Spalte `participantvisibility` → `participantlistaccess` (in `enrol_flexaccess_instance` und `enrol_flexaccess_policy`), Klasse `participant_visibility` → `participant_list_access`. Der Name sagt jetzt, was die Funktion tut: Sie steuert, ob temporäre Besucher die Teilnehmerliste **öffnen** dürfen — nicht, ob sie für andere unsichtbar sind. Der konfigurierte Wert wird beim Upgrade übernommen, der alte Schlüssel entfernt (`2026082428`, Migration mit Altdaten verifiziert).
