@@ -153,7 +153,9 @@ final class api {
      * @return bool
      */
     public static function requires_temporary_access_key(int $courseid): bool {
-        return self::get_effective_policy($courseid)->temporaryaccesskeyscope !== 'none';
+        $policy = self::get_effective_policy($courseid);
+        return $policy->temporaryaccesskeyscope !== 'none'
+            && \enrol_flexaccess\local\access_key_service::has_configured_key($courseid, $policy);
     }
 
     /**
