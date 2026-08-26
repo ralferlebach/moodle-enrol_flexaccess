@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.9.42 — 2026-08-25 — Versions-Gleichschritt
+- Keine Codeänderung. Versions-Gleichschritt auf `2026082419`.
+
+## 0.9.41 — 2026-08-25 — Review-P1/P2: Test-Gates korrigiert (falsch-grün behoben)
+- **Accessibility-Gate (Playwright/axe) war nicht belastbar:** `accessibility.spec.js` prüfte `/enrol/flexaccess/access.php` — diese Seite existiert nicht (der Entry-Point liegt in auth). Der Test konnte damit eine 404-Seite analysieren und „keine Verstöße" melden. Jetzt korrekte URL `/auth/flexaccess/access.php` **und** neue Helferfunktion `openAndVerify()`, die HTTP 200 sowie die erwartete Überschrift verifiziert, bevor axe läuft. Gilt auch für die Schnellregistrierung.
+- **JMeter-Write-Test war ein False-positive:** Der Thread „Anonymous temporary creators (write)" rief `access.php?confirm=1&sesskey=…` per **GET** auf; `access.php` akzeptiert die Kontoerzeugung aber nur per POST mit sesskey. Es wurde also nie ein temporärer Nutzer erzeugt, der Test war trotzdem grün. Der Sampler nutzt jetzt **POST** mit `confirm=1` und `sesskey` als Formularparametern, plus Assertion, dass tatsächlich ein sesskey extrahiert wurde.
+- **`npm ci` statt `npm install`** in den Playwright-Workflows (package-lock.json ist vorhanden) für reproduzierbare CI.
+- **Playwright-Workflows aller vier Plugins installieren jetzt alle vier Plugins.** Bisher installierte z. B. der auth-Workflow nur auth — bei der zyklischen auth↔enrol-Abhängigkeit schlägt die Moodle-Installation dann fehl; zudem zeigten die Workflows von auth/mod/tool auf nicht existierende `tests/playwright`-Verzeichnisse. Sie fahren nun die (einzige) Playwright-Suite in enrol.
+- Versions-Gleichschritt `2026082418`.
+
+## 0.9.40 — 2026-08-25 — Review-P1: Gast-Zugang an Core-Guest gekoppelt
+- **`offers_guest_access()`** prüft jetzt zusätzlich, ob im Kurs eine nutzbare Core-`enrol_guest`-Instanz aktiviert ist. Der „Als Gast"-Button wird nur angeboten, wenn Gastzugang tatsächlich funktioniert (sonst lief er ins Leere). Test entsprechend erweitert.
+- Versions-Gleichschritt `2026082417`.
+
 ## 0.9.39 — 2026-08-25 — Fix: Zugangsschlüssel nur verlangen, wenn gesetzt
 - **Widerspruch behoben:** Ist kein Zugangsschlüssel konfiguriert, wird auch keiner mehr verlangt. Bisher erzwang der Modus `course` (bzw. systemweit „verlangt") das Gate allein anhand des Scopes — auch ohne hinterlegten Hash, wodurch temporäre Nutzer dauerhaft `badkey` erhielten. `requires_temporary_access_key()` und das serverseitige Gate prüfen nun zusätzlich `access_key_service::has_configured_key()`; ein Schlüssel wird nur verlangt, wenn am aufgelösten Scope (System/Kurs) tatsächlich ein Hash existiert. Reproduzierender Test `access_key_unset_test`.
 - Versions-Gleichschritt `2026082416`.

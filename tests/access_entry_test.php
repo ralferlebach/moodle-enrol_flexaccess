@@ -80,10 +80,16 @@ final class access_entry_test extends \advanced_testcase {
         $this->assertTrue(api::offers_normal_login((int) $default->id));
         $this->assertFalse(api::offers_guest_access((int) $default->id));
 
-        // Guest enabled: offered. Normal login disabled: not offered.
+        // Guest enabled in policy but NO core guest enrolment in the course: not offered, because
+        // "enter as guest" would fail at the course.
         [$guest] = $this->course_with_instance(['allowguest' => 1, 'allownormallogin' => 0]);
-        $this->assertTrue(api::offers_guest_access((int) $guest->id));
+        $this->assertFalse(api::offers_guest_access((int) $guest->id));
         $this->assertFalse(api::offers_normal_login((int) $guest->id));
+
+        // Once a usable core guest enrolment exists, the guest button is offered.
+        enrol_get_plugin('guest')->add_instance($guest, ['status' => ENROL_INSTANCE_ENABLED]);
+        \cache::make('enrol_flexaccess', 'policy')->purge();
+        $this->assertTrue(api::offers_guest_access((int) $guest->id));
 
         // A course without any FlexAccess instance offers neither.
         $bare = $this->getDataGenerator()->create_course();

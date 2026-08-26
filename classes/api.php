@@ -95,7 +95,27 @@ final class api {
         if (!local\access_gate::is_flexaccess_open($policy, $now)) {
             return false;
         }
-        return $policy->allowguest;
+        // Only offer the guest button when the course really has a usable core guest enrolment;
+        // otherwise "enter as guest" would land on a course that refuses guest entry.
+        return $policy->allowguest && self::has_usable_guest_enrolment($courseid);
+    }
+
+    /**
+     * Whether the course has an enabled core guest enrolment instance and the guest plugin is on.
+     *
+     * @param int $courseid Course id.
+     * @return bool
+     */
+    private static function has_usable_guest_enrolment(int $courseid): bool {
+        global $DB;
+        if (!enrol_is_enabled('guest')) {
+            return false;
+        }
+        return $DB->record_exists('enrol', [
+            'enrol' => 'guest',
+            'courseid' => $courseid,
+            'status' => ENROL_INSTANCE_ENABLED,
+        ]);
     }
 
     /**
