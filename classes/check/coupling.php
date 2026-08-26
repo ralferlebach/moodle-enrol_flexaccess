@@ -37,7 +37,7 @@ class coupling extends check {
      * @return string
      */
     public function get_name(): string {
-        return get_string('check:coupling', 'enrol_flexaccess');
+        return get_string('checkcoupling', 'enrol_flexaccess');
     }
 
     /**
@@ -47,7 +47,7 @@ class coupling extends check {
      */
     public function get_action_link(): ?\action_link {
         $url = new \moodle_url('/admin/settings.php', ['section' => 'manageenrols']);
-        return new \action_link($url, get_string('check:coupling:action', 'enrol_flexaccess'));
+        return new \action_link($url, get_string('checkcouplingaction', 'enrol_flexaccess'));
     }
 
     /**
@@ -60,25 +60,25 @@ class coupling extends check {
         $enrolenabled = array_key_exists('flexaccess', enrol_get_plugins(true));
 
         if ($authenabled && $enrolenabled) {
-            return new result(result::OK, get_string('check:coupling:ok', 'enrol_flexaccess'));
+            return new result(result::OK, get_string('checkcouplingok', 'enrol_flexaccess'));
         }
         if (!$authenabled && !$enrolenabled) {
             // The whole ecosystem is switched off: nothing to warn about.
-            return new result(result::NA, get_string('check:coupling:bothoff', 'enrol_flexaccess'));
+            return new result(result::NA, get_string('checkcouplingbothoff', 'enrol_flexaccess'));
         }
         if ($enrolenabled && !$authenabled) {
             // The dangerous state: enrol provisions flexaccess-auth accounts that then cannot log in.
             return new result(
                 result::ERROR,
-                get_string('check:coupling:enrolonly', 'enrol_flexaccess'),
-                get_string('check:coupling:enrolonly_detail', 'enrol_flexaccess')
+                get_string('checkcouplingenrolonly', 'enrol_flexaccess'),
+                get_string('checkcouplingenrolonly_detail', 'enrol_flexaccess')
             );
         }
         // Auth enabled, enrol disabled: inert - no course offers FlexAccess entry.
         return new result(
             result::WARNING,
-            get_string('check:coupling:authonly', 'enrol_flexaccess'),
-            get_string('check:coupling:authonly_detail', 'enrol_flexaccess')
+            get_string('checkcouplingauthonly', 'enrol_flexaccess'),
+            get_string('checkcouplingauthonly_detail', 'enrol_flexaccess')
         );
     }
 }

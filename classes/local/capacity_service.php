@@ -109,7 +109,7 @@ final class capacity_service {
         $factory = \core\lock\lock_config::get_lock_factory(self::LOCK_TYPE);
         $lock = $factory->get_lock('instance_' . $enrolid, $timeout);
         if (!$lock) {
-            throw new \moodle_exception('error:capacitylock', 'enrol_flexaccess');
+            throw new \moodle_exception('errorcapacitylock', 'enrol_flexaccess');
         }
         try {
             return $callback();

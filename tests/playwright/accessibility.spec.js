@@ -29,6 +29,8 @@ const { test, expect } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 
 const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
+const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER;
+const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS;
 
 const BLOCKING_IMPACTS = ['serious', 'critical'];
 
@@ -76,4 +78,46 @@ test.describe('FlexAccess anonymous pages accessibility', () => {
         const violations = await blockingViolations(page);
         expect(violations, JSON.stringify(violations.map((v) => v.id), null, 2)).toEqual([]);
     });
+});
+
+/**
+ * Log in through the standard Moodle login form so the administrative pages can be reached.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @returns {Promise<void>}
+ */
+async function loginAsManager(page) {
+    await page.goto('/login/index.php');
+    await page.locator('#username').fill(ADMIN_USER);
+    await page.locator('#password').fill(ADMIN_PASS);
+    await page.locator('#loginbtn').click();
+    await page.waitForLoadState('domcontentloaded');
+}
+
+test.describe('FlexAccess administrative pages accessibility', () => {
+    // Skip (never fail) when the seed did not provide credentials, so the gate cannot go red for
+    // reasons unrelated to accessibility.
+    test.skip(!COURSE_ID || !ADMIN_USER || !ADMIN_PASS, 'Admin credentials were not seeded.');
+
+    test.beforeEach(async ({ page }) => {
+        await loginAsManager(page);
+    });
+
+    const adminPages = [
+        ['batch list', '/admin/tool/flexaccess/batches.php'],
+        ['invitation list', '/admin/tool/flexaccess/invitations.php'],
+        ['campaign list', '/admin/tool/flexaccess/campaigns.php'],
+        ['course access lists', `/admin/tool/flexaccess/coursebatches.php?courseid=${COURSE_ID}`],
+        ['course restrictions', `/enrol/flexaccess/restrictions.php?courseid=${COURSE_ID}`],
+    ];
+
+    for (const [label, url] of adminPages) {
+        test(`${label} has no serious accessibility violations`, async ({ page }) => {
+            const response = await page.goto(url);
+            expect(response, `No response for ${url}`).not.toBeNull();
+            expect(response.status(), `Unexpected HTTP status for ${url}`).toBe(200);
+            const violations = await blockingViolations(page);
+            expect(violations, JSON.stringify(violations.map((v) => v.id), null, 2)).toEqual([]);
+        });
+    }
 });

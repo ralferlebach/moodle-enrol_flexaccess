@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.9.46 — 2026-08-26 — Release-Artefakte ohne Entwicklerwerkzeuge
+- **CLI-Guard** (`PHP_SAPI !== 'cli'` → 403) in allen `tools/`-Skripten, vor jedem Schreibzugriff.
+- Die Release-Pakete respektieren jetzt `.gitattributes export-ignore`: `tools/`, `docs/`, `.github/`, `tests/load/`, `tests/playwright/` und die CI-Konfiguration sind nicht mehr enthalten.
+- Versions-Gleichschritt `2026082423`.
+
+## 0.9.45 — 2026-08-26 — Concurrency-Nachweise + String-IDs
+- **Concurrency-Tests (letzte Review-Rückstellung):** neues `concurrency_test` weist nach, dass die Kapazitätsgrenze exakt ist (der letzte Platz wird genau einmal vergeben), dass das Lock nicht geleakt wird und dass eine verschachtelte kritische Sektion nicht gegen sich selbst blockiert.
+- **Neues k6-Write-Szenario `tests/load/flexaccess-capacity-race.js`:** viele parallele Requests konkurrieren um den letzten freien Platz. Der Schwellenwert ist das fachliche Verhalten (`flexaccess_enrolled <= FREE_SEATS`), nicht bloß Latenz; der Schreibpfad läuft korrekt über POST mit `confirm=1` und `sesskey`.
+- **Methodischer Hinweis (dokumentiert):** Wechselseitige Ausschließung ist innerhalb eines PHP-Prozesses grundsätzlich nicht nachweisbar — PostgreSQL-Advisory-Locks sind pro DB-Session wiedereintrittsfähig und jeder `get_lock_factory()`-Aufruf liefert eine neue Factory-Instanz. Sie greift zwischen echten parallelen Requests; genau das deckt das k6-Szenario ab.
+- **String-IDs vereinheitlicht** (Colon → flach für allgemeine UI-Strings; Capabilities/Privacy unverändert).
+- Versions-Gleichschritt `2026082422`.
+
+## 0.9.44 — 2026-08-25 — Review-Abschluss: Restriktions-Verwaltung, CI-Gate, A11y
+- **Rollen-/Cohort-Beschränkungen sind jetzt administrierbar (letzter offener P1).** Die Auswertungs-Engine gab es bereits, aber keinen Verwaltungsweg. Neu: CRUD-API im `restriction_service` (`for_scope()`, `add()` idempotent, `delete()` **scope-geprüft**, damit eine Kursadministration keine Site-/Kursbereichsregel per ID löschen kann) und die Seite `enrol/flexaccess/restrictions.php`, verlinkt aus den Aktions-Icons der Einschreibemethode. Test `restriction_crud_test`.
+- **Accessibility-Gate ausgeweitet:** fünf zusätzliche axe-Prüfungen auf den administrativen Seiten (Batches, Einladungen, Kampagnen, Kurs-Zugangslisten, Restriktionen) inklusive Login über geseedete Manager-Credentials. Die Suite überspringt sich, wenn keine Credentials geseedet wurden — das Gate kann dadurch nie aus sachfremden Gründen rot werden.
+- **CI-Release-Gate:** neuer Job `ecosystem-lockstep` in der Main-Pipeline. Er bricht ab, wenn nicht alle vier Plugins dieselbe `$plugin->version` melden; `ci-complete` hängt daran. Damit wird nicht mehr „aktuelles Plugin + latest main der anderen drei" freigegeben, sondern der tatsächlich gemeinsam ausgelieferte Stand.
+- Versions-Gleichschritt `2026082421`.
+
 ## 0.9.43 — 2026-08-25 — CI: Geschwister aus development
 - **Dev-Pipeline und Playwright-Workflow** ziehen die Geschwister-Plugins jetzt per `--branch development` aus dem gemeinsamen Entwicklungszweig, damit das Ökosystem in seinem echten, gemeinsam entwickelten Stand getestet wird. Die Main-Pipeline bleibt auf `main`.
 - Versions-Gleichschritt `2026082420`.

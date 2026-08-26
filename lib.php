@@ -63,13 +63,13 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $modes = [];
         foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
             if ($config !== null && !empty($config->$flag)) {
-                $modes[] = get_string('mode:' . $flag, 'enrol_flexaccess');
+                $modes[] = get_string('mode' . $flag, 'enrol_flexaccess');
             }
         }
         $badge = html_writer::span(
-            $modes ? implode(', ', $modes) : get_string('mode:none', 'enrol_flexaccess'),
+            $modes ? implode(', ', $modes) : get_string('modenone', 'enrol_flexaccess'),
             'badge ' . ($modes ? 'badge-info bg-info' : 'badge-secondary bg-secondary'),
-            ['title' => get_string('mode:label', 'enrol_flexaccess')]
+            ['title' => get_string('modelabel', 'enrol_flexaccess')]
         );
         $icons[] = html_writer::span($badge, 'flexaccess-modes mr-2');
 
@@ -84,6 +84,14 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             $icons[] = $OUTPUT->action_icon(
                 new moodle_url('/admin/tool/flexaccess/coursebatches.php', ['courseid' => $courseid]),
                 new pix_icon('i/users', get_string('accesslists', 'enrol_flexaccess'))
+            );
+        }
+        // Entry point into the role/cohort restriction management for this course. The evaluation
+        // engine applies site, category and course rules; this is the course-scoped admin UI.
+        if (has_capability('enrol/flexaccess:config', \context_course::instance($courseid))) {
+            $icons[] = $OUTPUT->action_icon(
+                new moodle_url('/enrol/flexaccess/restrictions.php', ['courseid' => $courseid]),
+                new pix_icon('i/permissions', get_string('restrictionsmanage', 'enrol_flexaccess'))
             );
         }
         return $icons;
@@ -203,7 +211,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         ];
         $mform->addElement('select', 'status', get_string('status', 'enrol_flexaccess'), $options);
 
-        $mform->addElement('header', 'flexaccess_access', get_string('settings:access', 'enrol_flexaccess'));
+        $mform->addElement('header', 'flexaccess_access', get_string('settingsaccess', 'enrol_flexaccess'));
 
         $mform->addElement(
             'date_time_selector',
@@ -227,7 +235,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->setDefault('maxparticipants', 0);
 
         $mform->addElement('select', 'participantvisibility', get_string('participantvisibility', 'enrol_flexaccess'), [
-            'inherit' => get_string('participantvisibility:inherit', 'enrol_flexaccess'),
+            'inherit' => get_string('participantvisibilityinherit', 'enrol_flexaccess'),
             'show' => get_string('show', 'enrol_flexaccess'),
             'hide' => get_string('hide', 'enrol_flexaccess'),
         ]);
@@ -235,7 +243,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->setDefault('participantvisibility', 'inherit');
 
         // Access methods offered by this instance.
-        $mform->addElement('header', 'flexaccess_methods', get_string('settings:methods', 'enrol_flexaccess'));
+        $mform->addElement('header', 'flexaccess_methods', get_string('settingsmethods', 'enrol_flexaccess'));
 
         foreach (['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin'] as $flag) {
             $mform->addElement('advcheckbox', $flag, get_string($flag, 'enrol_flexaccess'));
@@ -272,7 +280,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         }
 
         // Lifetimes and expiry behaviour.
-        $mform->addElement('header', 'flexaccess_lifecycle', get_string('settings:lifecycle', 'enrol_flexaccess'));
+        $mform->addElement('header', 'flexaccess_lifecycle', get_string('settingslifecycle', 'enrol_flexaccess'));
 
         $mform->addElement('duration', 'temporarylifetime', get_string('temporarylifetime', 'enrol_flexaccess'));
         $mform->addHelpButton('temporarylifetime', 'temporarylifetime', 'enrol_flexaccess');
@@ -288,18 +296,18 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->setDefault('enrolperiod', 0);
 
         $mform->addElement('select', 'expiryaction', get_string('expiryaction', 'enrol_flexaccess'), [
-            'suspend' => get_string('expiryaction:suspend', 'enrol_flexaccess'),
-            'unenrol' => get_string('expiryaction:unenrol', 'enrol_flexaccess'),
+            'suspend' => get_string('expiryactionsuspend', 'enrol_flexaccess'),
+            'unenrol' => get_string('expiryactionunenrol', 'enrol_flexaccess'),
         ]);
         $mform->addHelpButton('expiryaction', 'expiryaction', 'enrol_flexaccess');
         $mform->setDefault('expiryaction', 'suspend');
 
         // Access key gating for temporary entry.
-        $mform->addElement('header', 'flexaccess_key', get_string('settings:accesskeygate', 'enrol_flexaccess'));
+        $mform->addElement('header', 'flexaccess_key', get_string('settingsaccesskeygate', 'enrol_flexaccess'));
 
         $mform->addElement('select', 'temporaryaccesskeymode', get_string('temporaryaccesskeymode', 'enrol_flexaccess'), [
-            'inherit' => get_string('temporaryaccesskeymode:inherit', 'enrol_flexaccess'),
-            'course' => get_string('temporaryaccesskeymode:course', 'enrol_flexaccess'),
+            'inherit' => get_string('temporaryaccesskeymodeinherit', 'enrol_flexaccess'),
+            'course' => get_string('temporaryaccesskeymodecourse', 'enrol_flexaccess'),
         ]);
         $mform->addHelpButton('temporaryaccesskeymode', 'temporaryaccesskeymode', 'enrol_flexaccess');
         $mform->setDefault('temporaryaccesskeymode', 'inherit');
@@ -309,20 +317,20 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addHelpButton('temporaryaccesskey', 'temporaryaccesskey', 'enrol_flexaccess');
         $mform->hideIf('temporaryaccesskey', 'temporaryaccesskeymode', 'neq', 'course');
 
-        $mform->addElement('header', 'flexaccess_quickreggate', get_string('settings:quickreggate', 'enrol_flexaccess'));
+        $mform->addElement('header', 'flexaccess_quickreggate', get_string('settingsquickreggate', 'enrol_flexaccess'));
 
-        $mform->addElement('select', 'quickreggatemode', get_string('instance:quickreggatemode', 'enrol_flexaccess'), [
-            'inherit' => get_string('gate:inherit', 'enrol_flexaccess'),
-            'none' => get_string('gate:none', 'enrol_flexaccess'),
-            'password' => get_string('gate:password', 'enrol_flexaccess'),
-            'domain' => get_string('gate:domain', 'enrol_flexaccess'),
+        $mform->addElement('select', 'quickreggatemode', get_string('instancequickreggatemode', 'enrol_flexaccess'), [
+            'inherit' => get_string('gateinherit', 'enrol_flexaccess'),
+            'none' => get_string('gatenone', 'enrol_flexaccess'),
+            'password' => get_string('gatepassword', 'enrol_flexaccess'),
+            'domain' => get_string('gatedomain', 'enrol_flexaccess'),
         ]);
         $mform->setDefault('quickreggatemode', 'inherit');
 
         $mform->addElement(
             'passwordunmask',
             'quickreggatepassword',
-            get_string('instance:quickreggatepassword', 'enrol_flexaccess')
+            get_string('instancequickreggatepassword', 'enrol_flexaccess')
         );
         $mform->setType('quickreggatepassword', PARAM_RAW);
         $mform->hideIf('quickreggatepassword', 'quickreggatemode', 'neq', 'password');
@@ -330,7 +338,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->addElement(
             'textarea',
             'quickreggatedomains',
-            get_string('instance:quickreggatedomains', 'enrol_flexaccess')
+            get_string('instancequickreggatedomains', 'enrol_flexaccess')
         );
         $mform->setType('quickreggatedomains', PARAM_RAW);
         $mform->hideIf('quickreggatedomains', 'quickreggatemode', 'neq', 'domain');
@@ -366,10 +374,10 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $from = (int) ($data['availablefrom'] ?? 0);
         $until = (int) ($data['availableuntil'] ?? 0);
         if (!access_window::is_valid_range($from, $until)) {
-            $errors['availableuntil'] = get_string('error:windowrange', 'enrol_flexaccess');
+            $errors['availableuntil'] = get_string('errorwindowrange', 'enrol_flexaccess');
         }
         if ((int) ($data['maxparticipants'] ?? 0) < 0) {
-            $errors['maxparticipants'] = get_string('error:maxparticipants', 'enrol_flexaccess');
+            $errors['maxparticipants'] = get_string('errormaxparticipants', 'enrol_flexaccess');
         }
         return $errors;
     }
@@ -439,7 +447,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             }
             $message = $status === 'full'
                 ? get_string('coursefull', 'enrol_flexaccess')
-                : get_string('access:unavailable', 'auth_flexaccess');
+                : get_string('accessunavailable', 'auth_flexaccess');
             return $OUTPUT->box($OUTPUT->notification($message, \core\output\notification::NOTIFY_WARNING, false));
         }
 
@@ -447,14 +455,14 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $button .= html_writer::empty_tag('input', ['type' => 'hidden', 'name' => 'flexaccessenrol', 'value' => 1]);
         $button .= html_writer::empty_tag('input', [
             'type' => 'submit',
-            'value' => get_string('access:enter', 'enrol_flexaccess'),
+            'value' => get_string('accessenter', 'enrol_flexaccess'),
             'class' => 'btn btn-primary',
         ]);
         $form = html_writer::tag('form', $button, [
             'method' => 'post',
             'action' => (new moodle_url('/enrol/index.php', ['id' => $courseid]))->out(false),
         ]);
-        return $OUTPUT->box(html_writer::tag('p', get_string('access:enterintro', 'enrol_flexaccess')) . $form);
+        return $OUTPUT->box(html_writer::tag('p', get_string('accessenterintro', 'enrol_flexaccess')) . $form);
     }
 
     /**

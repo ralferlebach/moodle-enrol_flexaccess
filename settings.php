@@ -29,7 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 require_once(__DIR__ . '/lib.php');
 
 if ($ADMIN->fulltree) {
-    $settings->add(new admin_setting_heading('enrol_flexaccess/defaults', get_string('settings:defaults', 'enrol_flexaccess'), ''));
+    $settings->add(new admin_setting_heading('enrol_flexaccess/defaults', get_string('settingsdefaults', 'enrol_flexaccess'), ''));
     $visibilitysetting = new admin_setting_configselect(
         'enrol_flexaccess/participantvisibilitydefault',
         get_string('participantvisibilitydefault', 'enrol_flexaccess'),
@@ -55,8 +55,8 @@ if ($ADMIN->fulltree) {
     foreach ($methoddefaults as $flag => $default) {
         $settings->add(new admin_setting_configcheckbox(
             'enrol_flexaccess/' . $flag,
-            get_string('setting:' . $flag, 'enrol_flexaccess'),
-            get_string('setting:' . $flag . '_desc', 'enrol_flexaccess'),
+            get_string('setting' . $flag, 'enrol_flexaccess'),
+            get_string('setting' . $flag . '_desc', 'enrol_flexaccess'),
             $default
         ));
     }
@@ -70,7 +70,7 @@ if ($ADMIN->fulltree) {
     $settings->add($wideningsetting);
     $settings->add(new admin_setting_heading(
         'enrol_flexaccess/accesskey',
-        get_string('settings:accesskey', 'enrol_flexaccess'),
+        get_string('settingsaccesskey', 'enrol_flexaccess'),
         ''
     ));
     $settings->add(new admin_setting_configcheckbox(
@@ -89,80 +89,80 @@ if ($ADMIN->fulltree) {
 
     $settings->add(new admin_setting_heading(
         'enrol_flexaccess/quickreggate',
-        get_string('settings:quickreggate', 'enrol_flexaccess'),
-        get_string('settings:quickreggate_desc', 'enrol_flexaccess')
+        get_string('settingsquickreggate', 'enrol_flexaccess'),
+        get_string('settingsquickreggate_desc', 'enrol_flexaccess')
     ));
     $settings->add(new admin_setting_configselect(
         'enrol_flexaccess/quickreggatemode',
-        get_string('setting:quickreggatemode', 'enrol_flexaccess'),
-        get_string('setting:quickreggatemode_desc', 'enrol_flexaccess'),
+        get_string('settingquickreggatemode', 'enrol_flexaccess'),
+        get_string('settingquickreggatemode_desc', 'enrol_flexaccess'),
         'none',
         [
-            'none' => get_string('gate:none', 'enrol_flexaccess'),
-            'password' => get_string('gate:password', 'enrol_flexaccess'),
-            'domain' => get_string('gate:domain', 'enrol_flexaccess'),
+            'none' => get_string('gatenone', 'enrol_flexaccess'),
+            'password' => get_string('gatepassword', 'enrol_flexaccess'),
+            'domain' => get_string('gatedomain', 'enrol_flexaccess'),
         ]
     ));
     $settings->add(new \enrol_flexaccess\admin\setting_access_key(
         'enrol_flexaccess/quickreggatepasswordhash',
-        get_string('setting:quickreggatepassword', 'enrol_flexaccess'),
-        get_string('setting:quickreggatepassword_desc', 'enrol_flexaccess'),
+        get_string('settingquickreggatepassword', 'enrol_flexaccess'),
+        get_string('settingquickreggatepassword_desc', 'enrol_flexaccess'),
         '',
         PARAM_RAW_TRIMMED
     ));
     $settings->add(new admin_setting_configtextarea(
         'enrol_flexaccess/quickreggatedomains',
-        get_string('setting:quickreggatedomains', 'enrol_flexaccess'),
-        get_string('setting:quickreggatedomains_desc', 'enrol_flexaccess'),
+        get_string('settingquickreggatedomains', 'enrol_flexaccess'),
+        get_string('settingquickreggatedomains_desc', 'enrol_flexaccess'),
         '',
         PARAM_RAW
     ));
 
     $settings->add(new admin_setting_heading(
         'enrol_flexaccess/ratelimit',
-        get_string('settings:ratelimit', 'enrol_flexaccess'),
-        get_string('settings:ratelimit_desc', 'enrol_flexaccess')
+        get_string('settingsratelimit', 'enrol_flexaccess'),
+        get_string('settingsratelimit_desc', 'enrol_flexaccess')
     ));
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/quickregmaxperip',
-        get_string('setting:quickregmaxperip', 'enrol_flexaccess'),
-        get_string('setting:quickregmaxperip_desc', 'enrol_flexaccess'),
+        get_string('settingquickregmaxperip', 'enrol_flexaccess'),
+        get_string('settingquickregmaxperip_desc', 'enrol_flexaccess'),
         30,
         PARAM_INT
     ));
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/quickregwindow',
-        get_string('setting:quickregwindow', 'enrol_flexaccess'),
-        get_string('setting:quickregwindow_desc', 'enrol_flexaccess'),
+        get_string('settingquickregwindow', 'enrol_flexaccess'),
+        get_string('settingquickregwindow_desc', 'enrol_flexaccess'),
         600,
         PARAM_INT
     ));
 
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/tempmaxperip',
-        get_string('setting:tempmaxperip', 'enrol_flexaccess'),
-        get_string('setting:tempmaxperip_desc', 'enrol_flexaccess'),
+        get_string('settingtempmaxperip', 'enrol_flexaccess'),
+        get_string('settingtempmaxperip_desc', 'enrol_flexaccess'),
         30,
         PARAM_INT
     ));
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/tempwindow',
-        get_string('setting:tempwindow', 'enrol_flexaccess'),
-        get_string('setting:tempwindow_desc', 'enrol_flexaccess'),
+        get_string('settingtempwindow', 'enrol_flexaccess'),
+        get_string('settingtempwindow_desc', 'enrol_flexaccess'),
         600,
         PARAM_INT
     ));
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/tempsitemax',
-        get_string('setting:tempsitemax', 'enrol_flexaccess'),
-        get_string('setting:tempsitemax_desc', 'enrol_flexaccess'),
+        get_string('settingtempsitemax', 'enrol_flexaccess'),
+        get_string('settingtempsitemax_desc', 'enrol_flexaccess'),
         0,
         PARAM_INT
     ));
     $settings->add(new admin_setting_configtext(
         'enrol_flexaccess/tempsitewindow',
-        get_string('setting:tempsitewindow', 'enrol_flexaccess'),
-        get_string('setting:tempsitewindow_desc', 'enrol_flexaccess'),
+        get_string('settingtempsitewindow', 'enrol_flexaccess'),
+        get_string('settingtempsitewindow_desc', 'enrol_flexaccess'),
         3600,
         PARAM_INT
     ));

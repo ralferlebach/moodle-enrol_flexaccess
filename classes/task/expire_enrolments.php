@@ -36,7 +36,7 @@ final class expire_enrolments extends \core\task\scheduled_task {
      * @return string
      */
     public function get_name(): string {
-        return get_string('task:expireenrolments', 'enrol_flexaccess');
+        return get_string('taskexpireenrolments', 'enrol_flexaccess');
     }
     /**
      * Execute task.
