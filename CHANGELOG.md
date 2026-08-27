@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0-RC1 — 2026-08-27 — Release Candidate 1
+- Version `2026082700`, Release `1.0.0-RC1`, Reifegrad `MATURITY_STABLE`.
+- Die Abhängigkeiten der vier Plugins verlangen ebenfalls `2026082700`: Sie sind nur in diesem gemeinsamen Stand lauffähig.
+- **Neue `README.md`** nach dem Muster von Moodle an Hochschulen, mit den tatsächlichen Angaben dieses Plugins: Voraussetzungen, Motivation, Installation, Einstellungen, Capabilities, geplante Aufgaben, Funktionsweise samt Stolperfallen sowie Hinweise zu Support, Übersetzung und Pflege.
+
 ## 0.9.63 — 2026-08-27 — k6-Capacity-Race klassifiziert korrekt
 - **Der Race-Test wertete Ablehnungen als Erfolge.** Er suchte im Seitentext nach „full"/„capacity"; die tatsächliche Meldung lautet aber „The maximum number of participants has been reached." und enthält keines dieser Wörter. Zusätzlich folgte k6 den Weiterleitungen, sodass Erteilung und Ablehnung beide mit HTTP 200 endeten. Die Klassifikation erfolgt jetzt über den HTTP-Status ohne Weiterleitung: 3xx bedeutet erteilt, 200 bedeutet kontrolliert abgelehnt. Keine Auswertung übersetzter Texte mehr.
 - Versions-Gleichschritt `2026082440`.
