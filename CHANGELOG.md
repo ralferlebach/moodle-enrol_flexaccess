@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.0-RC1 — 2026-08-27 — Browsertests: vollständige Aufzeichnung und sprechende Daten
+- **Aufzeichnung jetzt auch bei grünen Läufen.** Screenshot, Trace und Video werden für **jeden** Testlauf erzeugt, nicht mehr nur bei Fehlschlägen. Ein grüner Lauf dokumentiert damit den vollständigen Ablauf und liefert Abbildungen, die sich für Handbuch, Webseite und Plugin-Beschreibung verwenden lassen. Alles landet unverändert im Artefakt `playwright-report`.
+- **Sprechende Testdaten** statt Zeitstempeln: John und Jane Doe mit Adressen unter `example.org`, Passwort `P@$$w0rd!`, Kurs „My favourite course", Zugangsliste „My first list", Kampagne „Open day 2026".
+- **Wiederholungsfest:** Da jeder CI-Lauf ein frisches Moodle installiert, können feste Werte nicht kollidieren. Nur bei einem Wiederholungsversuch innerhalb desselben Laufs wird ein Zusatz angehängt — der erste Versuch, dessen Screenshots als Abbildungen dienen, behält die glatten Namen.
+- Adressen nutzen `example.org`; diese Domain ist laut RFC 2606 für Dokumentationszwecke reserviert, sodass kein reales Postfach getroffen werden kann.
+
 ## 1.0.0-RC1 — 2026-08-27 — Freigabe-Gate: verlangte ein Dokument, das es nur einmal gibt
 - **Der Gate scheiterte an einer Bedingung, die nur ein Plugin erfüllen konnte.** Er verlangte bei `MATURITY_STABLE` die Datei `docs/scope-decisions-1.0.md`; die liegt aber ausschließlich in `tool_flexaccess`. In den drei anderen Repositories blieb er deshalb rot, obwohl sämtliche Tests grün waren. Die Bedingung ist entfernt — die Scope-Entscheidungen bleiben dokumentiert, sind aber keine Freigabevoraussetzung je Plugin.
 - **Der Gate ist jetzt die einzige Bewertungsstelle der Release-Gates.** Er prüft Matrix, Lockstep, Artefakt und Coverage bei *jedem* Reifegrad, nennt jedes Ergebnis einzeln und gibt den deklarierten Reifegrad aus. Der Job heißt entsprechend „Release gate".

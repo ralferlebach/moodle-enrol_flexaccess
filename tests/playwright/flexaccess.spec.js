@@ -23,10 +23,16 @@
 
 const { test, expect } = require('@playwright/test');
 
+// Test data is chosen to be presentable: the screenshots and traces of a green run are used as
+// illustrations for the handbook and the plugin description, so the forms should show plausible
+// names rather than timestamps. Each CI run installs a fresh Moodle, so fixed values cannot clash.
+// Addresses use example.org, which RFC 2606 reserves for documentation - no real mailbox can ever
+// be hit by a test run.
+
 const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS || 'Admin!23';
 const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
-const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'FlexAccess Load Test';
+const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'My favourite course';
 
 async function login(page) {
   await loginAs(page, ADMIN_USER, ADMIN_PASS);
@@ -56,6 +62,20 @@ async function fillPasswordUnmask(page, name, value) {
   }
   await input.waitFor({ state: 'visible' });
   await fillStable(input, value);
+}
+
+/**
+ * Build a readable address that stays unique across retries.
+ *
+ * A retry would otherwise register the very same address a second time and fail on the duplicate.
+ * The first attempt - the one whose screenshots are used as illustrations - keeps the plain name.
+ *
+ * @param {string} local The local part, for example 'john.doe'.
+ * @param {import('@playwright/test').TestInfo} testInfo The current test info.
+ * @returns {string}
+ */
+function personEmail(local, testInfo) {
+  return testInfo.retry ? `${local}.${testInfo.retry}@example.org` : `${local}@example.org`;
 }
 
 /**
@@ -146,15 +166,15 @@ test('magic-login request page renders for anonymous users', async ({ page, cont
 
 test('quick registration creates a persistent account that can log in again', async ({ page, context }) => {
   test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
-  const email = `pw_quick_${Date.now()}@example.com`;
-  const password = 'Str0ng-Pass!23';
+  const email = personEmail('john.doe', testInfo);
+  const password = 'P@$$w0rd!';
 
   await context.clearCookies();
   await page.goto(`/auth/flexaccess/register.php?courseid=${COURSE_ID}`);
   await page.waitForLoadState('domcontentloaded');
   await page.fill('input[name="email"]', email);
-  await page.fill('input[name="firstname"]', 'Quick');
-  await page.fill('input[name="lastname"]', 'Learner');
+  await page.fill('input[name="firstname"]', 'John');
+  await page.fill('input[name="lastname"]', 'Doe');
   await fillPasswordUnmask(page, 'password', password);
   await page.getByRole('button', { name: /Create account and enter/i }).click();
   await expect(page.locator('body')).toContainText(COURSE_NAME);
@@ -167,8 +187,8 @@ test('quick registration creates a persistent account that can log in again', as
 
 test('temporary access can be made permanent and log in again', async ({ page, context }) => {
   test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
-  const email = `pw_persist_${Date.now()}@example.com`;
-  const password = 'Str0ng-Pass!23';
+  const email = personEmail('jane.doe', testInfo);
+  const password = 'P@$$w0rd!';
 
   // Enter anonymously as a temporary user.
   await context.clearCookies();
@@ -185,8 +205,8 @@ test('temporary access can be made permanent and log in again', async ({ page, c
   await page.goto('/auth/flexaccess/persist.php');
   await page.waitForLoadState('domcontentloaded');
   await page.fill('input[name="email"]', email);
-  await page.fill('input[name="firstname"]', 'Persist');
-  await page.fill('input[name="lastname"]', 'Learner');
+  await page.fill('input[name="firstname"]', 'Jane');
+  await page.fill('input[name="lastname"]', 'Doe');
   await fillPasswordUnmask(page, 'password', password);
   await page.getByRole('button', { name: /Make my account permanent/i }).click();
   await expect(page.locator('body')).toContainText(/permanent/i);

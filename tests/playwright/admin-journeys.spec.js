@@ -27,7 +27,7 @@ const { test, expect } = require('@playwright/test');
 const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS || 'Admin!23';
 const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
-const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'FlexAccess Load Test';
+const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'My favourite course';
 
 /**
  * Log in through the standard Moodle login form.
@@ -120,6 +120,20 @@ async function open(page, url) {
 }
 
 /**
+ * Build a readable label that stays unique across retries.
+ *
+ * The first attempt - the one whose screenshots are used as illustrations - keeps the plain name;
+ * a retry gets a suffix so it does not collide with what the first attempt already created.
+ *
+ * @param {string} label The readable name.
+ * @param {import('@playwright/test').TestInfo} testInfo The current test info.
+ * @returns {string}
+ */
+function uniqueLabel(label, testInfo) {
+  return testInfo.retry ? `${label} (${testInfo.retry})` : label;
+}
+
+/**
  * Fill a field and make sure the value survives.
  *
  * Moodle's login password uses the `toggle_sensitive` component, whose JavaScript initialises after
@@ -176,27 +190,27 @@ test.describe('FlexAccess administrative journeys', () => {
     await login(page);
   });
 
-  test('an invitation can be created and appears in the list', async ({ page }) => {
+  test('an invitation can be created and appears in the list', async ({ page }, testInfo) => {
     await open(page, '/admin/tool/flexaccess/invitations.php?action=new');
-    const address = `invitee-${Date.now()}@example.invalid`;
+    const address = testInfo.retry ? `john.doe.${testInfo.retry}@example.org` : 'john.doe@example.org';
     await page.locator('#id_emails, textarea[name="emails"], input[name="emails"]').first().fill(address);
     await chooseCourse(page, COURSE_ID);
     await submitForm(page);
     await expect(page.locator('body')).toContainText(address);
   });
 
-  test('an access list can be created for a course', async ({ page }) => {
+  test('an access list can be created for a course', async ({ page }, testInfo) => {
     await open(page, `/admin/tool/flexaccess/coursebatches.php?courseid=${COURSE_ID}&action=new`);
-    const name = `E2E ${Date.now()}`;
+    const name = uniqueLabel('My first list', testInfo);
     await page.locator('#id_name, input[name="name"]').first().fill(name);
     await page.locator('#id_count, input[name="count"]').first().fill('2');
     await submitForm(page);
     await expect(page.locator('body')).toContainText(name);
   });
 
-  test('a campaign link is shown exactly once on creation', async ({ page }) => {
+  test('a campaign link is shown exactly once on creation', async ({ page }, testInfo) => {
     await open(page, '/admin/tool/flexaccess/campaigns.php?action=new');
-    const name = `Campaign ${Date.now()}`;
+    const name = uniqueLabel('Open day 2026', testInfo);
     await page.locator('#id_name, input[name="name"]').first().fill(name);
     await chooseCourse(page, COURSE_ID);
     await submitForm(page);

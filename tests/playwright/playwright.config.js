@@ -31,10 +31,12 @@ module.exports = defineConfig({
   use: {
     baseURL: process.env.FLEXACCESS_BASE_URL || 'http://localhost:8000',
     headless: true,
-    screenshot: 'only-on-failure',
-    trace: 'retain-on-failure',
+    // Captured on every run, not just on failure: a green run's trace documents the intended
+    // journey end to end and its screenshots are usable as illustrations.
+    screenshot: 'on',
+    trace: 'on',
     // A recording of the failing run makes a diagnosis possible without reproducing it locally.
-    video: 'retain-on-failure',
+    video: 'on',
   },
   reporter: [['list'], ['html', { open: 'never' }]],
 });

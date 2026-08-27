@@ -30,7 +30,8 @@ require(__DIR__ . '/../../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->dirroot . '/user/lib.php');
 
-$coursename = 'FlexAccess Load Test';
+// A presentable name: the screenshots of a green run are used as illustrations.
+$coursename = 'My favourite course';
 $category = \core_course_category::get_default();
 $course = create_course((object) [
     'fullname' => $coursename,
