@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.61 — 2026-08-27 — Browser-Tests: Passwortfeld und Formularabsendung
+- **Passwortfelder werden jetzt nachweisbar befüllt.** Moodles `passwordunmask` blendet das eigentliche Eingabefeld hinter einem Bearbeiten-Anker aus. Der Testhelfer öffnet es, tippt den Wert zeichenweise (damit alle Ereignisse ausgelöst werden) und **prüft anschließend den Feldwert**. Erreichte der Wert das Feld bisher nicht, entstand ein Konto mit einem anderen Passwort — sichtbar wurde das erst beim späteren Anmelden als „Invalid login". Der Fehler tritt jetzt sofort und mit klarer Ursache auf.
+- **Formularabsendung eindeutig:** Der Submit-Button wird innerhalb des Formulars gesucht statt seitenweit; die vorherige Auswahl konnte ein unbeteiligtes Bedienelement aus dem Seitenkopf treffen, was sich nur als Zeitüberschreitung zeigte.
+- Zum Hintergrund: Der Ablauf selbst wurde serverseitig End-zu-Ende überprüft — Schnellregistrierung und Persistierung setzen den Anmeldenamen auf die E-Mail, das Passwort ist gültig und `authenticate_user_login()` gelingt. Der Fehler lag ausschließlich in der Formularbedienung des Browsertests.
+- Versions-Gleichschritt `2026082438`.
+
 ## 0.9.60 — 2026-08-27 — k6- und Playwright-Fehlschläge behoben
 - **k6 meldete `HTTP 0`, obwohl der Server lief.** `php -S` lauscht auf **einer** Adresse; `curl` erreichte den auf `localhost` gebundenen Server, k6 löste `localhost` nach `::1` auf und lief ins Leere. Server und Basis-URL verwenden jetzt durchgängig `127.0.0.1`. Das Verhalten wurde nachgestellt: IPv4 antwortet mit 200, IPv6 liefert genau den Code `000`, der im Log als `HTTP 0` erschien. Betrifft ebenso jMeter und Playwright.
 - **Playwright: Rollen getrennt.** Das Seed exportierte sein Manager-Konto als `FLEXACCESS_ADMIN_USER` und überschrieb damit den Site-Admin. Seiten wie `manageenrols`, die `moodle/site:config` verlangen, verweigerten daraufhin den Zugriff — daher schlug „FlexAccess enrolment method is installed and listed" fehl. Das Konto heißt jetzt `FLEXACCESS_MANAGER_*`; die Barrierefreiheitsprüfungen der Plugin-Seiten nutzen es, die Administrationswege den Site-Admin.

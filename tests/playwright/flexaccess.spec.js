@@ -50,11 +50,21 @@ async function login(page) {
  */
 async function fillPasswordUnmask(page, name, value) {
   const input = page.locator(`input[name="${name}"]`);
-  if (!(await input.isVisible())) {
-    const wrapper = page.locator(`[data-passwordunmask="wrapper"]:has(input[name="${name}"])`);
-    await wrapper.locator('[data-passwordunmask="edit"]').click();
+  // The element hides the real input behind a "click to enter text" anchor until it is used.
+  const edit = page.locator(
+    `[data-passwordunmask="wrapper"]:has(input[name="${name}"]) [data-passwordunmask="edit"]`
+  );
+  if (await edit.count() && !(await input.isVisible())) {
+    await edit.first().click();
   }
-  await input.fill(value);
+  await input.waitFor({ state: 'visible' });
+  await input.fill('');
+  // Typed rather than set in one go, so every event the element listens for actually fires.
+  await input.pressSequentially(value);
+  // Confirm what will really be submitted. Without this a value that never reached the field
+  // creates an account with a different password, and the failure only surfaces much later as
+  // "Invalid login" on the next sign-in.
+  await expect(input).toHaveValue(value);
 }
 
 test('FlexAccess enrolment method is installed and listed', async ({ page }) => {

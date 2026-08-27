@@ -48,6 +48,22 @@ async function login(page) {
 }
 
 /**
+ * Submit the form on the current page.
+ *
+ * Scoped to the form itself: a page-wide "first submit button" can pick up an unrelated control
+ * from the header, which then never completes the action and only surfaces as a timeout.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @returns {Promise<void>}
+ */
+async function submitForm(page) {
+  const form = page.locator('form').filter({ has: page.locator('input, textarea, select') }).first();
+  const button = form.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first();
+  await button.waitFor({ state: 'visible' });
+  await button.click();
+}
+
+/**
  * Open a page and assert it rendered rather than redirecting to login or erroring out.
  *
  * @param {import('@playwright/test').Page} page The page under test.
@@ -73,7 +89,7 @@ test.describe('FlexAccess administrative journeys', () => {
     const address = `invitee-${Date.now()}@example.invalid`;
     await page.locator('#id_emails, textarea[name="emails"], input[name="emails"]').first().fill(address);
     await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
-    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
+    await submitForm(page);
     await expect(page.locator('body')).toContainText(address);
   });
 
@@ -82,7 +98,7 @@ test.describe('FlexAccess administrative journeys', () => {
     const name = `E2E ${Date.now()}`;
     await page.locator('#id_name, input[name="name"]').first().fill(name);
     await page.locator('#id_count, input[name="count"]').first().fill('2');
-    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
+    await submitForm(page);
     await expect(page.locator('body')).toContainText(name);
   });
 
@@ -91,7 +107,7 @@ test.describe('FlexAccess administrative journeys', () => {
     const name = `Campaign ${Date.now()}`;
     await page.locator('#id_name, input[name="name"]').first().fill(name);
     await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
-    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
+    await submitForm(page);
 
     // The plaintext link is stored hashed and must be displayed on this response only.
     await expect(page.locator('body')).toContainText(/campaign\.php\?token=/);
