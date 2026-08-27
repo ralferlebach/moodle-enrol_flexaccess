@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.57 — 2026-08-27 — Versions-Gleichschritt
+- Keine Codeänderung. Versions-Gleichschritt auf `2026082434`.
+
 ## 0.9.56 — 2026-08-27 — Playwright, jMeter und k6 lauffähig gemacht
 - **Playwright scheiterte an der Moodle-Installation** („Dependencies check failed"). Ursache war meine Versions-Bump-Automatik: Ein pauschales Suchen-und-Ersetzen der Build-Nummer schrieb **auch die `$plugin->dependencies`** um, sodass jedes Plugin exakt den brandneuen Build aller Geschwister verlangte. Beim Rollout über vier Repositories liegt aber zwangsläufig eines zurück — und dann verweigert der Installer den Dienst. Die Pins nennen jetzt die **Mindestversion**, in der die genutzte API entstand (`2026082411`, für `tool → auth` `2026082423`), und werden nicht mehr automatisch mitgezogen.
 - **jMeter scheiterte am Prüfsummenvergleich.** Die Apache-Datei enthält bereits einen Dateinamen (`<hash> *apache-jmeter-5.6.3.tgz`); das Skript hängte einen zweiten an, woraufhin `sha512sum` nach einer Datei namens „apache-jmeter-5.6.3.tgz  jmeter.tgz" suchte. Es wird jetzt nur das Hash-Feld verwendet — mit echter Prüfsummendatei verifiziert.
