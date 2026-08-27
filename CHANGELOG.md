@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.63 — 2026-08-27 — k6-Capacity-Race klassifiziert korrekt
+- **Der Race-Test wertete Ablehnungen als Erfolge.** Er suchte im Seitentext nach „full"/„capacity"; die tatsächliche Meldung lautet aber „The maximum number of participants has been reached." und enthält keines dieser Wörter. Zusätzlich folgte k6 den Weiterleitungen, sodass Erteilung und Ablehnung beide mit HTTP 200 endeten. Die Klassifikation erfolgt jetzt über den HTTP-Status ohne Weiterleitung: 3xx bedeutet erteilt, 200 bedeutet kontrolliert abgelehnt. Keine Auswertung übersetzter Texte mehr.
+- Versions-Gleichschritt `2026082440`.
+
 ## 0.9.62 — 2026-08-27 — Browsertests: Anmeldung und Formularabsendung repariert
 - **Ursache aus dem Trace belegt.** Beim erneuten Anmelden wurde `password` **leer** übertragen, `username` dagegen korrekt — die Registrierung selbst hatte das Passwort einwandfrei gesendet. Der Fehler lag also ausschließlich in der Testbedienung, nicht im Plugin; der Ablauf wurde zusätzlich serverseitig End-zu-Ende geprüft (Anmeldename = E-Mail, Passwort gültig, `authenticate_user_login()` erfolgreich).
 - **Neuer Helfer `loginAs()`** in allen drei Spezifikationen: Er arbeitet innerhalb des Anmeldeformulars statt seitenweit und **prüft die eingetragenen Werte vor dem Absenden**. Ein Wert, der das Feld nicht erreicht, fällt damit sofort auf, statt später serverseitig als „Invalid login" zu erscheinen.

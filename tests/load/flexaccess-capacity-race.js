@@ -103,14 +103,21 @@ export default function () {
   const post = http.post(
     `${BASE_URL}/auth/flexaccess/access.php?courseid=${COURSEID}`,
     { confirm: '1', sesskey: match[1] },
-    { tags: { endpoint: 'access-post' } }
+    {
+      tags: { endpoint: 'access-post' },
+      // Do not follow the redirect: it is what distinguishes the two outcomes.
+      redirects: 0,
+      responseCallback: http.expectedStatuses({ min: 200, max: 399 }),
+    }
   );
 
   check(post, { 'write path did not error': (r) => r.status < 500 });
 
-  // Classify the outcome. A granted seat lands in the course; a lost race is refused politely.
-  const body = post.body || '';
-  if (post.status === 200 && !/full|besetzt|capacity/i.test(body)) {
+  // Classify by HTTP status, not by page text. A granted seat redirects into the course; a refused
+  // one re-renders the entry page. Matching words like "full" or "capacity" missed the real
+  // message ("The maximum number of participants has been reached.") and, with redirects followed,
+  // both outcomes ended up as 200 - so refusals could be counted as grants.
+  if (post.status >= 300 && post.status < 400) {
     enrolled.add(1);
   } else {
     refused.add(1);
