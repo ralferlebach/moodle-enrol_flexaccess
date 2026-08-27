@@ -27,6 +27,7 @@ const { test, expect } = require('@playwright/test');
 const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS || 'Admin!23';
 const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
+const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'FlexAccess Load Test';
 
 /**
  * Log in through the standard Moodle login form.
@@ -42,6 +43,31 @@ async function login(page) {
     page,
     `Login as "${ADMIN_USER}" failed; these pages need the site administrator.`
   ).not.toHaveURL(/\/login\//);
+}
+
+/**
+ * Choose a course in Moodle's AJAX course selector.
+ *
+ * The visible control is an autocomplete; the value that gets submitted lives in a hidden select
+ * behind it. Calling selectOption on a plain `select[name="courseid"]` therefore silently did
+ * nothing and left the required field empty.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @param {string} courseId The course id to select.
+ * @returns {Promise<void>}
+ */
+async function chooseCourse(page, courseId) {
+  const hidden = page.locator('select[name="courseid"]');
+  if (await hidden.count()) {
+    await hidden.selectOption(courseId, { force: true });
+    return;
+  }
+  const input = page.locator('input[id^="form_autocomplete_input"]').first();
+  await input.click();
+  await input.fill(COURSE_NAME);
+  const suggestion = page.locator('[id^="form_autocomplete_suggestions"] [role="option"]').first();
+  await suggestion.waitFor({ state: 'visible' });
+  await suggestion.click();
 }
 
 /**
@@ -74,7 +100,9 @@ async function submitForm(page) {
  */
 async function open(page, url) {
   const response = await page.goto(url);
-  await page.waitForLoadState('networkidle').catch(() => {});
+  // Deliberately not 'networkidle': pages carrying an AJAX autocomplete keep polling and never
+  // reach that state, which consumed the whole test timeout.
+  await page.waitForLoadState('domcontentloaded');
   expect(response, `No response for ${url}`).not.toBeNull();
   expect(response.status(), `Unexpected HTTP status for ${url}`).toBe(200);
   await expect(page.locator('body')).not.toContainText(/Coding error|Exception|Debug info/i);
@@ -121,7 +149,7 @@ async function loginAs(page, username, password) {
   await page.goto('/login/index.php');
   // Let the page's JavaScript settle first, otherwise a component that initialises afterwards can
   // still discard what was typed.
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
   const form = page.locator('form[action*="login/index.php"]').first();
   const user = form.locator('input[name="username"]');
   const pass = form.locator('input[name="password"]');
@@ -141,7 +169,7 @@ test.describe('FlexAccess administrative journeys', () => {
     await open(page, '/admin/tool/flexaccess/invitations.php?action=new');
     const address = `invitee-${Date.now()}@example.invalid`;
     await page.locator('#id_emails, textarea[name="emails"], input[name="emails"]').first().fill(address);
-    await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
+    await chooseCourse(page, COURSE_ID);
     await submitForm(page);
     await expect(page.locator('body')).toContainText(address);
   });
@@ -159,7 +187,7 @@ test.describe('FlexAccess administrative journeys', () => {
     await open(page, '/admin/tool/flexaccess/campaigns.php?action=new');
     const name = `Campaign ${Date.now()}`;
     await page.locator('#id_name, input[name="name"]').first().fill(name);
-    await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
+    await chooseCourse(page, COURSE_ID);
     await submitForm(page);
 
     // The plaintext link is stored hashed and must be displayed on this response only.

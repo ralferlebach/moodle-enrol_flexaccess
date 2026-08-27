@@ -99,7 +99,7 @@ async function loginAs(page, username, password) {
   await page.goto('/login/index.php');
   // Let the page's JavaScript settle first, otherwise a component that initialises afterwards can
   // still discard what was typed.
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
   const form = page.locator('form[action*="login/index.php"]').first();
   const user = form.locator('input[name="username"]');
   const pass = form.locator('input[name="password"]');
@@ -151,7 +151,7 @@ test('quick registration creates a persistent account that can log in again', as
 
   await context.clearCookies();
   await page.goto(`/auth/flexaccess/register.php?courseid=${COURSE_ID}`);
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Quick');
   await page.fill('input[name="lastname"]', 'Learner');
@@ -183,7 +183,7 @@ test('temporary access can be made permanent and log in again', async ({ page, c
 
   // Make the account permanent (verification is disabled on the test site).
   await page.goto('/auth/flexaccess/persist.php');
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Persist');
   await page.fill('input[name="lastname"]', 'Learner');

@@ -107,7 +107,7 @@ async function loginAs(page, username, password) {
   await page.goto('/login/index.php');
   // Let the page's JavaScript settle first, otherwise a component that initialises afterwards can
   // still discard what was typed.
-  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForLoadState('domcontentloaded');
   const form = page.locator('form[action*="login/index.php"]').first();
   const user = form.locator('input[name="username"]');
   const pass = form.locator('input[name="password"]');
