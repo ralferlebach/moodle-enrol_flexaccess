@@ -94,13 +94,24 @@ jobs:
             --fullname="CI" --shortname="CI" \
             --adminpass="Admin!23" --adminemail=ci@example.invalid
           # Serve with multiple workers so parallel requests don't serialise.
-          PHP_CLI_SERVER_WORKERS=8 php -S localhost:8000 -t . >/tmp/moodle-server.log 2>&1 &
+          # setsid detaches the server from this step's process group, so it survives until the
+          # job ends instead of being torn down when the step's shell exits.
+          setsid nohup env PHP_CLI_SERVER_WORKERS=8 \
+            php -S localhost:8000 -t . >/tmp/moodle-server.log 2>&1 < /dev/null &
+          ready=0
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
               http://localhost:8000/login/index.php || true)
-            [ "$code" = "200" ] && break
+            if [ "$code" = "200" ]; then ready=1; break; fi
             sleep 3
           done
+          # Without this the loop simply ran out and the job continued against a dead server, which
+          # showed up much later as "100% of requests failed" instead of a clear cause.
+          if [ "$ready" != "1" ]; then
+            echo "Der Moodle-Testserver ist nicht erreichbar geworden (letzter HTTP-Status: $code)."
+            cat /tmp/moodle-server.log || true
+            exit 1
+          fi
           # seed_large.php prints "export KEY='value'" lines (BASE_URL, COURSEID, INSTANCEID);
           # expose the ones the load plan needs as step outputs.
           php enrol/flexaccess/tests/load/seed_large.php > /tmp/seed.env
@@ -125,10 +136,22 @@ jobs:
           curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz -o jmeter.tgz
           curl -sSL https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512 \
             || curl -sSL https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz.sha512 -o jmeter.tgz.sha512
-          echo "$(cat jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
+          # The Apache .sha512 file already carries a filename ("<hash> *apache-jmeter-5.6.3.tgz"),
+          # so appending a second one produced a malformed line and sha512sum looked for a file
+          # called "apache-jmeter-5.6.3.tgz  jmeter.tgz". Take the hash field only.
+          echo "$(awk '{print $1}' jmeter.tgz.sha512)  jmeter.tgz" | sha512sum -c -
           tar xzf jmeter.tgz
       - name: Run load plan
         run: |
+          # Pre-flight: confirm the target answers before generating load. A dead server otherwise
+          # surfaces as a wall of failed samples and looks like a plugin problem.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            "${{ steps.params.outputs.base_url }}/login/index.php" || true)
+          if [ "$code" != "200" ]; then
+            echo "Ziel ist nicht erreichbar (HTTP $code): ${{ steps.params.outputs.base_url }}"
+            cat /tmp/moodle-server.log || true
+            exit 1
+          fi
           apache-jmeter-5.6.3/bin/jmeter -n \
             -t plugin/tests/load/flexaccess-read-endpoints.jmx \
             -Jbase_url='${{ steps.params.outputs.base_url }}' \

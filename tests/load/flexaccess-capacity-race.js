@@ -67,6 +67,22 @@ export const options = {
   },
 };
 
+/**
+ * Fail fast on a missing or unreachable target, so a broken environment is reported as such
+ * instead of surfacing as a wall of failed requests.
+ *
+ * @returns {void}
+ */
+export function setup() {
+  if (!BASE_URL || !COURSEID) {
+    throw new Error('BASE_URL und COURSEID muessen gesetzt sein (-e BASE_URL=... -e COURSEID=...).');
+  }
+  const probe = http.get(`${BASE_URL}/login/index.php`);
+  if (probe.status !== 200) {
+    throw new Error(`Ziel nicht erreichbar: ${BASE_URL} lieferte HTTP ${probe.status}.`);
+  }
+}
+
 export default function () {
   // Step 1: GET the entry page to establish a session and read the sesskey.
   const entry = http.get(`${BASE_URL}/auth/flexaccess/access.php?courseid=${COURSEID}`, {

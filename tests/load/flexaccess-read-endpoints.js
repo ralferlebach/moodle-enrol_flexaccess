@@ -43,6 +43,24 @@ export const options = {
   },
 };
 
+/**
+ * Fail fast on missing or unreachable targets.
+ *
+ * Without this the plan happily generates load against an empty or dead URL and reports
+ * "100% of requests failed", which reads like a plugin defect instead of a broken environment.
+ *
+ * @returns {void}
+ */
+export function setup() {
+  if (!BASE_URL || !COURSEID) {
+    throw new Error('BASE_URL und COURSEID muessen gesetzt sein (-e BASE_URL=... -e COURSEID=...).');
+  }
+  const probe = http.get(`${BASE_URL}/login/index.php`);
+  if (probe.status !== 200) {
+    throw new Error(`Ziel nicht erreichbar: ${BASE_URL} lieferte HTTP ${probe.status}.`);
+  }
+}
+
 export default function () {
   // Anonymous access entry page (target-aware); the dominant read path.
   const entry = http.get(`${BASE_URL}/auth/flexaccess/access.php?courseid=${COURSEID}`, {
@@ -51,11 +69,15 @@ export default function () {
   check(entry, { 'access.php returns 200': (r) => r.status === 200 });
 
   // Magic-login endpoint: a bare GET without a token must fail closed, not error out.
+  // magic.php without a token must fail closed: it renders the "link invalid" page or redirects
+  // to login. Both are correct behaviour, so they are declared as expected responses - otherwise
+  // this deliberate refusal would be counted as an error and skew http_req_failed.
   const magic = http.get(`${BASE_URL}/auth/flexaccess/magic.php`, {
     tags: { endpoint: 'magic' },
     redirects: 0,
+    responseCallback: http.expectedStatuses({ min: 200, max: 399 }),
   });
-  check(magic, { 'magic.php reachable': (r) => r.status === 200 || r.status === 303 });
+  check(magic, { 'magic.php answers (fails closed without a token)': (r) => r.status >= 200 && r.status < 400 });
 
   sleep(1);
 }
