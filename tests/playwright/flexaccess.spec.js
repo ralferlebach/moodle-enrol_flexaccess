@@ -55,13 +55,32 @@ async function fillPasswordUnmask(page, name, value) {
     await edit.first().click();
   }
   await input.waitFor({ state: 'visible' });
-  await input.fill('');
-  // Typed rather than set in one go, so every event the element listens for actually fires.
-  await input.pressSequentially(value);
-  // Confirm what will really be submitted. Without this a value that never reached the field
-  // creates an account with a different password, and the failure only surfaces much later as
-  // "Invalid login" on the next sign-in.
-  await expect(input).toHaveValue(value);
+  await fillStable(input, value);
+}
+
+/**
+ * Fill a field and make sure the value survives.
+ *
+ * Moodle's login password uses the `toggle_sensitive` component, whose JavaScript initialises after
+ * the markup is in place and resets the field. Filling before that happens silently produced an
+ * empty password: the value looked right, and the server then answered "Invalid login".
+ *
+ * @param {import('@playwright/test').Locator} field The input to fill.
+ * @param {string} value The value to enter.
+ * @returns {Promise<void>}
+ */
+async function fillStable(field, value) {
+  let current = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await field.fill(value);
+    // Give a late-initialising component the chance to reset the field before trusting the value.
+    await field.page().waitForTimeout(300);
+    current = await field.inputValue();
+    if (current === value) {
+      return;
+    }
+  }
+  throw new Error(`The field kept losing its value; it now holds "${current}".`);
 }
 
 /**
@@ -78,13 +97,14 @@ async function fillPasswordUnmask(page, name, value) {
  */
 async function loginAs(page, username, password) {
   await page.goto('/login/index.php');
+  // Let the page's JavaScript settle first, otherwise a component that initialises afterwards can
+  // still discard what was typed.
+  await page.waitForLoadState('networkidle').catch(() => {});
   const form = page.locator('form[action*="login/index.php"]').first();
   const user = form.locator('input[name="username"]');
   const pass = form.locator('input[name="password"]');
-  await user.fill(username);
-  await pass.fill(password);
-  await expect(user).toHaveValue(username);
-  await expect(pass).toHaveValue(password);
+  await fillStable(user, username);
+  await fillStable(pass, password);
   await form.locator('#loginbtn, button[type="submit"], input[type="submit"]').first().click();
 }
 
@@ -131,6 +151,7 @@ test('quick registration creates a persistent account that can log in again', as
 
   await context.clearCookies();
   await page.goto(`/auth/flexaccess/register.php?courseid=${COURSE_ID}`);
+  await page.waitForLoadState('networkidle').catch(() => {});
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Quick');
   await page.fill('input[name="lastname"]', 'Learner');
@@ -162,6 +183,7 @@ test('temporary access can be made permanent and log in again', async ({ page, c
 
   // Make the account permanent (verification is disabled on the test site).
   await page.goto('/auth/flexaccess/persist.php');
+  await page.waitForLoadState('networkidle').catch(() => {});
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Persist');
   await page.fill('input[name="lastname"]', 'Learner');

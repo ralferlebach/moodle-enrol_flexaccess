@@ -67,6 +67,31 @@ async function openAndVerify(page, url, heading) {
 }
 
 /**
+ * Fill a field and make sure the value survives.
+ *
+ * Moodle's login password uses the `toggle_sensitive` component, whose JavaScript initialises after
+ * the markup is in place and resets the field. Filling before that happens silently produced an
+ * empty password: the value looked right, and the server then answered "Invalid login".
+ *
+ * @param {import('@playwright/test').Locator} field The input to fill.
+ * @param {string} value The value to enter.
+ * @returns {Promise<void>}
+ */
+async function fillStable(field, value) {
+  let current = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await field.fill(value);
+    // Give a late-initialising component the chance to reset the field before trusting the value.
+    await field.page().waitForTimeout(300);
+    current = await field.inputValue();
+    if (current === value) {
+      return;
+    }
+  }
+  throw new Error(`The field kept losing its value; it now holds "${current}".`);
+}
+
+/**
  * Log in through Moodle's login form.
  *
  * Scoped to the login form and with the entered values verified: filling `#password` page-wide can
@@ -80,13 +105,14 @@ async function openAndVerify(page, url, heading) {
  */
 async function loginAs(page, username, password) {
   await page.goto('/login/index.php');
+  // Let the page's JavaScript settle first, otherwise a component that initialises afterwards can
+  // still discard what was typed.
+  await page.waitForLoadState('networkidle').catch(() => {});
   const form = page.locator('form[action*="login/index.php"]').first();
   const user = form.locator('input[name="username"]');
   const pass = form.locator('input[name="password"]');
-  await user.fill(username);
-  await pass.fill(password);
-  await expect(user).toHaveValue(username);
-  await expect(pass).toHaveValue(password);
+  await fillStable(user, username);
+  await fillStable(pass, password);
   await form.locator('#loginbtn, button[type="submit"], input[type="submit"]').first().click();
 }
 
