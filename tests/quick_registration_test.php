@@ -226,7 +226,7 @@ final class quick_registration_test extends \advanced_testcase {
     }
 
     /**
-     * P0-2: an already-used email is rejected up front, leaving no enrolled orphan account.
+     * an already-used email is rejected up front, leaving no enrolled orphan account.
      *
      * @return void
      */
@@ -251,7 +251,7 @@ final class quick_registration_test extends \advanced_testcase {
     }
 
     /**
-     * P0-3: a trusted caller (campaign/invitation) bypasses the course quick-registration gate.
+     * a trusted caller (campaign/invitation) bypasses the course quick-registration gate.
      *
      * @return void
      */

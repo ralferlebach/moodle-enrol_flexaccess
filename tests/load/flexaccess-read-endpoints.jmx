@@ -120,8 +120,8 @@
           <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract sesskey" enabled="true">
             <stringProp name="RegexExtractor.useHeaders">false</stringProp>
             <stringProp name="RegexExtractor.refname">sesskey</stringProp>
-            <stringProp name="RegexExtractor.regex">sesskey=([A-Za-z0-9]{6,})</stringProp>
-            <stringProp name="RegexExtractor.template">$1$</stringProp>
+            <stringProp name="RegexExtractor.regex">name=&quot;sesskey&quot;[^&gt;]*value=&quot;([A-Za-z0-9]{6,})&quot;|sesskey=([A-Za-z0-9]{6,})</stringProp>
+            <stringProp name="RegexExtractor.template">$1$$2$</stringProp>
             <stringProp name="RegexExtractor.default">NOSESSKEY</stringProp>
             <stringProp name="RegexExtractor.match_number">1</stringProp>
           </RegexExtractor>

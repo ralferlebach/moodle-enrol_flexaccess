@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.59 — 2026-08-27 — Browser-Journeys und robusterer Lasttest-Extractor
+- **Neue Browser-Tests `admin-journeys.spec.js`:** Einladung anlegen, Zugangsliste anlegen, Kampagne anlegen (samt Nachweis, dass der Link **nur einmal** erscheint und in der Liste nicht mehr auftaucht), Restriktionsseite und Batch-Liste. Dazu ein Tastatur-Test, der prüft, dass die Einstiegsseite ohne Maus bedienbar ist und der Fokus sichtbar ist.
+- **JMeter-Sesskey-Extractor** liest jetzt zuerst das Hidden-Input und fällt auf die Formular-Action zurück. Damit funktioniert er auch in der Access-Key-Variante; ohne Sesskey greift weiterhin der Fehlerfall. Beide Markup-Varianten wurden gegen den Ausdruck geprüft.
+- Versions-Gleichschritt `2026082436`.
+
+## 0.9.58 — 2026-08-27 — Playwright/k6 lauffähig, Capacity-Race als Gate
+- **Playwright-Testharness bereinigt (Reviewer-Befund).** Die Geschwister-Plugins wurden zweimal installiert — einmal von `development`, danach nochmals von `SIBLING_REF` per `cp -a` in ein bereits bestehendes Verzeichnis, wodurch verschachtelte Repository-Kopien entstanden. Jetzt gibt es **eine** Installationsroutine mit **einem** Ref (`SIBLING_REF`, Vorgabe: der laufende Branch); das Zielverzeichnis wird vorher entfernt. Ein neuer Prüfschritt erzwingt genau eine `version.php` je Plugin-Root und bricht bei Verschachtelung ab.
+- **Zwei Testfehler behoben:** Die Barrierefreiheitsprüfung scheiterte an einer Strict-Mode-Verletzung (drei passende Überschriften) und prüft jetzt die erste. Die Passwortfelder sind Moodle-`passwordunmask`-Elemente, deren Eingabefeld erst nach Betätigen des Bearbeiten-Ankers erreichbar ist; ein neuer Helfer bedient dieses Markup, statt in den Timeout zu laufen.
+- **Webserver läuft jetzt im selben Schritt wie der Testlauf.** Ein in einem früheren Schritt gestarteter Hintergrundserver überlebt nicht zuverlässig bis zum nächsten — das äußerte sich in k6 als „100 % fehlgeschlagene Requests" gegen ein bereits verschwundenes Ziel. Betrifft Playwright, jMeter und k6.
+- **k6-Capacity-Race ist jetzt ein verpflichtendes Gate.** Neues Fixture `seed_capacity.php` füllt den Kurs bis auf `FREE_SEATS` und macht das erwartete Ergebnis eindeutig; der Workflow führt den Race-Plan aus und archiviert beide Ergebnisdateien.
+- Versions-Gleichschritt `2026082435`.
+
 ## 0.9.57 — 2026-08-27 — Versions-Gleichschritt
 - Keine Codeänderung. Versions-Gleichschritt auf `2026082434`.
 

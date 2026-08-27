@@ -36,6 +36,27 @@ async function login(page) {
   await expect(page).not.toHaveURL(/\/login\//);
 }
 
+
+/**
+ * Fill a Moodle `passwordunmask` field.
+ *
+ * The element renders the real input behind an "click to enter text" anchor and keeps it hidden
+ * until that anchor is used, so filling the input directly times out.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @param {string} name The form field name.
+ * @param {string} value The password to type.
+ * @returns {Promise<void>}
+ */
+async function fillPasswordUnmask(page, name, value) {
+  const input = page.locator(`input[name="${name}"]`);
+  if (!(await input.isVisible())) {
+    const wrapper = page.locator(`[data-passwordunmask="wrapper"]:has(input[name="${name}"])`);
+    await wrapper.locator('[data-passwordunmask="edit"]').click();
+  }
+  await input.fill(value);
+}
+
 test('FlexAccess enrolment method is installed and listed', async ({ page }) => {
   await login(page);
   await page.goto('/admin/settings.php?section=manageenrols');
@@ -82,7 +103,7 @@ test('quick registration creates a persistent account that can log in again', as
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Quick');
   await page.fill('input[name="lastname"]', 'Learner');
-  await page.fill('input[name="password"]', password);
+  await fillPasswordUnmask(page, 'password', password);
   await page.getByRole('button', { name: /Create account and enter/i }).click();
   await expect(page.locator('body')).toContainText(COURSE_NAME);
 
@@ -116,7 +137,7 @@ test('temporary access can be made permanent and log in again', async ({ page, c
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="firstname"]', 'Persist');
   await page.fill('input[name="lastname"]', 'Learner');
-  await page.fill('input[name="password"]', password);
+  await fillPasswordUnmask(page, 'password', password);
   await page.getByRole('button', { name: /Make my account permanent/i }).click();
   await expect(page.locator('body')).toContainText(/permanent/i);
 

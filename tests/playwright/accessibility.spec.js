@@ -60,7 +60,10 @@ async function openAndVerify(page, url, heading) {
     const response = await page.goto(url);
     expect(response, `No response for ${url}`).not.toBeNull();
     expect(response.status(), `Unexpected HTTP status for ${url}`).toBe(200);
-    await expect(page.getByRole('heading', { name: heading })).toBeVisible();
+    // .first(): the page legitimately carries several headings matching the pattern (site, course
+    // and section). Any of them proves the page rendered, so a strict single match is the wrong
+    // assertion here - it failed as "resolved to 3 elements".
+    await expect(page.getByRole('heading', { name: heading }).first()).toBeVisible();
 }
 
 test.describe('FlexAccess anonymous pages accessibility', () => {
