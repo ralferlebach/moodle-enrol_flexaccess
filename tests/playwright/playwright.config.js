@@ -33,6 +33,8 @@ module.exports = defineConfig({
     headless: true,
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
+    // A recording of the failing run makes a diagnosis possible without reproducing it locally.
+    video: 'retain-on-failure',
   },
   reporter: [['list'], ['html', { open: 'never' }]],
 });

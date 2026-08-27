@@ -66,6 +66,30 @@ async function openAndVerify(page, url, heading) {
     await expect(page.getByRole('heading', { name: heading }).first()).toBeVisible();
 }
 
+/**
+ * Log in through Moodle's login form.
+ *
+ * Scoped to the login form and with the entered values verified: filling `#password` page-wide can
+ * land on a different element, and the empty value only surfaces later as "Invalid login" on the
+ * server. Checking the field before submitting turns that into an immediate, obvious failure.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @param {string} username The username to use.
+ * @param {string} password The password to use.
+ * @returns {Promise<void>}
+ */
+async function loginAs(page, username, password) {
+  await page.goto('/login/index.php');
+  const form = page.locator('form[action*="login/index.php"]').first();
+  const user = form.locator('input[name="username"]');
+  const pass = form.locator('input[name="password"]');
+  await user.fill(username);
+  await pass.fill(password);
+  await expect(user).toHaveValue(username);
+  await expect(pass).toHaveValue(password);
+  await form.locator('#loginbtn, button[type="submit"], input[type="submit"]').first().click();
+}
+
 test.describe('FlexAccess anonymous pages accessibility', () => {
     test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID must be provided by the seed script.');
 
@@ -90,11 +114,8 @@ test.describe('FlexAccess anonymous pages accessibility', () => {
  * @returns {Promise<void>}
  */
 async function loginAsManager(page) {
-    await page.goto('/login/index.php');
-    await page.locator('#username').fill(MANAGER_USER);
-    await page.locator('#password').fill(MANAGER_PASS);
-    await page.locator('#loginbtn').click();
-    await page.waitForLoadState('domcontentloaded');
+  await loginAs(page, MANAGER_USER, MANAGER_PASS);
+  await page.waitForLoadState('domcontentloaded');
 }
 
 test.describe('FlexAccess administrative pages accessibility', () => {

@@ -29,10 +29,7 @@ const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
 const COURSE_NAME = process.env.FLEXACCESS_COURSE_NAME || 'FlexAccess Load Test';
 
 async function login(page) {
-  await page.goto('/login/index.php');
-  await page.fill('#username', ADMIN_USER);
-  await page.fill('#password', ADMIN_PASS);
-  await page.click('#loginbtn');
+  await loginAs(page, ADMIN_USER, ADMIN_PASS);
   await expect(page).not.toHaveURL(/\/login\//);
 }
 
@@ -65,6 +62,30 @@ async function fillPasswordUnmask(page, name, value) {
   // creates an account with a different password, and the failure only surfaces much later as
   // "Invalid login" on the next sign-in.
   await expect(input).toHaveValue(value);
+}
+
+/**
+ * Log in through Moodle's login form.
+ *
+ * Scoped to the login form and with the entered values verified: filling `#password` page-wide can
+ * land on a different element, and the empty value only surfaces later as "Invalid login" on the
+ * server. Checking the field before submitting turns that into an immediate, obvious failure.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @param {string} username The username to use.
+ * @param {string} password The password to use.
+ * @returns {Promise<void>}
+ */
+async function loginAs(page, username, password) {
+  await page.goto('/login/index.php');
+  const form = page.locator('form[action*="login/index.php"]').first();
+  const user = form.locator('input[name="username"]');
+  const pass = form.locator('input[name="password"]');
+  await user.fill(username);
+  await pass.fill(password);
+  await expect(user).toHaveValue(username);
+  await expect(pass).toHaveValue(password);
+  await form.locator('#loginbtn, button[type="submit"], input[type="submit"]').first().click();
 }
 
 test('FlexAccess enrolment method is installed and listed', async ({ page }) => {
@@ -119,10 +140,7 @@ test('quick registration creates a persistent account that can log in again', as
 
   // Log out and log back in with the credentials just created.
   await context.clearCookies();
-  await page.goto('/login/index.php');
-  await page.fill('#username', email);
-  await page.fill('#password', password);
-  await page.click('#loginbtn');
+  await loginAs(page, email, password);
   await expect(page.locator('body')).toContainText('Quick Learner');
 });
 
@@ -153,9 +171,6 @@ test('temporary access can be made permanent and log in again', async ({ page, c
 
   // Log out and log back in.
   await context.clearCookies();
-  await page.goto('/login/index.php');
-  await page.fill('#username', email);
-  await page.fill('#password', password);
-  await page.click('#loginbtn');
+  await loginAs(page, email, password);
   await expect(page.locator('body')).toContainText('Persist Learner');
 });

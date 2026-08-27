@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.9.62 — 2026-08-27 — Browsertests: Anmeldung und Formularabsendung repariert
+- **Ursache aus dem Trace belegt.** Beim erneuten Anmelden wurde `password` **leer** übertragen, `username` dagegen korrekt — die Registrierung selbst hatte das Passwort einwandfrei gesendet. Der Fehler lag also ausschließlich in der Testbedienung, nicht im Plugin; der Ablauf wurde zusätzlich serverseitig End-zu-Ende geprüft (Anmeldename = E-Mail, Passwort gültig, `authenticate_user_login()` erfolgreich).
+- **Neuer Helfer `loginAs()`** in allen drei Spezifikationen: Er arbeitet innerhalb des Anmeldeformulars statt seitenweit und **prüft die eingetragenen Werte vor dem Absenden**. Ein Wert, der das Feld nicht erreicht, fällt damit sofort auf, statt später serverseitig als „Invalid login" zu erscheinen.
+- **Formularabsendung korrigiert:** Der Submit wird über Moodles Standard-Id `id_submitbutton` angesteuert, ersatzweise innerhalb des Hauptbereichs. Die vorherige Suche nach „dem ersten Formular mit einem Eingabefeld" traf das Suchfeld im Seitenkopf, dessen Schaltfläche die Aktion nie abschloss — sichtbar nur als Zeitüberschreitung.
+- **Videoaufzeichnung bei Fehlschlägen** ergänzt. Screenshots, Traces und Fehlerkontext werden bereits als Artefakt `playwright-report` hochgeladen; die Aufzeichnung kommt hinzu.
+- Versions-Gleichschritt `2026082439`.
+
 ## 0.9.61 — 2026-08-27 — Browser-Tests: Passwortfeld und Formularabsendung
 - **Passwortfelder werden jetzt nachweisbar befüllt.** Moodles `passwordunmask` blendet das eigentliche Eingabefeld hinter einem Bearbeiten-Anker aus. Der Testhelfer öffnet es, tippt den Wert zeichenweise (damit alle Ereignisse ausgelöst werden) und **prüft anschließend den Feldwert**. Erreichte der Wert das Feld bisher nicht, entstand ein Konto mit einem anderen Passwort — sichtbar wurde das erst beim späteren Anmelden als „Invalid login". Der Fehler tritt jetzt sofort und mit klarer Ursache auf.
 - **Formularabsendung eindeutig:** Der Submit-Button wird innerhalb des Formulars gesucht statt seitenweit; die vorherige Auswahl konnte ein unbeteiligtes Bedienelement aus dem Seitenkopf treffen, was sich nur als Zeitüberschreitung zeigte.

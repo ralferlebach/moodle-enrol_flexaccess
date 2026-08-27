@@ -35,10 +35,7 @@ const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
  * @returns {Promise<void>}
  */
 async function login(page) {
-  await page.goto('/login/index.php');
-  await page.fill('#username', ADMIN_USER);
-  await page.fill('#password', ADMIN_PASS);
-  await page.click('#loginbtn');
+  await loginAs(page, ADMIN_USER, ADMIN_PASS);
   // These journeys visit pages that require moodle/site:config, so they need the site
   // administrator - not the manager account the seed creates for the accessibility checks.
   await expect(
@@ -57,8 +54,13 @@ async function login(page) {
  * @returns {Promise<void>}
  */
 async function submitForm(page) {
-  const form = page.locator('form').filter({ has: page.locator('input, textarea, select') }).first();
-  const button = form.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first();
+  // Moodle gives the primary submit of a moodleform the id `id_submitbutton`. Searching for "the
+  // first form containing an input" instead picked up the search box in the page header, whose
+  // button never completes the action and only showed up as a timeout.
+  const button = page
+    .locator('#id_submitbutton')
+    .or(page.locator('[role="main"] button[type="submit"], [role="main"] input[type="submit"]'))
+    .first();
   await button.waitFor({ state: 'visible' });
   await button.click();
 }
@@ -75,6 +77,30 @@ async function open(page, url) {
   expect(response, `No response for ${url}`).not.toBeNull();
   expect(response.status(), `Unexpected HTTP status for ${url}`).toBe(200);
   await expect(page.locator('body')).not.toContainText(/Coding error|Exception|Debug info/i);
+}
+
+/**
+ * Log in through Moodle's login form.
+ *
+ * Scoped to the login form and with the entered values verified: filling `#password` page-wide can
+ * land on a different element, and the empty value only surfaces later as "Invalid login" on the
+ * server. Checking the field before submitting turns that into an immediate, obvious failure.
+ *
+ * @param {import('@playwright/test').Page} page The page under test.
+ * @param {string} username The username to use.
+ * @param {string} password The password to use.
+ * @returns {Promise<void>}
+ */
+async function loginAs(page, username, password) {
+  await page.goto('/login/index.php');
+  const form = page.locator('form[action*="login/index.php"]').first();
+  const user = form.locator('input[name="username"]');
+  const pass = form.locator('input[name="password"]');
+  await user.fill(username);
+  await pass.fill(password);
+  await expect(user).toHaveValue(username);
+  await expect(pass).toHaveValue(password);
+  await form.locator('#loginbtn, button[type="submit"], input[type="submit"]').first().click();
 }
 
 test.describe('FlexAccess administrative journeys', () => {
