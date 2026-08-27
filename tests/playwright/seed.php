@@ -60,8 +60,8 @@ if (!in_array('flexaccess', $enabledauths, true)) {
 echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";
 echo "export FLEXACCESS_COURSE_ID='" . $course->id . "'\n";
 echo "export FLEXACCESS_COURSE_NAME='" . $coursename . "'\n";
-// Credentials for the authenticated accessibility checks of the administrative pages. These are
-// created on a throwaway CI site only; the specs skip when the variables are absent.
+// A manager account for the authenticated accessibility checks of the plugin's own administration
+// pages. Created on a throwaway CI site only; the specs skip when the variables are absent.
 $adminuser = $DB->get_record('user', ['username' => 'flexa11y'], '*', IGNORE_MISSING);
 if (!$adminuser) {
     $adminuser = \core_user::get_user(
@@ -82,5 +82,8 @@ role_assign(
     \context_system::instance()->id
 );
 
-echo "export FLEXACCESS_ADMIN_USER='flexa11y'\n";
-echo "export FLEXACCESS_ADMIN_PASS='Flex-A11y-Pass!1'\n";
+// Deliberately NOT called FLEXACCESS_ADMIN_*: this is a manager, not the site administrator.
+// Overriding the admin credentials with it denied the specs access to /admin pages that require
+// moodle/site:config.
+echo "export FLEXACCESS_MANAGER_USER='flexa11y'\n";
+echo "export FLEXACCESS_MANAGER_PASS='Flex-A11y-Pass!1'\n";

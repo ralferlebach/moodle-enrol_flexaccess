@@ -39,7 +39,12 @@ async function login(page) {
   await page.fill('#username', ADMIN_USER);
   await page.fill('#password', ADMIN_PASS);
   await page.click('#loginbtn');
-  await expect(page).not.toHaveURL(/\/login\//);
+  // These journeys visit pages that require moodle/site:config, so they need the site
+  // administrator - not the manager account the seed creates for the accessibility checks.
+  await expect(
+    page,
+    `Login as "${ADMIN_USER}" failed; these pages need the site administrator.`
+  ).not.toHaveURL(/\/login\//);
 }
 
 /**
@@ -66,27 +71,27 @@ test.describe('FlexAccess administrative journeys', () => {
   test('an invitation can be created and appears in the list', async ({ page }) => {
     await open(page, '/admin/tool/flexaccess/invitations.php?action=new');
     const address = `invitee-${Date.now()}@example.invalid`;
-    await page.fill('textarea[name="emails"], input[name="emails"]', address);
+    await page.locator('#id_emails, textarea[name="emails"], input[name="emails"]').first().fill(address);
     await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
-    await page.getByRole('button', { name: /save|speichern|create|anlegen/i }).first().click();
+    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
     await expect(page.locator('body')).toContainText(address);
   });
 
   test('an access list can be created for a course', async ({ page }) => {
     await open(page, `/admin/tool/flexaccess/coursebatches.php?courseid=${COURSE_ID}&action=new`);
     const name = `E2E ${Date.now()}`;
-    await page.fill('input[name="name"]', name);
-    await page.fill('input[name="count"]', '2');
-    await page.getByRole('button', { name: /save|speichern|create|anlegen/i }).first().click();
+    await page.locator('#id_name, input[name="name"]').first().fill(name);
+    await page.locator('#id_count, input[name="count"]').first().fill('2');
+    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
     await expect(page.locator('body')).toContainText(name);
   });
 
   test('a campaign link is shown exactly once on creation', async ({ page }) => {
     await open(page, '/admin/tool/flexaccess/campaigns.php?action=new');
     const name = `Campaign ${Date.now()}`;
-    await page.fill('input[name="name"]', name);
+    await page.locator('#id_name, input[name="name"]').first().fill(name);
     await page.selectOption('select[name="courseid"]', COURSE_ID).catch(() => {});
-    await page.getByRole('button', { name: /save|speichern|create|anlegen/i }).first().click();
+    await page.locator('#id_submitbutton, button[type="submit"], input[type="submit"]').first().click();
 
     // The plaintext link is stored hashed and must be displayed on this response only.
     await expect(page.locator('body')).toContainText(/campaign\.php\?token=/);

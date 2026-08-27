@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.9.60 — 2026-08-27 — k6- und Playwright-Fehlschläge behoben
+- **k6 meldete `HTTP 0`, obwohl der Server lief.** `php -S` lauscht auf **einer** Adresse; `curl` erreichte den auf `localhost` gebundenen Server, k6 löste `localhost` nach `::1` auf und lief ins Leere. Server und Basis-URL verwenden jetzt durchgängig `127.0.0.1`. Das Verhalten wurde nachgestellt: IPv4 antwortet mit 200, IPv6 liefert genau den Code `000`, der im Log als `HTTP 0` erschien. Betrifft ebenso jMeter und Playwright.
+- **Playwright: Rollen getrennt.** Das Seed exportierte sein Manager-Konto als `FLEXACCESS_ADMIN_USER` und überschrieb damit den Site-Admin. Seiten wie `manageenrols`, die `moodle/site:config` verlangen, verweigerten daraufhin den Zugriff — daher schlug „FlexAccess enrolment method is installed and listed" fehl. Das Konto heißt jetzt `FLEXACCESS_MANAGER_*`; die Barrierefreiheitsprüfungen der Plugin-Seiten nutzen es, die Administrationswege den Site-Admin.
+- **Formularselektoren robuster:** Die neuen Administrationswege sprechen die Moodle-üblichen `id_*`-Felder an und melden bei fehlgeschlagener Anmeldung ausdrücklich, dass diese Seiten den Site-Admin erfordern.
+- Versions-Gleichschritt `2026082437`.
+
 ## 0.9.59 — 2026-08-27 — Browser-Journeys und robusterer Lasttest-Extractor
 - **Neue Browser-Tests `admin-journeys.spec.js`:** Einladung anlegen, Zugangsliste anlegen, Kampagne anlegen (samt Nachweis, dass der Link **nur einmal** erscheint und in der Liste nicht mehr auftaucht), Restriktionsseite und Batch-Liste. Dazu ein Tastatur-Test, der prüft, dass die Einstiegsseite ohne Maus bedienbar ist und der Fokus sichtbar ist.
 - **JMeter-Sesskey-Extractor** liest jetzt zuerst das Hidden-Input und fällt auf die Formular-Action zurück. Damit funktioniert er auch in der Access-Key-Variante; ohne Sesskey greift weiterhin der Fehlerfall. Beide Markup-Varianten wurden gegen den Ausdruck geprüft.

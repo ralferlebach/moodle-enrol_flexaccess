@@ -29,8 +29,8 @@ const { test, expect } = require('@playwright/test');
 const AxeBuilder = require('@axe-core/playwright').default;
 
 const COURSE_ID = process.env.FLEXACCESS_COURSE_ID;
-const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER;
-const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS;
+const MANAGER_USER = process.env.FLEXACCESS_MANAGER_USER;
+const MANAGER_PASS = process.env.FLEXACCESS_MANAGER_PASS;
 
 const BLOCKING_IMPACTS = ['serious', 'critical'];
 
@@ -91,8 +91,8 @@ test.describe('FlexAccess anonymous pages accessibility', () => {
  */
 async function loginAsManager(page) {
     await page.goto('/login/index.php');
-    await page.locator('#username').fill(ADMIN_USER);
-    await page.locator('#password').fill(ADMIN_PASS);
+    await page.locator('#username').fill(MANAGER_USER);
+    await page.locator('#password').fill(MANAGER_PASS);
     await page.locator('#loginbtn').click();
     await page.waitForLoadState('domcontentloaded');
 }
@@ -100,7 +100,7 @@ async function loginAsManager(page) {
 test.describe('FlexAccess administrative pages accessibility', () => {
     // Skip (never fail) when the seed did not provide credentials, so the gate cannot go red for
     // reasons unrelated to accessibility.
-    test.skip(!COURSE_ID || !ADMIN_USER || !ADMIN_PASS, 'Admin credentials were not seeded.');
+    test.skip(!COURSE_ID || !MANAGER_USER || !MANAGER_PASS, 'Manager credentials were not seeded.');
 
     test.beforeEach(async ({ page }) => {
         await loginAsManager(page);

@@ -45,7 +45,7 @@ jobs:
 
     env:
       MOODLE_BRANCH: MOODLE_405_STABLE
-      MOODLE_WWWROOT: http://localhost:8000
+      MOODLE_WWWROOT: http://127.0.0.1:8000
 
     steps:
       - name: Check out plugin
@@ -116,11 +116,15 @@ jobs:
         run: |
           # Serve with multiple workers so parallel requests don't serialise. Started inside THIS
           # step so it is guaranteed to be alive for the whole run.
-          PHP_CLI_SERVER_WORKERS=8 php -S localhost:8000 -t moodle >/tmp/moodle-server.log 2>&1 &
+          #
+          # Bound to 127.0.0.1 rather than "localhost": PHP's built-in server listens on a
+          # single address, while clients resolve "localhost" differently - curl reached the
+          # server while k6 tried ::1 and reported connection errors as HTTP 0.
+          PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8000 -t moodle >/tmp/moodle-server.log 2>&1 &
           ready=0
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-              http://localhost:8000/login/index.php || true)
+              http://127.0.0.1:8000/login/index.php || true)
             if [ "$code" = "200" ]; then ready=1; break; fi
             sleep 3
           done
@@ -154,11 +158,11 @@ jobs:
           FREE_SEATS=1 CAPACITY=20 php enrol/flexaccess/tests/load/seed_capacity.php > /tmp/cap.env
           cd ..
           get() { sed -n "s/^export $1='\(.*\)'$/\1/p" /tmp/cap.env; }
-          PHP_CLI_SERVER_WORKERS=8 php -S localhost:8000 -t moodle >/tmp/moodle-server.log 2>&1 &
+          PHP_CLI_SERVER_WORKERS=8 php -S 127.0.0.1:8000 -t moodle >/tmp/moodle-server.log 2>&1 &
           ready=0
           for i in $(seq 1 40); do
             code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-              http://localhost:8000/login/index.php || true)
+              http://127.0.0.1:8000/login/index.php || true)
             if [ "$code" = "200" ]; then ready=1; break; fi
             sleep 3
           done
