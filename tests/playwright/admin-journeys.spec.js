@@ -58,16 +58,27 @@ async function login(page) {
  */
 async function chooseCourse(page, courseId) {
   const hidden = page.locator('select[name="courseid"]');
-  if (await hidden.count()) {
+  // The hidden select starts out EMPTY: Moodle fills it over AJAX once a search has run. Calling
+  // selectOption on it therefore waits forever for an option that does not exist yet, so the
+  // autocomplete has to be driven the way a user would.
+  if (await hidden.locator(`option[value="${courseId}"]`).count()) {
     await hidden.selectOption(courseId, { force: true });
     return;
   }
   const input = page.locator('input[id^="form_autocomplete_input"]').first();
   await input.click();
-  await input.fill(COURSE_NAME);
-  const suggestion = page.locator('[id^="form_autocomplete_suggestions"] [role="option"]').first();
-  await suggestion.waitFor({ state: 'visible' });
+  // Typed rather than set, so the widget's key handlers fire and the search actually starts.
+  await input.pressSequentially(COURSE_NAME);
+  // Pick the suggestion that actually names the seeded course, not merely the first one the
+  // search happened to return.
+  const suggestion = page
+    .locator('[id^="form_autocomplete_suggestions"] [role="option"]')
+    .filter({ hasText: COURSE_NAME })
+    .first();
+  await suggestion.waitFor({ state: 'visible', timeout: 15000 });
   await suggestion.click();
+  // Confirm the choice reached the field that is actually submitted.
+  await expect(hidden).toHaveValue(courseId);
 }
 
 /**
