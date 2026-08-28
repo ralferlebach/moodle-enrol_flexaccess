@@ -35,7 +35,9 @@ $coursename = 'My favourite course';
 $category = \core_course_category::get_default();
 $course = create_course((object) [
     'fullname' => $coursename,
-    'shortname' => 'FAPW' . time(),
+    // Unique by construction: two seeds started within the same second would otherwise
+    // collide on the shortname and the course could not be created.
+    'shortname' => uniqid('FAPW', true),
     'category' => $category->id,
     'visible' => 1,
 ]);

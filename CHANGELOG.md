@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.0.0-RC1 — 2026-08-27 — Eigene Browser-Testsuite je Plugin
+- **Jedes Plugin bringt jetzt seine eigene Playwright-Suite mit** (`tests/playwright/`), statt dass alle vier dieselbe Suite aus `enrol_flexaccess` ausführen. Jede Suite prüft die Handlungen, für die *ihr* Plugin zuständig ist, und jedes Repository steht damit für sich.
+- Gemeinsame Helfer liegen als `helpers.js` in jedem Plugin — bewusst als Kopie: Ein geteiltes Paket würde die vier Repositories auch auf Testebene aneinanderbinden.
+- Jedes Plugin hat ein eigenes `seed.php`, das genau das Fixture erzeugt, das seine Suite braucht.
+- **Zwei Fehler dabei gefunden und behoben:** Das Kurskürzel im Fixture nutzte `time()` — zwei Läufe innerhalb derselben Sekunde kollidierten und der Kurs konnte nicht angelegt werden. Und der Pfad zur `config.php` stimmt bei `tool`-Plugins nicht, weil sie eine Ebene tiefer liegen (`admin/tool/<name>`).
+- Die Testsuiten bleiben wie bisher aus dem Installationspaket ausgeschlossen.
+
+- Inhalt: Einschreibemethode installiert und gelistet, Wirkung der Kursrichtlinie auf der Einstiegsseite, Konfiguration der Instanz im Kurs, Verwaltung der Rollen- und Cohort-Beschränkungen (4 Tests).
+
+## 1.0.0-RC1 — 2026-08-27 — Browsertests: Signaturfehler behoben, zwei Artefaktvarianten
+- **`ReferenceError: testInfo is not defined` behoben.** Beim Einbau der wiederholungsfesten Testdaten hatte ich zwei Testsignaturen nicht mitgezogen: Sie lauten `async ({ page, context })`, mein Muster erwartete `async ({ page })`. Alle Tests, die `testInfo` verwenden, führen es jetzt auch als Parameter — systematisch über alle Spezifikationen geprüft.
+- **Zwei Artefakte je Lauf:** `playwright-report` **ohne** Videos (Screenshots, Traces, Bericht) und `playwright-report-with-videos` mit allem. Videos machen den Großteil der Größe aus und stören, wenn nur die Screenshots als Abbildungen gebraucht werden.
+- **Artefaktpfad korrigiert.** Die Workflows von `auth`, `mod` und `tool` luden aus ihrem *eigenen* Plugin-Verzeichnis hoch — dort liegt aber keine Testsuite. Aus diesen drei Repositories gab es deshalb **nie** Artefakte. Alle vier zeigen jetzt auf `enrol_flexaccess/tests/playwright`, wo die einzige Suite liegt und von allen ausgeführt wird.
+
 ## 1.0.0-RC1 — 2026-08-27 — Browsertests: vollständige Aufzeichnung und sprechende Daten
 - **Aufzeichnung jetzt auch bei grünen Läufen.** Screenshot, Trace und Video werden für **jeden** Testlauf erzeugt, nicht mehr nur bei Fehlschlägen. Ein grüner Lauf dokumentiert damit den vollständigen Ablauf und liefert Abbildungen, die sich für Handbuch, Webseite und Plugin-Beschreibung verwenden lassen. Alles landet unverändert im Artefakt `playwright-report`.
 - **Sprechende Testdaten** statt Zeitstempeln: John und Jane Doe mit Adressen unter `example.org`, Passwort `P@$$w0rd!`, Kurs „My favourite course", Zugangsliste „My first list", Kampagne „Open day 2026".
