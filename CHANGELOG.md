@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.0-RC1 — 2026-08-27 — `db/removed_files.txt` nicht mehr im Auslieferungspaket
+- **Die Liste entfernter Dateien wird nicht mehr mit ausgeliefert** (`export-ignore`). Sie ist ausschließlich repo-seitig von Bedeutung: Moodles ZIP-Installation ersetzt das Plugin-Verzeichnis vollständig, eine Altdatei kann sie also gar nicht überleben. Nur beim Aktualisieren eines Repositories an Ort und Stelle bleibt eine entfernte Datei liegen — genau dafür liest der CI-Job `stale-files` die Liste weiterhin aus dem Repository.
+
+## 1.0.0-RC1 — 2026-08-27 — Entfernte Browsertests waren nicht als entfernt gelistet
+- **Die beim Aufteilen der Browsersuiten aus `enrol_flexaccess` entfernten Dateien** `tests/playwright/flexaccess.spec.js`, `admin-journeys.spec.js` und `accessibility.spec.js` **stehen jetzt in `db/removed_files.txt`.** Ein Plugin-Paket fügt Dateien hinzu und überschreibt sie, löscht aber nie: Die alten Sammel-Spezifikationen blieben deshalb im Repository liegen und liefen weiter mit — samt eines Fehlers, der in der aufgeteilten Fassung längst behoben war. Der CI-Job `stale-files` weist sie ab sofort aus.
+- **Zu tun:** Diese drei Dateien einmalig aus dem Repository löschen (`git rm`).
+
 ## 1.0.0-RC1 — 2026-08-27 — Serverlog im Fehlerpaket
 - **Das vollständige Serverlog liegt dem Fehlerpaket bei**, gzip-komprimiert (`moodle-server.log.gz`). Im Job-Protokoll erscheinen weiterhin nur die letzten 100 Zeilen — der Rest ist dort ohnehin nicht lesbar, wächst aber schnell auf eine Größe, die den Download unhandlich macht. An einem Beispiellauf gemessen: 492 KB roh, 4 KB gepackt.
 - Der Schritt läuft **nach** dem Einsammeln der Fehlerverzeichnisse: Dieses leert das Zielverzeichnis zuerst und hätte ein vorher abgelegtes Log wieder entfernt.

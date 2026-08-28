@@ -8,3 +8,6 @@
 # The stale-files CI job fails the build while any of these paths still exists.
 classes/local/participant_visibility.php
 tests/participant_visibility_test.php
+tests/playwright/flexaccess.spec.js
+tests/playwright/admin-journeys.spec.js
+tests/playwright/accessibility.spec.js
