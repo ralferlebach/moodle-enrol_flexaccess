@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.0 — 2026-09-11 — Erste stabile Freigabe
+- **Review-Befund von moodle.org behoben:** Die Cache-Definition `policy` in `db/caches.php` hatte keinen Sprachstring. `cachedef_policy` ist in Englisch und Deutsch ergänzt. Alle vier Plugins wurden systematisch auf fehlende Strings aus `caches.php`, `messages.php` und `tasks.php` geprüft — dies war der einzige Fund.
+- Reifegrad `MATURITY_STABLE`, Version `2026091100`, Release `1.0.0`.
+- **README:** FlexAccess-Badge neben dem CI-Badge; Verbundversion nachgezogen.
+
 ## 1.0.0-RC2 — 2026-08-28 — Versions-Gleichschritt
 - Keine Codeänderung. Versions-Gleichschritt auf `2026082701`.
 

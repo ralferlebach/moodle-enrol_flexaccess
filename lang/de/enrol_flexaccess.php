@@ -47,6 +47,7 @@ $string['availablefrom'] = 'Verfügbar ab';
 $string['availablefrom_help'] = 'Frühester Zeitpunkt, zu dem diese Instanz FlexAccess-Zugang anbietet. Leer/deaktiviert bedeutet keine Untergrenze. Unabhängig von Account- und Einschreibelaufzeit und mit dem Zugangsschlüssel kombinierbar.';
 $string['availableuntil'] = 'Verfügbar bis';
 $string['availableuntil_help'] = 'Spätester Zeitpunkt, zu dem diese Instanz FlexAccess-Zugang anbietet (exklusiv). Leer/deaktiviert bedeutet keine Obergrenze.';
+$string['cachedef_policy'] = 'FlexAccess-Zugangsrichtlinie';
 $string['checkcoupling'] = 'FlexAccess-Kopplung Auth/Enrol';
 $string['checkcouplingaction'] = 'Einschreibe-Plugins verwalten';
 $string['checkcouplingauthonly'] = 'auth_flexaccess ist aktiv, enrol_flexaccess jedoch nicht';

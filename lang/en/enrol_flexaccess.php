@@ -47,6 +47,7 @@ $string['availablefrom'] = 'Available from';
 $string['availablefrom_help'] = 'Earliest time FlexAccess access is offered by this instance. Empty/disabled means no lower bound. This is separate from account lifetime and enrolment lifetime, and is combinable with the access key.';
 $string['availableuntil'] = 'Available until';
 $string['availableuntil_help'] = 'Latest time FlexAccess access is offered by this instance (exclusive). Empty/disabled means no upper bound.';
+$string['cachedef_policy'] = 'FlexAccess access policy';
 $string['checkcoupling'] = 'FlexAccess auth/enrol coupling';
 $string['checkcouplingaction'] = 'Manage enrol plugins';
 $string['checkcouplingauthonly'] = 'auth_flexaccess is enabled but enrol_flexaccess is not';
