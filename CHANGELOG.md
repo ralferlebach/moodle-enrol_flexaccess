@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.1.0 — 2026-09-22 — Listen-Symbol, Readiness, Einschreibungsverwaltung
+- **Zugangslisten-Symbol (Issue #5).** Die Aktion „Zugangslisten“ in der Einschreibemethodenübersicht zeigt jetzt das Core-Symbol `e/bullet_list` (`fa-list-ul`) statt des Nutzer-Symbols `i/users`. Tooltip und zugänglicher Name bleiben „Zugangslisten“. Das Symbol ist in Moodle 4.5, 5.0, 5.2 und main vorhanden; ein Test prüft es gegen die Symbolzuordnung der laufenden Version.
+- **Readiness-Hinweis im Instanzformular.** Das Formular der Einschreibemethode zeigt kompakt „FlexAccess bereit“ oder, was fehlt: Auth deaktiviert, Einschreibeplugin deaktiviert, Rolle fehlerhaft, Policy blockiert eine konfigurierte Methode. Mit Berechtigung verlinkt der Hinweis auf den FlexAccess-Systemstatus.
+- **Neue API für Recovery, Merge und Diagnose:**
+  - `get_user_enrolments()`, `get_course_userids()`
+  - `reactivate_enrolment()` (kursbezogen; eine abgelaufene Endzeit wird erneuert, damit der Ablauf-Task nicht sofort wieder suspendiert)
+  - `reenrol_user()`
+  - `transfer_user_enrolments()`
+  - `role_model_problems()` / `repair_role_model()`
+  - `find_role_mismatches()`
+  - `policy_conflicts()`, `course_readiness_problems()`
+- Die Restriktionsseite trägt die Kursreiter von FlexAccess, sofern tool_flexaccess installiert ist.
+- Reifegrad `MATURITY_STABLE`, Version `2026092201`, Release `1.1.0`. Abhängigkeit `auth_flexaccess` ≥ `2026092201`.
+
 ## 1.0.0 — 2026-09-11 — Erste stabile Freigabe
 - **Review-Befund von moodle.org behoben:** Die Cache-Definition `policy` in `db/caches.php` hatte keinen Sprachstring. `cachedef_policy` ist in Englisch und Deutsch ergänzt. Alle vier Plugins wurden systematisch auf fehlende Strings aus `caches.php`, `messages.php` und `tasks.php` geprüft — dies war der einzige Fund.
 - Reifegrad `MATURITY_STABLE`, Version `2026091100`, Release `1.0.0`.

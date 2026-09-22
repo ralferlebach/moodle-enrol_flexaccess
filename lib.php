@@ -32,6 +32,9 @@ use enrol_flexaccess\local\instance_config;
  * @package    enrol_flexaccess
  */
 class enrol_flexaccess_plugin extends enrol_plugin {
+    /** Core icon of the access-list action: a list, not the participants/users symbol. */
+    public const ACCESSLISTS_ICON = 'e/bullet_list';
+
     /**
      * Return the display name of an enrolment instance.
      *
@@ -83,7 +86,9 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         ) {
             $icons[] = $OUTPUT->action_icon(
                 new moodle_url('/admin/tool/flexaccess/coursebatches.php', ['courseid' => $courseid]),
-                new pix_icon('i/users', get_string('accesslists', 'enrol_flexaccess'))
+                // A list metaphor: the action opens access (credential) lists, not a participant
+                // view. e/bullet_list is a core icon in every supported release (4.5 to 5.2).
+                new pix_icon(self::ACCESSLISTS_ICON, get_string('accesslists', 'enrol_flexaccess'))
             );
         }
         // Entry point into the role/cohort restriction management for this course. The evaluation
@@ -95,6 +100,39 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             );
         }
         return $icons;
+    }
+
+    /**
+     * Render the readiness verdict for a course, with a link to the system status for admins.
+     *
+     * @param int $courseid Course id.
+     * @return string HTML.
+     */
+    public function readiness_hint(int $courseid): string {
+        $problems = \enrol_flexaccess\api::course_readiness_problems($courseid);
+        if (!$problems) {
+            return html_writer::span(get_string('readinessok', 'enrol_flexaccess'), 'badge badge-success bg-success');
+        }
+        $labels = [];
+        foreach ($problems as $problem) {
+            $key = 'readiness_' . (str_starts_with($problem, 'policy_') ? 'policy' : $problem);
+            $labels[$key] = get_string($key, 'enrol_flexaccess');
+        }
+        $html = html_writer::span(
+            get_string('readinessincomplete', 'enrol_flexaccess', implode(' / ', $labels)),
+            'badge badge-warning bg-warning text-dark'
+        );
+        if (
+            class_exists('\tool_flexaccess\local\health')
+                && get_capability_info('tool/flexaccess:viewsystemstatus')
+                && has_capability('tool/flexaccess:viewsystemstatus', \context_system::instance())
+        ) {
+            $html .= ' ' . html_writer::link(
+                new moodle_url('/admin/tool/flexaccess/status.php'),
+                get_string('readinesslink', 'enrol_flexaccess')
+            );
+        }
+        return $html;
     }
 
     /**
@@ -210,6 +248,17 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             ENROL_INSTANCE_DISABLED => get_string('no'),
         ];
         $mform->addElement('select', 'status', get_string('status', 'enrol_flexaccess'), $options);
+
+        // Compact readiness verdict: a course can configure FlexAccess while a sibling or higher-level
+        // precondition silently neutralises it. Shown read-only; repairs live in the system status.
+        if ($context instanceof \context_course) {
+            $mform->addElement(
+                'static',
+                'flexaccess_readiness',
+                get_string('readiness', 'enrol_flexaccess'),
+                $this->readiness_hint((int) $context->instanceid)
+            );
+        }
 
         $mform->addElement('header', 'flexaccess_access', get_string('settingsaccess', 'enrol_flexaccess'));
 

@@ -85,6 +85,11 @@ foreach (cohort_get_available_cohorts($context, COHORT_ALL, 0, 0) as $cohort) {
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('restrictionstitle', 'enrol_flexaccess'));
+// Same course tabs as the rest of the course-level FlexAccess management (Users, Access lists,
+// Restrictions), when tool_flexaccess is installed; enrol does not depend on it.
+if (class_exists(\tool_flexaccess\local\navigation::class)) {
+    echo \tool_flexaccess\local\navigation::render_course($courseid, \tool_flexaccess\local\navigation::RESTRICTIONS);
+}
 echo html_writer::tag('p', get_string('restrictionsintro', 'enrol_flexaccess'));
 
 $restrictions = restriction_service::for_scope('course', $courseid);

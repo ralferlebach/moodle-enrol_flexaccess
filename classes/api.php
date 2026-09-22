@@ -230,4 +230,118 @@ final class api {
         }
         return $total;
     }
+
+    /**
+     * FlexAccess enrolments of a user (recovery snapshot), optionally limited to one course.
+     *
+     * @param int $userid User id.
+     * @param int|null $courseid Optional course id.
+     * @param int|null $now Current time.
+     * @return \stdClass[] ueid, enrolid, courseid, status, timestart, timeend, expiryaction, expired.
+     */
+    public static function get_user_enrolments(int $userid, ?int $courseid = null, ?int $now = null): array {
+        return local\enrolment_admin::get_user_enrolments($userid, $courseid, $now);
+    }
+
+    /**
+     * Users holding a FlexAccess enrolment in a course.
+     *
+     * @param int $courseid Course id.
+     * @return int[]
+     */
+    public static function get_course_userids(int $courseid): array {
+        return local\enrolment_admin::get_course_userids($courseid);
+    }
+
+    /**
+     * Reactivate a suspended FlexAccess enrolment (explicit administrative decision).
+     *
+     * @param int $ueid User-enrolment id.
+     * @param int|null $courseid When set, the enrolment must belong to this course.
+     * @param int|null $now Current time.
+     * @return \stdClass|null Old/new status and end time, or null when not applicable.
+     */
+    public static function reactivate_enrolment(int $ueid, ?int $courseid = null, ?int $now = null): ?\stdClass {
+        return local\enrolment_admin::reactivate($ueid, $courseid, $now);
+    }
+
+    /**
+     * Enrol a previously unenrolled user again (explicit, confirmed administrative decision).
+     *
+     * @param int $courseid Course id.
+     * @param int $userid User id.
+     * @param bool $restrict Whether the visitor restriction applies (temporary accounts).
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function reenrol_user(int $courseid, int $userid, bool $restrict, ?int $now = null): bool {
+        return local\enrol_service::admin_enrol($courseid, $userid, $restrict, $now);
+    }
+
+    /**
+     * Map the FlexAccess enrolments of a merged-away identity onto the surviving one.
+     *
+     * @param int $fromuserid Source identity.
+     * @param int $touserid Surviving identity.
+     * @param bool $permanent Whether the merge establishes permanent course access.
+     * @param int|null $now Current time.
+     * @return \stdClass ->transferred, ->merged.
+     */
+    public static function transfer_user_enrolments(
+        int $fromuserid,
+        int $touserid,
+        bool $permanent = false,
+        ?int $now = null
+    ): \stdClass {
+        return local\enrolment_admin::transfer($fromuserid, $touserid, $permanent, $now);
+    }
+
+    /**
+     * Role-model problems of the FlexAccess participant and restriction roles.
+     *
+     * @return string[] Problem codes; empty when the role model is correct.
+     */
+    public static function role_model_problems(): array {
+        return local\readiness::role_model_problems();
+    }
+
+    /**
+     * Recreate/repair the FlexAccess roles (deterministic, idempotent).
+     *
+     * @return void
+     */
+    public static function repair_role_model(): void {
+        local\readiness::repair_role_model();
+    }
+
+    /**
+     * FlexAccess enrolments without their course role, and participant roles assigned site-wide.
+     *
+     * @param int $limit Maximum rows.
+     * @return array ->missingrole, ->systemparticipant.
+     */
+    public static function find_role_mismatches(int $limit = 200): array {
+        return local\enrolment_admin::find_role_mismatches($limit);
+    }
+
+    /**
+     * Course instances enabling a method that a higher-level policy or master switch neutralises.
+     *
+     * @param int|null $courseid Optional single course.
+     * @param int $limit Maximum number of conflicts.
+     * @return \stdClass[] courseid, enrolid, flag, cause.
+     */
+    public static function policy_conflicts(?int $courseid = null, int $limit = 200): array {
+        return local\readiness::policy_conflicts($courseid, $limit);
+    }
+
+    /**
+     * Compact readiness verdict of a course (empty = ready).
+     *
+     * @param int $courseid Course id.
+     * @return string[]
+     */
+    public static function course_readiness_problems(int $courseid): array {
+        return local\readiness::course_problems($courseid);
+    }
 }
