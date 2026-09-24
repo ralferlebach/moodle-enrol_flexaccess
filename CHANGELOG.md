@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.1.1 — 2026-09-22 — APIs für den Kontenabgleich
+- **Neue APIs, die der Kontenabgleich in `tool_flexaccess` nutzt:**
+  - `get_enrolments_for_users()` liest die FlexAccess-Einschreibungen vieler Nutzer samt Kursrollen-Kennzeichen in einer Abfrage statt einer Abfrage je Nutzer.
+  - `unrestrict_completely()` entfernt die Restriktionsrolle eines Nutzers vollständig. Das bisherige `unrestrict()` löst nur die Zuweisung, die FlexAccess selbst gesetzt hat; Altdaten tragen die Rolle teils ohne Komponente, und für eine dauerhafte Identität muss sie ganz verschwinden.
+  - `remove_system_participant_assignments()` räumt Zuweisungen der reinen Kursrolle auf Systemebene ab, wie sie in Altdaten vorkommen.
+- Keine Verhaltensänderung an Einschreibung, Ablauf oder Richtlinien.
+- Reifegrad `MATURITY_STABLE`, Version `2026092202`, Release `1.1.1`. Abhängigkeit `auth_flexaccess` ≥ `2026092202`.
+
 ## 1.1.0 — 2026-09-22 — Listen-Symbol, Readiness, Einschreibungsverwaltung
 - **Zugangslisten-Symbol (Issue #5).** Die Aktion „Zugangslisten“ in der Einschreibemethodenübersicht zeigt jetzt das Core-Symbol `e/bullet_list` (`fa-list-ul`) statt des Nutzer-Symbols `i/users`. Tooltip und zugänglicher Name bleiben „Zugangslisten“. Das Symbol ist in Moodle 4.5, 5.0, 5.2 und main vorhanden; ein Test prüft es gegen die Symbolzuordnung der laufenden Version.
 - **Readiness-Hinweis im Instanzformular.** Das Formular der Einschreibemethode zeigt kompakt „FlexAccess bereit“ oder, was fehlt: Auth deaktiviert, Einschreibeplugin deaktiviert, Rolle fehlerhaft, Policy blockiert eine konfigurierte Methode. Mit Berechtigung verlinkt der Hinweis auf den FlexAccess-Systemstatus.

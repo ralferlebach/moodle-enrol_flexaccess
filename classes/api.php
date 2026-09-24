@@ -344,4 +344,34 @@ final class api {
     public static function course_readiness_problems(int $courseid): array {
         return local\readiness::course_problems($courseid);
     }
+
+    /**
+     * FlexAccess enrolments of many users in one query, with the course-role flag.
+     *
+     * @param int[] $userids User ids.
+     * @param int|null $now Current time.
+     * @return array<int, \stdClass[]>
+     */
+    public static function get_enrolments_for_users(array $userids, ?int $now = null): array {
+        return local\enrolment_admin::get_enrolments_for_users($userids, $now);
+    }
+
+    /**
+     * Remove every assignment of the restriction role from a user (any component).
+     *
+     * @param int $userid User id.
+     * @return int Number of assignments removed.
+     */
+    public static function unrestrict_completely(int $userid): int {
+        return local\participant_role::unrestrict_all($userid);
+    }
+
+    /**
+     * Remove system-level assignments of the course-only participant role.
+     *
+     * @return int[] Affected user ids.
+     */
+    public static function remove_system_participant_assignments(): array {
+        return local\participant_role::remove_system_assignments();
+    }
 }

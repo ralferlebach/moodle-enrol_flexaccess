@@ -72,6 +72,54 @@ final class enrolment_admin {
     }
 
     /**
+     * FlexAccess enrolments of many users in one query, with the course-role flag (no N+1).
+     *
+     * @param int[] $userids User ids.
+     * @param int|null $now Current time.
+     * @return array<int, \stdClass[]> userid => enrolments (ueid, enrolid, courseid, status, timestart,
+     *     timeend, expired, hasrole).
+     */
+    public static function get_enrolments_for_users(array $userids, ?int $now = null): array {
+        global $DB;
+        $now = $now ?? time();
+        $userids = array_values(array_unique(array_filter(array_map('intval', $userids))));
+        $out = array_fill_keys($userids, []);
+        if (!$userids) {
+            return $out;
+        }
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $params['roleid'] = participant_role::get_id();
+        $params['courselevel'] = CONTEXT_COURSE;
+        $rows = $DB->get_recordset_sql(
+            "SELECT ue.id AS ueid, ue.userid, ue.enrolid, e.courseid, ue.status, ue.timestart, ue.timeend,
+                    CASE WHEN EXISTS (
+                        SELECT 1 FROM {role_assignments} ra
+                         WHERE ra.userid = ue.userid AND ra.contextid = ctx.id AND ra.roleid = :roleid
+                    ) THEN 1 ELSE 0 END AS hasrole
+               FROM {user_enrolments} ue
+               JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'flexaccess'
+               JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :courselevel
+              WHERE ue.userid $insql
+           ORDER BY ue.userid, e.courseid, ue.id",
+            $params
+        );
+        foreach ($rows as $row) {
+            $out[(int) $row->userid][] = (object) [
+                'ueid' => (int) $row->ueid,
+                'enrolid' => (int) $row->enrolid,
+                'courseid' => (int) $row->courseid,
+                'status' => (int) $row->status,
+                'timestart' => (int) $row->timestart,
+                'timeend' => (int) $row->timeend,
+                'expired' => (int) $row->timeend > 0 && (int) $row->timeend <= $now,
+                'hasrole' => (int) $row->hasrole === 1,
+            ];
+        }
+        $rows->close();
+        return $out;
+    }
+
+    /**
      * Users holding a FlexAccess enrolment in a course.
      *
      * @param int $courseid Course id.

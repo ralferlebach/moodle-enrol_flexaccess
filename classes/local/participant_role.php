@@ -185,6 +185,51 @@ final class participant_role {
     }
 
     /**
+     * Remove every assignment of the restriction role from a user, whatever component created it.
+     *
+     * unrestrict() only lifts the assignment FlexAccess itself made. Historical data may also carry
+     * assignments without a component (older releases, manual assignment); for a permanent identity
+     * the role must go completely.
+     *
+     * @param int $userid User id.
+     * @return int Number of assignments removed.
+     */
+    public static function unrestrict_all(int $userid): int {
+        global $DB;
+        $roleid = self::get_restriction_id();
+        if ($roleid === 0) {
+            return 0;
+        }
+        $contextid = \context_system::instance()->id;
+        $rows = $DB->get_records('role_assignments', ['roleid' => $roleid, 'userid' => $userid, 'contextid' => $contextid]);
+        foreach ($rows as $ra) {
+            role_unassign($roleid, $userid, $contextid, (string) $ra->component, (int) $ra->itemid);
+        }
+        return count($rows);
+    }
+
+    /**
+     * Remove assignments of the course-only participant role at system level (historical data).
+     *
+     * @return int[] User ids whose system-level assignment was removed.
+     */
+    public static function remove_system_assignments(): array {
+        global $DB;
+        $roleid = self::get_id();
+        if ($roleid === 0) {
+            return [];
+        }
+        $contextid = \context_system::instance()->id;
+        $rows = $DB->get_records('role_assignments', ['roleid' => $roleid, 'contextid' => $contextid]);
+        $userids = [];
+        foreach ($rows as $ra) {
+            role_unassign($roleid, (int) $ra->userid, $contextid, (string) $ra->component, (int) $ra->itemid);
+            $userids[] = (int) $ra->userid;
+        }
+        return array_values(array_unique($userids));
+    }
+
+    /**
      * The dedicated role id, or 0 when it does not yet exist.
      *
      * @return int

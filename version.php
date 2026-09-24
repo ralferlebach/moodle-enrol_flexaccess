@@ -25,9 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'enrol_flexaccess';
-$plugin->version = 2026092201;
+$plugin->version = 2026092202;
 $plugin->requires = 2024100700;
 $plugin->supported = [405, 502];
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.1.0';
-$plugin->dependencies = ['auth_flexaccess' => 2026092201];
+$plugin->release = '1.1.1';
+$plugin->dependencies = ['auth_flexaccess' => 2026092202];
