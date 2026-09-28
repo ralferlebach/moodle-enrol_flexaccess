@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 (2026092801) — 2026-09-28 — Vollständige Zählungen für den Systemstatus
+- Neu `count_missing_course_roles()`: vollständige Zahl der FlexAccess-Einschreibungen ohne Kursrolle, ohne Limit.
+- `policy_conflicts()` akzeptiert `limit = 0` für eine vollständige Liste.
+- Version `2026092801`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092801`.
+
 ## 1.1.0 (2026092800) — 2026-09-28 — Serverseitiger Gate-Nachweis für die Schnellregistrierung (auth Issue #9)
 - **Neuer Prüfschritt** `access_controller::check_quickreg_gate()`: prüft nur das Kurs-/Zugangskennwort, bevor irgendetwas angelegt wird. Fehlversuche sind wie beim temporären Zugangsschlüssel je Client und Kurs begrenzt (5 in 5 Minuten); während der Sperre wird auch das richtige Kennwort abgewiesen.
 - **Nachweis statt Kennwort (`local\gate_pass`).** Nach bestandener Prüfung liegt in der Session ein Nachweis ohne Geheimnis, gebunden an Kurs, Zweck, Session und einen Fingerabdruck des Kurskennworts; er gilt 15 Minuten. Ein Wechsel des Kurskennworts entwertet offene Nachweise. Nach erfolgreicher Registrierung wird der Nachweis verbraucht und kann nicht erneut verwendet werden.

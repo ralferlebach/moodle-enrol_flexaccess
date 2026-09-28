@@ -114,7 +114,7 @@ final class readiness {
      * Course instances that enable a method a higher level switches off.
      *
      * @param int|null $courseid Optional single course.
-     * @param int $limit Maximum number of conflicts.
+     * @param int $limit Maximum number of conflicts; 0 returns all.
      * @return \stdClass[] Each with courseid, enrolid, flag, cause ('ceiling'|'magicmaster').
      */
     public static function policy_conflicts(?int $courseid = null, int $limit = 200): array {
@@ -142,7 +142,7 @@ final class readiness {
                 } else if ($flag === 'allowmagiclogin' && !$magicmaster) {
                     $conflicts[] = self::conflict($instance, $flag, 'magicmaster');
                 }
-                if (count($conflicts) >= $limit) {
+                if ($limit > 0 && count($conflicts) >= $limit) {
                     return $conflicts;
                 }
             }

@@ -374,4 +374,13 @@ final class api {
     public static function remove_system_participant_assignments(): array {
         return local\participant_role::remove_system_assignments();
     }
+
+    /**
+     * Complete number of FlexAccess enrolments lacking their course role (no limit).
+     *
+     * @return int
+     */
+    public static function count_missing_course_roles(): int {
+        return local\enrolment_admin::count_missing_course_roles();
+    }
 }

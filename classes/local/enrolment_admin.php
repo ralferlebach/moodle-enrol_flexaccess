@@ -282,4 +282,26 @@ final class enrolment_admin {
         ]) : 0;
         return ['missingrole' => $missing, 'systemparticipant' => (int) $system];
     }
+
+    /**
+     * Complete number of FlexAccess enrolments whose user lacks the participant role in the course.
+     *
+     * @return int
+     */
+    public static function count_missing_course_roles(): int {
+        global $DB;
+        $roleid = participant_role::get_id();
+        if ($roleid <= 0) {
+            return 0;
+        }
+        return (int) $DB->count_records_sql(
+            "SELECT COUNT(1)
+               FROM {user_enrolments} ue
+               JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'flexaccess'
+               JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :courselevel
+          LEFT JOIN {role_assignments} ra ON ra.userid = ue.userid AND ra.contextid = ctx.id AND ra.roleid = :roleid
+              WHERE ra.id IS NULL",
+            ['courselevel' => CONTEXT_COURSE, 'roleid' => $roleid]
+        );
+    }
 }
