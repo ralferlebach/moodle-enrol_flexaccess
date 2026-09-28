@@ -1,14 +1,20 @@
 # Changelog
 
-## 1.1.1 — 2026-09-22 — APIs für den Kontenabgleich
+## 1.1.0 (2026092800) — 2026-09-28 — Serverseitiger Gate-Nachweis für die Schnellregistrierung (auth Issue #9)
+- **Neuer Prüfschritt** `access_controller::check_quickreg_gate()`: prüft nur das Kurs-/Zugangskennwort, bevor irgendetwas angelegt wird. Fehlversuche sind wie beim temporären Zugangsschlüssel je Client und Kurs begrenzt (5 in 5 Minuten); während der Sperre wird auch das richtige Kennwort abgewiesen.
+- **Nachweis statt Kennwort (`local\gate_pass`).** Nach bestandener Prüfung liegt in der Session ein Nachweis ohne Geheimnis, gebunden an Kurs, Zweck, Session und einen Fingerabdruck des Kurskennworts; er gilt 15 Minuten. Ein Wechsel des Kurskennworts entwertet offene Nachweise. Nach erfolgreicher Registrierung wird der Nachweis verbraucht und kann nicht erneut verwendet werden.
+- **Controller bleibt die Sicherheitsgrenze.** `grant_quick_registration()` verlangt bei Kennwort-Gate weiterhin einen gültigen Nachweis oder das richtige Kennwort; ein direkter Aufruf ohne beides legt nichts an. Bei nicht konfiguriertem Kennwort greift weiter „fail closed“. Vertrauenswürdige Pfade (Einladung, Kampagne) brauchen keinen zweiten Nachweis.
+- Version `2026092800`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092800`.
+
+## 1.1.0 (2026092202) — 2026-09-28 — APIs für den Kontenabgleich
 - **Neue APIs, die der Kontenabgleich in `tool_flexaccess` nutzt:**
   - `get_enrolments_for_users()` liest die FlexAccess-Einschreibungen vieler Nutzer samt Kursrollen-Kennzeichen in einer Abfrage statt einer Abfrage je Nutzer.
   - `unrestrict_completely()` entfernt die Restriktionsrolle eines Nutzers vollständig. Das bisherige `unrestrict()` löst nur die Zuweisung, die FlexAccess selbst gesetzt hat; Altdaten tragen die Rolle teils ohne Komponente, und für eine dauerhafte Identität muss sie ganz verschwinden.
   - `remove_system_participant_assignments()` räumt Zuweisungen der reinen Kursrolle auf Systemebene ab, wie sie in Altdaten vorkommen.
 - Keine Verhaltensänderung an Einschreibung, Ablauf oder Richtlinien.
-- Reifegrad `MATURITY_STABLE`, Version `2026092202`, Release `1.1.1`. Abhängigkeit `auth_flexaccess` ≥ `2026092202`.
+- Reifegrad `MATURITY_STABLE`, Version `2026092202`, Release `1.1.0`. Abhängigkeit `auth_flexaccess` ≥ `2026092202`.
 
-## 1.1.0 — 2026-09-22 — Listen-Symbol, Readiness, Einschreibungsverwaltung
+## 1.1.0 (2026092201) — 2026-09-22 — Listen-Symbol, Readiness, Einschreibungsverwaltung
 - **Zugangslisten-Symbol (Issue #5).** Die Aktion „Zugangslisten“ in der Einschreibemethodenübersicht zeigt jetzt das Core-Symbol `e/bullet_list` (`fa-list-ul`) statt des Nutzer-Symbols `i/users`. Tooltip und zugänglicher Name bleiben „Zugangslisten“. Das Symbol ist in Moodle 4.5, 5.0, 5.2 und main vorhanden; ein Test prüft es gegen die Symbolzuordnung der laufenden Version.
 - **Readiness-Hinweis im Instanzformular.** Das Formular der Einschreibemethode zeigt kompakt „FlexAccess bereit“ oder, was fehlt: Auth deaktiviert, Einschreibeplugin deaktiviert, Rolle fehlerhaft, Policy blockiert eine konfigurierte Methode. Mit Berechtigung verlinkt der Hinweis auf den FlexAccess-Systemstatus.
 - **Neue API für Recovery, Merge und Diagnose:**

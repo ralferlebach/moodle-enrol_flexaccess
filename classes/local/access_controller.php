@@ -202,9 +202,21 @@ final class access_controller {
         // trusted caller (a campaign or a person-bound invitation) has already authorised the
         // applicant through its own gate and is an alternative provisioning path, so the course
         // gate is not applied again.
+        //
+        // A password gate is normally answered in its own, earlier step (check_quickreg_gate()), which
+        // leaves a short-lived, session-bound pass instead of passing the clear-text password on. The
+        // controller still enforces the gate itself: without a valid pass (or the correct password,
+        // for API callers) nothing is created, whatever page called it.
+        $gatebypass = false;
         if (!$trustedgate) {
             $accesspassword = (string) ($userdata->accesspassword ?? '');
-            if (!quickreg_gate::passes($policy, (string) $userdata->email, $accesspassword)) {
+            $gatebypass = $policy->quickreggatemode === 'password' && gate_pass::is_valid(
+                $courseid,
+                gate_pass::PURPOSE_QUICKREG,
+                (string) $policy->quickreggatepasswordhash,
+                $now
+            );
+            if (!$gatebypass && !quickreg_gate::passes($policy, (string) $userdata->email, $accesspassword)) {
                 return self::result('badgate');
             }
         }
@@ -264,17 +276,79 @@ final class access_controller {
             (string) $userdata->password,
             $now
         );
-        if ($status === 'verificationsent') {
-            return self::result('verificationsent', $outcome->userid, $enrolid);
-        }
-        if ($status === 'converted') {
-            return self::result('granted', $outcome->userid, $enrolid);
+        if ($status === 'verificationsent' || $status === 'converted') {
+            // The gate pass has done its job; it cannot be used for a second registration.
+            gate_pass::consume($courseid, gate_pass::PURPOSE_QUICKREG);
+            return self::result($status === 'converted' ? 'granted' : 'verificationsent', $outcome->userid, $enrolid);
         }
         // Persistence setup failed after the account was created and enrolled (e.g. a residual
         // email-availability race). Compensate by removing the enrolment and deleting the temporary
         // user, so no orphaned account is left holding a capacity slot.
         \auth_flexaccess\api::rollback_temporary_user((int) $outcome->userid);
         return self::result($status, 0, $enrolid);
+    }
+
+    /**
+     * First step of a password-protected quick registration: check only the course access password.
+     *
+     * Runs before any personal data is asked for. On success a short-lived pass bound to course,
+     * purpose, session and gate secret is issued; the registration form follows only afterwards and
+     * never sees the clear-text password again. Failed attempts are rate limited per client and
+     * course, like the temporary access key. Nothing is created in any case.
+     *
+     * @param int $courseid Course id.
+     * @param string $accesspassword Clear-text course access password as entered.
+     * @param string $clientip Client address for the failure limit.
+     * @param int|null $now Current time.
+     * @return string 'passed', 'notrequired' (no password gate), 'badgate', 'ratelimited', 'closed'
+     *     or 'notallowed'.
+     */
+    public static function check_quickreg_gate(
+        int $courseid,
+        string $accesspassword,
+        string $clientip,
+        ?int $now = null
+    ): string {
+        $now = $now ?? time();
+        $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
+        if (!access_gate::is_flexaccess_open($policy, $now)) {
+            return 'closed';
+        }
+        if (!$policy->allowquick) {
+            return 'notallowed';
+        }
+        if ($policy->quickreggatemode !== 'password') {
+            return 'notrequired';
+        }
+        $rateid = access_key_rate::identifier($clientip . '|quickreggate', $courseid);
+        if (access_key_rate::is_blocked($rateid, $now)) {
+            return 'ratelimited';
+        }
+        // The e-mail is irrelevant for the password mode; passes() fails closed without a secret.
+        if (!quickreg_gate::passes($policy, '', $accesspassword)) {
+            access_key_rate::record_failure($rateid, $now);
+            return 'badgate';
+        }
+        access_key_rate::reset($rateid);
+        gate_pass::issue($courseid, gate_pass::PURPOSE_QUICKREG, (string) $policy->quickreggatepasswordhash, $now);
+        return 'passed';
+    }
+
+    /**
+     * Whether the visitor currently holds a valid quick-registration gate pass for the course.
+     *
+     * @param int $courseid Course id.
+     * @param int|null $now Current time.
+     * @return bool
+     */
+    public static function has_quickreg_gate_pass(int $courseid, ?int $now = null): bool {
+        $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
+        return $policy->quickreggatemode === 'password' && gate_pass::is_valid(
+            $courseid,
+            gate_pass::PURPOSE_QUICKREG,
+            (string) $policy->quickreggatepasswordhash,
+            $now
+        );
     }
 
     /**
