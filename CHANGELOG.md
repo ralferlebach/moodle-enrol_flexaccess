@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.1.0 (2026092802) — 2026-09-28 — Versions-Gleichschritt
+- Keine Codeänderung. Abhängigkeit `auth_flexaccess` ≥ `2026092802`. Version `2026092802`, Release `1.1.0`, `MATURITY_STABLE`.
+
 ## 1.1.0 (2026092801) — 2026-09-28 — Vollständige Zählungen für den Systemstatus
 - Neu `count_missing_course_roles()`: vollständige Zahl der FlexAccess-Einschreibungen ohne Kursrolle, ohne Limit.
 - `policy_conflicts()` akzeptiert `limit = 0` für eine vollständige Liste.
