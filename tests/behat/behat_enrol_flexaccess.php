@@ -37,6 +37,28 @@
  */
 class behat_enrol_flexaccess extends behat_base {
     /**
+     * Enable the FlexAccess enrolment and authentication plugins, as a site using FlexAccess has them.
+     *
+     * Entry flows stop while either is disabled (kill switch), so every step that sets up a working
+     * FlexAccess method makes sure both are on.
+     *
+     * @return void
+     */
+    private function enable_flexaccess_plugins(): void {
+        $enrol = array_filter(explode(',', (string) get_config('core', 'enrol_plugins_enabled')));
+        if (!in_array('flexaccess', $enrol, true)) {
+            $enrol[] = 'flexaccess';
+            set_config('enrol_plugins_enabled', implode(',', $enrol));
+        }
+        $auth = get_enabled_auth_plugins();
+        if (!in_array('flexaccess', $auth, true)) {
+            $auth[] = 'flexaccess';
+            set_config('auth', implode(',', array_diff($auth, ['manual', 'nologin'])));
+        }
+        \cache::make('enrol_flexaccess', 'policy')->purge();
+    }
+
+    /**
      * Grants a temporary FlexAccess account in a course via the real enrol access flow.
      *
      * @Given a FlexAccess temporary account is granted in course :coursefullname
@@ -44,6 +66,7 @@ class behat_enrol_flexaccess extends behat_base {
      * @return void
      */
     public function a_flexaccess_temporary_account_is_granted_in_course(string $coursefullname): void {
+        $this->enable_flexaccess_plugins();
         global $DB;
 
         $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
@@ -71,6 +94,7 @@ class behat_enrol_flexaccess extends behat_base {
      * @return void
      */
     public function a_flexaccess_method_allowing_temporary_access_exists_in_course(string $coursefullname): void {
+        $this->enable_flexaccess_plugins();
         global $DB;
         $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
         $course = get_course($courseid);
@@ -107,6 +131,7 @@ class behat_enrol_flexaccess extends behat_base {
      * @return void
      */
     public function a_flexaccess_method_allowing_quick_registration_exists_in_course(string $coursefullname): void {
+        $this->enable_flexaccess_plugins();
         global $DB;
         $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
         set_config('allowwidening', 1, 'enrol_flexaccess');
@@ -132,6 +157,7 @@ class behat_enrol_flexaccess extends behat_base {
     public function a_flexaccess_method_offering_guest_access_and_normal_login_exists_in_course(
         string $coursefullname
     ): void {
+        $this->enable_flexaccess_plugins();
         global $DB;
         $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
         set_config('allowwidening', 1, 'enrol_flexaccess');
@@ -274,6 +300,7 @@ class behat_enrol_flexaccess extends behat_base {
         string $key,
         string $coursefullname
     ): void {
+        $this->enable_flexaccess_plugins();
         global $DB;
         $courseid = (int) $DB->get_field('course', 'id', ['fullname' => $coursefullname], MUST_EXIST);
         set_config('allowwidening', 1, 'enrol_flexaccess');

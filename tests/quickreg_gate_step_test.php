@@ -47,6 +47,9 @@ final class quickreg_gate_step_test extends \advanced_testcase {
             $this->markTestSkipped('Requires the auth_flexaccess sibling plugin to be installed.');
         }
         $this->resetAfterTest();
+        // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
+        set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
+        set_config('auth', 'flexaccess');
         set_config('requireemailverification', 0, 'auth_flexaccess');
         set_config('allowwidening', 1, 'enrol_flexaccess');
         set_config('quickreggatemode', 'password', 'enrol_flexaccess');

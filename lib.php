@@ -515,6 +515,49 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     }
 
     /**
+     * Restore the FlexAccess method of a backed-up course.
+     *
+     * A new course gets the method; a course that already has a FlexAccess method (restore merged into
+     * an existing course) keeps its own, and the backup is mapped onto it instead of creating a second
+     * one. The configuration follows in restore_enrol_flexaccess_plugin.
+     *
+     * @param restore_enrolments_structure_step $step Restore step.
+     * @param stdClass $data Backed-up enrol row.
+     * @param stdClass $course Target course.
+     * @param int $oldid Enrol id in the backup.
+     * @return void
+     */
+    public function restore_instance(restore_enrolments_structure_step $step, stdClass $data, $course, $oldid) {
+        global $DB;
+        if ($step->get_task()->get_target() != backup::TARGET_NEW_COURSE) {
+            $existing = $DB->get_record('enrol', ['courseid' => $course->id, 'enrol' => 'flexaccess'], 'id', IGNORE_MULTIPLE);
+            if ($existing) {
+                $step->set_mapping('enrol', $oldid, (int) $existing->id);
+                return;
+            }
+        }
+        $instanceid = $this->add_instance($course, (array) $data);
+        $step->set_mapping('enrol', $oldid, $instanceid);
+        // Recorded in the restore's own mapping table (scoped to this restore, unlike process state), so
+        // the configuration step only ever writes onto a method this restore has created.
+        $step->set_mapping('enrol_flexaccess_created', $oldid, $instanceid);
+    }
+
+    /**
+     * Restore a user enrolment into the restored FlexAccess method (only when users are included).
+     *
+     * @param restore_enrolments_structure_step $step Restore step.
+     * @param stdClass $data Backed-up user enrolment.
+     * @param stdClass $instance Restored enrol instance.
+     * @param int $userid Mapped user id.
+     * @param int $oldinstancestatus Status of the backed-up instance.
+     * @return void
+     */
+    public function restore_user_enrolment(restore_enrolments_structure_step $step, $data, $instance, $userid, $oldinstancestatus) {
+        $this->enrol_user($instance, $userid, null, (int) $data->timestart, (int) $data->timeend, (int) $data->status);
+    }
+
+    /**
      * Delete an instance and its extended FlexAccess configuration.
      *
      * @param stdClass $instance Enrol instance.

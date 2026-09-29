@@ -36,6 +36,10 @@ final class persistence_test extends \advanced_testcase {
      */
     protected function setUp(): void {
         parent::setUp();
+        // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
+        $this->resetAfterTest();
+        set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
+        set_config('auth', 'flexaccess');
         global $DB;
         if (!$DB->get_manager()->table_exists('auth_flexaccess_account')) {
             $this->markTestSkipped('Requires the auth_flexaccess sibling plugin to be installed.');

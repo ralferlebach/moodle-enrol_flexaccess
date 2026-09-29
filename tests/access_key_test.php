@@ -30,6 +30,19 @@ use enrol_flexaccess\local\instance_config;
  */
 final class access_key_test extends \advanced_testcase {
     /**
+     * Enable the FlexAccess plugins the tested flows require.
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
+        $this->resetAfterTest();
+        set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
+        set_config('auth', 'flexaccess');
+    }
+
+    /**
      * Create a course with a temporary-access instance protected by a course access key.
      *
      * @param string $key Clear-text key to store (hashed).

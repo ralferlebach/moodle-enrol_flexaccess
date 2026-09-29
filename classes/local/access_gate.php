@@ -42,7 +42,20 @@ final class access_gate {
      * @return bool
      */
     public static function is_flexaccess_open(policy $policy, int $now): bool {
-        return $policy->is_within_window($now);
+        return self::plugins_enabled() && $policy->is_within_window($now);
+    }
+
+    /**
+     * Kill switch: FlexAccess entry flows only run while both halves of the mechanism are enabled.
+     *
+     * With the enrolment plugin disabled, Moodle ignores its enrolments; with the authentication
+     * plugin disabled, the accounts it creates could not sign in again. In either case an entry flow
+     * must stop before creating any user, account, enrolment or mail - not afterwards.
+     *
+     * @return bool
+     */
+    public static function plugins_enabled(): bool {
+        return enrol_is_enabled('flexaccess') && is_enabled_auth('flexaccess');
     }
 
     /**
@@ -54,14 +67,14 @@ final class access_gate {
      * @return \stdClass Object with boolean properties: temporary, quick, guest, normallogin.
      */
     public static function offerable(policy $policy, int $now, int $activecount): \stdClass {
-        $open = $policy->is_within_window($now);
+        $open = self::is_flexaccess_open($policy, $now);
         $hascapacity = capacity_service::has_free_capacity($activecount, $policy->maxparticipants);
 
         $result = new \stdClass();
         $result->temporary = $policy->allowtemporary && $open && $hascapacity;
         $result->quick = $policy->allowquick && $open && $hascapacity;
         $result->guest = $policy->allowguest && $open;
-        $result->normallogin = $policy->allownormallogin;
+        $result->normallogin = $policy->allownormallogin && self::plugins_enabled();
         return $result;
     }
 

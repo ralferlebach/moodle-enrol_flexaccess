@@ -30,6 +30,19 @@ use enrol_flexaccess\local\instance_config;
  */
 final class access_key_unset_test extends \advanced_testcase {
     /**
+     * Enable the FlexAccess plugins the tested flows require.
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
+        $this->resetAfterTest();
+        set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
+        set_config('auth', 'flexaccess');
+    }
+
+    /**
      * Create a fresh course-key-mode instance that has no key configured.
      *
      * @return array{0:int,1:int} Course id and enrol instance id.

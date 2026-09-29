@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.0 (2026092900) — 2026-09-29 — Kurs-Backup/-Restore und Kill-Switch (Review-Abschlussmatrix)
+- **Backup, Wiederherstellen, Duplizieren und Import behalten die FlexAccess-Methode (Abschnitt 11).**
+  - **Bisher:** Moodles Standard-`restore_instance()` stellt Einschreibemethoden nicht wieder her. Beim Duplizieren oder Wiederherstellen eines Kurses verschwand FlexAccess samt Konfiguration und Einschreibungen – ohne Hinweis.
+  - **Jetzt:** Ein Backup-/Restore-Plugin nimmt die Konfiguration aus `enrol_flexaccess_instance` mit. Rollen- und Gruppen-IDs werden auf das Ziel umgeschlüsselt, Hashes bleiben Hashes, und Einschreibungen werden bei gesicherten Nutzerdaten wiederhergestellt.
+  - **Wiederherstellen in einen bestehenden Kurs:** Hat der Kurs schon eine eigene FlexAccess-Methode, wird diese genutzt statt verdoppelt, und ihre Konfiguration bleibt unverändert. Die Zuordnung läuft über die Restore-eigene Mapping-Tabelle, nicht über Prozesszustand. Der Test deckte diesen Fehler im ersten Entwurf auf.
+  - Zwei Rundlauf-Tests.
+- **Kill-Switch (Lesson 3).**
+  - **Bisher:** Bei deaktiviertem Einschreibe- oder Auth-Plugin legten temporärer Zugang und Schnellregistrierung trotzdem Nutzer, Konten, Einschreibungen und Mails an.
+  - **Jetzt:** `access_gate::is_flexaccess_open()` prüft beide Plugins, bevor irgendetwas angelegt wird. Das gilt auch für Einladungen und Kampagnen sowie für den Gate-Schritt; die Einstiegsseite bietet dann nichts an. Regressionstest für beide Fälle, der auch prüft, dass keine Nebenwirkung entsteht.
+- **Tests stellen aktivierte Plugins jetzt ausdrücklich her.** Das betrifft 9 PHPUnit-Klassen und die Behat-Schritte, die eine FlexAccess-Methode einrichten, wie auf einer echten Site. Behat lokal: 18 von 18 Szenarien grün.
+- Verwaisten Docblock von `delete_instance()` korrigiert.
+- Version `2026092900`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092900`.
+
 ## 1.1.0 (2026092805) — 2026-09-29 — Behat: CI wieder grün, neue Abläufe abgesichert
 - **Behebt die rote CI von `2026092803` und `2026092804`.** Das Szenario zum Magic-Link erwartete noch die sofortige Anmeldung beim Öffnen des Links. Das hatte die Bestätigungsseite aus `2026092803` bewusst abgeschafft. Das Szenario prüft jetzt das gewollte Verhalten: Öffnen allein meldet nicht an, erst die Schaltfläche.
 - **Neue Szenarien für die Produktionspfade (Lesson 15):**

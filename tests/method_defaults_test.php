@@ -28,6 +28,19 @@ use enrol_flexaccess\local\policy_assembler;
  */
 final class method_defaults_test extends \advanced_testcase {
     /**
+     * Enable the FlexAccess plugins the tested flows require.
+     *
+     * @return void
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
+        $this->resetAfterTest();
+        set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
+        set_config('auth', 'flexaccess');
+    }
+
+    /**
      * Create an enabled FlexAccess instance offering temporary access in a fresh course.
      *
      * @return int Course id.
