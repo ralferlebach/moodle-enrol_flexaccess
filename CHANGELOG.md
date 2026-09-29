@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 (2026092803) — 2026-09-28 — Review gegen Checkliste und Lessons Learnt (Schritt 1 und 2)
+- **Deinstallation hinterlässt keine Kursrollen mehr (Lesson 27, im Core nachgeprüft).** Moodle entfernt beim Deinstallieren nur Rollenzuweisungen mit Komponente. FlexAccess vergibt die Teilnehmerrolle aber ohne Komponente. Das neue `db/uninstall.php` entfernt deshalb diese Kursrollen zu FlexAccess-Einschreibungen und löscht beide FlexAccess-Rollen. Die Teilnehmerrolle wird nur gelöscht, wenn sie außerhalb von FlexAccess niemand nutzt; die Administration verliert keine eigene Zuweisung. Zwei Tests.
+- **Fehlversuch-Zähler (Lesson 35):** Der Cache ist jetzt in `db/caches.php` deklariert (`accesskeyrate`, TTL 600 s) statt als Ad-hoc-Cache ohne Ablaufzeit. Veraltete Zähler werden beim Lesen entfernt.
+- **Datenschutz-Begründung vollständig (Lesson 26):** Der Text zu „keine personenbezogenen Daten“ nennt jetzt ausdrücklich die kurzlebigen, nicht zuordenbaren Spuren: die Zähler aus einem Einweg-Hash von Adresse und Kurs sowie den Gate-Nachweis in der Session.
+- **`PARAM_RAW` verengt (Lesson 7):** Die Domainliste des Registrierungs-Gates nutzt `PARAM_TEXT`, in der Einstellung wie im Instanzformular.
+- Version `2026092803`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092803`.
+
 ## 1.1.0 (2026092802) — 2026-09-28 — Versions-Gleichschritt
 - Keine Codeänderung. Abhängigkeit `auth_flexaccess` ≥ `2026092802`. Version `2026092802`, Release `1.1.0`, `MATURITY_STABLE`.
 

@@ -33,4 +33,13 @@ $definitions = [
         'simplekeys' => true,
         'simpledata' => false,
     ],
+    // Failed access-key / access-password attempts per (hashed) client and course. Application-wide
+    // so the limit holds across web nodes; entries expire on their own and are removed when found
+    // stale, so nothing outlives the counting window for long.
+    'accesskeyrate' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'simplekeys' => true,
+        'simpledata' => true,
+        'ttl' => 600,
+    ],
 ];

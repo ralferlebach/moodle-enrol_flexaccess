@@ -115,7 +115,7 @@ if ($ADMIN->fulltree) {
         get_string('settingquickreggatedomains', 'enrol_flexaccess'),
         get_string('settingquickreggatedomains_desc', 'enrol_flexaccess'),
         '',
-        PARAM_RAW
+        PARAM_TEXT
     ));
 
     $settings->add(new admin_setting_heading(

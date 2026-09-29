@@ -59,6 +59,8 @@ final class access_key_rate {
             return false;
         }
         if ($now - (int) $entry['since'] > self::WINDOW) {
+            // A stale counter carries no information any more: remove it instead of keeping it.
+            self::cache()->delete($identifier);
             return false;
         }
         return (int) $entry['count'] >= self::MAX_ATTEMPTS;
@@ -93,15 +95,11 @@ final class access_key_rate {
     }
 
     /**
-     * The ad-hoc application cache used to hold attempt counters.
+     * The declared application cache holding the attempt counters (see db/caches.php).
      *
      * @return \cache
      */
     private static function cache(): \cache {
-        return \cache::make_from_params(
-            \cache_store::MODE_APPLICATION,
-            'enrol_flexaccess',
-            'accesskeyrate'
-        );
+        return \cache::make('enrol_flexaccess', 'accesskeyrate');
     }
 }

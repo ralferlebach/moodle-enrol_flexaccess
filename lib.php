@@ -389,7 +389,7 @@ class enrol_flexaccess_plugin extends enrol_plugin {
             'quickreggatedomains',
             get_string('instancequickreggatedomains', 'enrol_flexaccess')
         );
-        $mform->setType('quickreggatedomains', PARAM_RAW);
+        $mform->setType('quickreggatedomains', PARAM_TEXT);
         $mform->hideIf('quickreggatedomains', 'quickreggatemode', 'neq', 'domain');
 
         // Populate the extended fields from stored configuration when editing an existing instance.
