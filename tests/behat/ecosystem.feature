@@ -105,7 +105,44 @@ Feature: FlexAccess plugins work together across the temporary-access lifecycle
     And I press "Send me a login link"
     Then I should see "a login link is on its way"
 
-  Scenario: A permanent account logs in through a magic-login link
+  Scenario: A permanent account logs in through a magic-login link, only after confirming it
     Given a permanent FlexAccess account "magic@example.com" exists with name "Magic" "User"
     When I open a FlexAccess magic-login link for "magic@example.com"
+    # Opening the link (as a mail scanner would) must neither log in nor spend the link.
+    Then I should see "Click the button to sign in with this one-time link"
+    And I should not see "Magic User"
+    When I press "Sign in"
     Then I should see "Magic User"
+
+  Scenario: A course access password is asked first, on its own, before the registration form
+    Given a FlexAccess enrolment method allowing quick registration exists in course "Course 1"
+    And the FlexAccess authentication method is enabled
+    And the following config values are set as admin:
+      | requireemailverification | 0 | auth_flexaccess |
+    And the FlexAccess quick registration is protected by the course access password "Kurs-42"
+    When I open the FlexAccess quick registration page for course "Course 1"
+    Then I should see "This course is protected by an access password"
+    And I should not see "Email address"
+    When I set the field "Course access password" to "wrong"
+    And I press "Continue"
+    Then I should see "The course access password is not correct"
+    And I should not see "Email address"
+    When I set the field "Course access password" to "Kurs-42"
+    And I press "Continue"
+    Then I should see "Email address"
+    And I should not see "Course access password"
+    When I set the following fields to these values:
+      | Email address | gated@example.com |
+      | First name    | Gated             |
+      | Last name     | Learner           |
+      | Password      | Str0ng-Pass!23    |
+    And I press "Create account and enter"
+    Then I should see "Course 1"
+
+  Scenario: A verification link converts the account only after it is confirmed
+    Given the FlexAccess authentication method is enabled
+    When I open a FlexAccess verification link for "verify.me@example.com"
+    Then I should see "Click the button to confirm your e-mail address"
+    And I should not see "Your account is now permanent"
+    When I press "Confirm e-mail address"
+    Then I should see "Your account is now permanent"

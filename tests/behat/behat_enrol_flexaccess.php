@@ -291,4 +291,31 @@ class behat_enrol_flexaccess extends behat_base {
             ['enrolid' => $enrolid]
         );
     }
+
+    /**
+     * Protects quick registration site-wide with a course access password (gate-first flow).
+     *
+     * @Given the FlexAccess quick registration is protected by the course access password :password
+     * @param string $password Clear-text course access password.
+     * @return void
+     */
+    public function the_flexaccess_quick_registration_is_protected_by_password(string $password): void {
+        set_config('quickreggatemode', 'password', 'enrol_flexaccess');
+        set_config('quickreggatepasswordhash', \enrol_flexaccess\local\quickreg_gate::hash($password), 'enrol_flexaccess');
+        \cache::make('enrol_flexaccess', 'policy')->purge();
+    }
+
+    /**
+     * Creates a temporary account waiting for e-mail verification and opens its verification link.
+     *
+     * @When I open a FlexAccess verification link for :email
+     * @param string $email Address the verification was requested for.
+     * @return void
+     */
+    public function i_open_a_flexaccess_verification_link_for(string $email): void {
+        $userid = \auth_flexaccess\api::create_temporary_user(time() + 3600);
+        \auth_flexaccess\api::request_persistence($userid, $email, 'Verify', 'Person', 'Str0ng-Pass!23');
+        $token = \auth_flexaccess\local\token_service::issue($userid, 'persistence', 900);
+        $this->execute('behat_general::i_visit', [new \moodle_url('/auth/flexaccess/persist.php', ['token' => $token])]);
+    }
 }

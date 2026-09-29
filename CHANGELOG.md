@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.1.0 (2026092805) — 2026-09-29 — Behat: CI wieder grün, neue Abläufe abgesichert
+- **Behebt die rote CI von `2026092803` und `2026092804`.** Das Szenario zum Magic-Link erwartete noch die sofortige Anmeldung beim Öffnen des Links. Das hatte die Bestätigungsseite aus `2026092803` bewusst abgeschafft. Das Szenario prüft jetzt das gewollte Verhalten: Öffnen allein meldet nicht an, erst die Schaltfläche.
+- **Neue Szenarien für die Produktionspfade (Lesson 15):**
+  - Kurs-/Zugangskennwort wird vor dem Registrierungsformular und getrennt davon abgefragt; bei falschem Kennwort bleibt das Formular verborgen.
+  - Der Verifikationslink wandelt das Konto erst nach Bestätigung um.
+- **Neue Behat-Schritte:** Gate-Kennwort setzen, Verifikationslink öffnen.
+- Alle FlexAccess-Szenarien ohne JavaScript lokal grün (Moodle 4.5, PostgreSQL). Per Gegenprobe belegt: Ohne Gate-Schritt schlägt das Gate-Szenario an.
+- Version `2026092805`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092805`.
+
 ## 1.1.0 (2026092804) — 2026-09-28 — Review gegen Checkliste und Lessons Learnt (Schritt 3)
 - **Nachfrage vor dem Löschen einer Restriktion.** Das Löschen ändert, wer den Kurs betreten darf; vorher fragt jetzt Moodles Bestätigungsdialog nach.
 - „Cohort“ heißt im Deutschen jetzt wie in Moodle „Globale Gruppe“.
