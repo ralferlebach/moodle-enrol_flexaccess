@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0 (2026092804) — 2026-09-28 — Review gegen Checkliste und Lessons Learnt (Schritt 3)
+- **Nachfrage vor dem Löschen einer Restriktion.** Das Löschen ändert, wer den Kurs betreten darf; vorher fragt jetzt Moodles Bestätigungsdialog nach.
+- „Cohort“ heißt im Deutschen jetzt wie in Moodle „Globale Gruppe“.
+- Version `2026092804`, Release `1.1.0`, `MATURITY_STABLE`. Abhängigkeit `auth_flexaccess` ≥ `2026092804`.
+
 ## 1.1.0 (2026092803) — 2026-09-28 — Review gegen Checkliste und Lessons Learnt (Schritt 1 und 2)
 - **Deinstallation hinterlässt keine Kursrollen mehr (Lesson 27, im Core nachgeprüft).** Moodle entfernt beim Deinstallieren nur Rollenzuweisungen mit Komponente. FlexAccess vergibt die Teilnehmerrolle aber ohne Komponente. Das neue `db/uninstall.php` entfernt deshalb diese Kursrollen zu FlexAccess-Einschreibungen und löscht beide FlexAccess-Rollen. Die Teilnehmerrolle wird nur gelöscht, wenn sie außerhalb von FlexAccess niemand nutzt; die Administration verliert keine eigene Zuweisung. Zwei Tests.
 - **Fehlversuch-Zähler (Lesson 35):** Der Cache ist jetzt in `db/caches.php` deklariert (`accesskeyrate`, TTL 600 s) statt als Ad-hoc-Cache ohne Ablaufzeit. Veraltete Zähler werden beim Lesen entfernt.

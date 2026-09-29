@@ -109,6 +109,7 @@ $string['restrictionrole_desc'] = 'System-level role assigned to temporary FlexA
 $string['restrictionsadd'] = 'Add restriction';
 $string['restrictionsadded'] = 'Restriction added.';
 $string['restrictionscohorthint'] = 'Cohort (used when type is Cohort)';
+$string['restrictionsdeleteconfirm'] = 'Delete this restriction? This changes who may enter the course.';
 $string['restrictionsdeleted'] = 'Restriction deleted.';
 $string['restrictionseffect'] = 'Effect';
 $string['restrictionseffectallow'] = 'Allow';

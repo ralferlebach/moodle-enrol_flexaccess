@@ -107,11 +107,14 @@ if ($restrictions) {
         } else {
             $name = $cohorts[$r->refid] ?? get_string('restrictionsmissingref', 'enrol_flexaccess');
         }
-        $delete = $OUTPUT->render(new single_button(
+        $deletebutton = new single_button(
             new moodle_url($pageurl, ['action' => 'delete', 'id' => $r->id]),
             get_string('delete'),
             'post'
-        ));
+        );
+        // Changes who may enter the course: ask before it takes effect.
+        $deletebutton->add_confirm_action(get_string('restrictionsdeleteconfirm', 'enrol_flexaccess'));
+        $delete = $OUTPUT->render($deletebutton);
         $table->data[] = [
             get_string('restrictionskind' . $r->kind, 'enrol_flexaccess'),
             s($name),
