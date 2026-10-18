@@ -72,12 +72,12 @@ final class enrolment_admin {
     }
 
     /**
-     * FlexAccess enrolments of many users in one query, with the course-role flag (no N+1).
+     * FlexAccess enrolments of many users in one query, with role flag and effective state (no N+1).
      *
      * @param int[] $userids User ids.
      * @param int|null $now Current time.
      * @return array<int, \stdClass[]> userid => enrolments (ueid, enrolid, courseid, status, timestart,
-     *     timeend, expired, hasrole).
+     *     timeend, expired, hasrole, instanceenabled, instancecount, effective (state), problems).
      */
     public static function get_enrolments_for_users(array $userids, ?int $now = null): array {
         global $DB;
@@ -92,6 +92,9 @@ final class enrolment_admin {
         $params['courselevel'] = CONTEXT_COURSE;
         $rows = $DB->get_recordset_sql(
             "SELECT ue.id AS ueid, ue.userid, ue.enrolid, e.courseid, ue.status, ue.timestart, ue.timeend,
+                    e.status AS instancestatus,
+                    (SELECT COUNT(1) FROM {enrol} e2 WHERE e2.courseid = e.courseid AND e2.enrol = 'flexaccess')
+                        AS instancecount,
                     CASE WHEN EXISTS (
                         SELECT 1 FROM {role_assignments} ra
                          WHERE ra.userid = ue.userid AND ra.contextid = ctx.id AND ra.roleid = :roleid
@@ -103,7 +106,16 @@ final class enrolment_admin {
            ORDER BY ue.userid, e.courseid, ue.id",
             $params
         );
+        $pluginenabled = enrol_is_enabled('flexaccess');
         foreach ($rows as $row) {
+            $problems = enrolment_effective_state::classify(
+                $pluginenabled,
+                (int) $row->instancecount,
+                (int) $row->instancestatus === ENROL_INSTANCE_ENABLED,
+                $row,
+                (int) $row->hasrole === 1,
+                $now
+            );
             $out[(int) $row->userid][] = (object) [
                 'ueid' => (int) $row->ueid,
                 'enrolid' => (int) $row->enrolid,
@@ -113,6 +125,10 @@ final class enrolment_admin {
                 'timeend' => (int) $row->timeend,
                 'expired' => (int) $row->timeend > 0 && (int) $row->timeend <= $now,
                 'hasrole' => (int) $row->hasrole === 1,
+                'instanceenabled' => (int) $row->instancestatus === ENROL_INSTANCE_ENABLED,
+                'instancecount' => (int) $row->instancecount,
+                'effective' => $problems ? $problems[0] : enrolment_effective_state::OK,
+                'problems' => $problems,
             ];
         }
         $rows->close();
@@ -136,49 +152,104 @@ final class enrolment_admin {
         ));
     }
 
+    /** Reactivation outcome: the enrolment is active again and the participant role is held. */
+    public const REACTIVATED = 'reactivated';
+    /** Reactivation outcome: the enrolment was already active (the role was repaired when missing). */
+    public const ALREADY_ACTIVE = 'alreadyactive';
+    /** Reactivation outcome: no such FlexAccess enrolment (in the given course). */
+    public const NOT_FOUND = 'notfound';
+    /** Reactivation outcome: refused, the FlexAccess enrolment plugin is disabled. */
+    public const BLOCKED_PLUGIN_DISABLED = 'plugindisabled';
+    /** Reactivation outcome: refused, the FlexAccess enrolment instance is disabled. */
+    public const BLOCKED_INSTANCE_DISABLED = 'instancedisabled';
+    /** Reactivation outcome: refused, the FlexAccess participant role does not exist. */
+    public const BLOCKED_ROLE_MISSING = 'rolemissing';
+
     /**
-     * Reactivate a suspended FlexAccess enrolment, optionally only within one course.
+     * Reactivate a suspended or expired FlexAccess enrolment, optionally only within one course.
      *
-     * If its end time has already passed, it receives a fresh end derived from the instance's
+     * Core counts an enrolment as active only when the plugin and the instance are enabled as well, and
+     * FlexAccess course capabilities come from the participant role. Reactivation therefore fails
+     * closed - without writing anything - when the plugin or the instance is disabled (a deliberate
+     * decision that is never reversed implicitly) or the participant role does not exist, and it puts
+     * a missing participant role back into the course context. Foreign and manual roles are untouched.
+     *
+     * If the end time has already passed, the enrolment receives a fresh end derived from the instance's
      * enrolment period (or none), because otherwise the expiry task would suspend it again at once.
      *
      * @param int $ueid User-enrolment id.
      * @param int|null $courseid When set, the enrolment must belong to this course.
      * @param int|null $now Current time.
-     * @return \stdClass|null Old and new status/timeend, or null when not applicable.
+     * @return \stdClass ->outcome (reactivated|alreadyactive|notfound|plugindisabled|instancedisabled|
+     *     rolemissing), ->ueid, ->userid, ->courseid, ->oldstatus, ->newstatus, ->oldtimeend, ->newtimeend,
+     *     ->rolerepaired, ->effective (the effective state afterwards, see {@see enrolment_effective_state}).
      */
-    public static function reactivate(int $ueid, ?int $courseid = null, ?int $now = null): ?\stdClass {
+    public static function reactivate(int $ueid, ?int $courseid = null, ?int $now = null): \stdClass {
         global $DB;
         $now = $now ?? time();
+        $result = (object) [
+            'outcome' => self::NOT_FOUND,
+            'ueid' => $ueid,
+            'userid' => 0,
+            'courseid' => (int) $courseid,
+            'oldstatus' => null,
+            'newstatus' => null,
+            'oldtimeend' => null,
+            'newtimeend' => null,
+            'rolerepaired' => false,
+            'effective' => null,
+        ];
         $row = $DB->get_record_sql(
-            "SELECT ue.*, e.courseid
+            "SELECT ue.*, e.courseid, e.status AS instancestatus
                FROM {user_enrolments} ue
                JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'flexaccess'
               WHERE ue.id = :id",
             ['id' => $ueid]
         );
         if (!$row || ($courseid !== null && (int) $row->courseid !== $courseid)) {
-            return null;
+            return $result;
         }
-        if ((int) $row->status === ENROL_USER_ACTIVE && ((int) $row->timeend === 0 || (int) $row->timeend > $now)) {
-            return null;
+        $result->userid = (int) $row->userid;
+        $result->courseid = (int) $row->courseid;
+        $result->oldstatus = (int) $row->status;
+        $result->newstatus = (int) $row->status;
+        $result->oldtimeend = (int) $row->timeend;
+        $result->newtimeend = (int) $row->timeend;
+
+        $roleid = participant_role::get_id();
+        if (!enrol_is_enabled('flexaccess')) {
+            $result->outcome = self::BLOCKED_PLUGIN_DISABLED;
+        } else if ((int) $row->instancestatus !== ENROL_INSTANCE_ENABLED) {
+            $result->outcome = self::BLOCKED_INSTANCE_DISABLED;
+        } else if ($roleid === 0) {
+            $result->outcome = self::BLOCKED_ROLE_MISSING;
         }
-        $instance = $DB->get_record('enrol', ['id' => $row->enrolid], '*', MUST_EXIST);
-        $timeend = (int) $row->timeend;
-        if ($timeend > 0 && $timeend <= $now) {
-            $config = instance_config::load((int) $instance->id);
-            $period = $config ? (int) $config->enrolperiod : 0;
-            $timeend = $period > 0 ? $now + $period : 0;
+        if ($result->outcome !== self::NOT_FOUND) {
+            $result->effective = enrolment_effective_state::evaluate($result->userid, $result->courseid, $now);
+            return $result;
         }
-        enrol_get_plugin('flexaccess')->update_user_enrol($instance, (int) $row->userid, ENROL_USER_ACTIVE, null, $timeend);
-        return (object) [
-            'ueid' => $ueid,
-            'courseid' => (int) $row->courseid,
-            'oldstatus' => (int) $row->status,
-            'newstatus' => ENROL_USER_ACTIVE,
-            'oldtimeend' => (int) $row->timeend,
-            'newtimeend' => $timeend,
-        ];
+
+        $active = (int) $row->status === ENROL_USER_ACTIVE && ((int) $row->timeend === 0 || (int) $row->timeend > $now);
+        $transaction = $DB->start_delegated_transaction();
+        if (!$active) {
+            $instance = $DB->get_record('enrol', ['id' => $row->enrolid], '*', MUST_EXIST);
+            $timeend = (int) $row->timeend;
+            if ($timeend > 0 && $timeend <= $now) {
+                $timeend = enrol_time::end_for_instance((int) $instance->id, $now);
+            }
+            enrol_get_plugin('flexaccess')->update_user_enrol($instance, $result->userid, ENROL_USER_ACTIVE, null, $timeend);
+            $result->newstatus = ENROL_USER_ACTIVE;
+            $result->newtimeend = $timeend;
+        }
+        if (!enrolment_effective_state::has_participant_role($result->userid, $result->courseid)) {
+            // Assigned exactly as enrol_user() assigns it (the plugin's roles are not protected).
+            role_assign($roleid, $result->userid, \context_course::instance($result->courseid)->id);
+            $result->rolerepaired = true;
+        }
+        $transaction->allow_commit();
+        $result->outcome = $active ? self::ALREADY_ACTIVE : self::REACTIVATED;
+        $result->effective = enrolment_effective_state::evaluate($result->userid, $result->courseid, $now);
+        return $result;
     }
 
     /**

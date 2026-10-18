@@ -70,3 +70,36 @@ test('role and cohort restrictions can be administered per course', async ({ pag
   await open(page, `/enrol/flexaccess/restrictions.php?courseid=${COURSE_ID}`);
   await expect(page.locator('body')).toContainText(/restriction|beschr/i);
 });
+
+test('a new FlexAccess participant is immediately in the gradebook and active participants', async ({ page, browser }) => {
+  test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
+  // enrol_flexaccess #8/#9: the grader report lists only active enrolments with a gradebook role, so
+  // it shows at once whether Core counts the fresh enrolment as active and the role as gradable.
+  await loginAs(page, ADMIN_USER, ADMIN_PASS);
+  const grader = `/grade/report/grader/index.php?id=${COURSE_ID}`;
+  await open(page, grader);
+  const before = await page.locator('table.gradereport-grader-table, table#user-grades').first()
+    .getByText('FlexAccess Guest').count();
+
+  // An anonymous visitor enters the course through temporary access.
+  const context = await browser.newContext();
+  const visitor = await context.newPage();
+  await visitor.goto(`/auth/flexaccess/access.php?courseid=${COURSE_ID}`);
+  const button = visitor.getByRole('button', { name: /Continue/i });
+  if (await button.count()) {
+    await button.first().click();
+  } else {
+    await visitor.getByRole('link', { name: /Continue/i }).first().click();
+  }
+  await expect(visitor).toHaveURL(/course\/view\.php/);
+  await context.close();
+
+  // Immediately afterwards - no waiting for a rounding window - Core lists the participant.
+  await open(page, grader);
+  await expect(
+    page.locator('table.gradereport-grader-table, table#user-grades').first().getByText('FlexAccess Guest')
+  ).toHaveCount(before + 1);
+  await open(page, `/user/index.php?id=${COURSE_ID}&perpage=5000`);
+  const row = page.locator('tr', { hasText: 'FlexAccess Guest' }).last();
+  await expect(row).toContainText('Active');
+});

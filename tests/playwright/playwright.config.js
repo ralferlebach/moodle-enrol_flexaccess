@@ -25,6 +25,8 @@ const { defineConfig } = require('@playwright/test');
 
 module.exports = defineConfig({
   testDir: '.',
+  // The two-site LTI suite has its own configuration and sites (lti/lti.config.js, lti-interop.yml).
+  testIgnore: ['lti/**'],
   timeout: 60000,
   expect: { timeout: 10000 },
   retries: process.env.CI ? 1 : 0,

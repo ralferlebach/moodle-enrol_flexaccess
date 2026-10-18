@@ -230,6 +230,60 @@ final class participant_role {
     }
 
     /**
+     * Role ids listed in $CFG->gradebookroles (the roles Core grades and tracks for completion).
+     *
+     * @return int[]
+     */
+    public static function gradebook_roleids(): array {
+        global $CFG;
+        $raw = (string) ($CFG->gradebookroles ?? '');
+        return array_values(array_unique(array_filter(array_map('intval', explode(',', $raw)))));
+    }
+
+    /**
+     * Whether the site grades student roles but not the FlexAccess participant role.
+     *
+     * Core's gradebook, completion tracking, grade import and LTI gradebook services do not look at the
+     * role archetype; they filter by the role ids in $CFG->gradebookroles. A site that lists at least one
+     * other student-archetype role there treats students as gradable, so the FlexAccess participant role
+     * (archetype student) belongs there too. A site that lists no student role deliberately grades other
+     * roles; that policy is respected and not reported.
+     *
+     * @return bool
+     */
+    public static function gradebook_role_missing(): bool {
+        $roleid = self::get_id();
+        if ($roleid === 0) {
+            return false;
+        }
+        $listed = self::gradebook_roleids();
+        if (in_array($roleid, $listed, true)) {
+            return false;
+        }
+        $students = array_map('intval', array_keys(get_archetype_roles('student')));
+        $students = array_diff($students, [$roleid]);
+        return (bool) array_intersect($students, $listed);
+    }
+
+    /**
+     * Register the FlexAccess participant role as gradable/tracked where the site grades students.
+     *
+     * Idempotent: adds only the participant role id, keeps every other id and its order, never creates a
+     * duplicate, and leaves a site that grades no student role untouched.
+     *
+     * @return bool Whether $CFG->gradebookroles was changed.
+     */
+    public static function sync_gradebook_role(): bool {
+        if (!self::gradebook_role_missing()) {
+            return false;
+        }
+        $listed = self::gradebook_roleids();
+        $listed[] = self::get_id();
+        set_config('gradebookroles', implode(',', $listed));
+        return true;
+    }
+
+    /**
      * The dedicated role id, or 0 when it does not yet exist.
      *
      * @return int

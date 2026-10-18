@@ -23,10 +23,12 @@
  */
 
 /**
- * Create the dedicated FlexAccess participant role on a fresh install.
+ * Create the dedicated FlexAccess participant role on a fresh install and register it as gradable.
  *
  * @return void
  */
 function xmldb_enrol_flexaccess_install(): void {
     \enrol_flexaccess\local\participant_role::ensure();
+    // Core gradebook, completion and LTI grade services filter by $CFG->gradebookroles, not by archetype.
+    \enrol_flexaccess\local\participant_role::sync_gradebook_role();
 }

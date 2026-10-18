@@ -41,7 +41,8 @@ final class readiness {
      * Check the role model.
      *
      * @return string[] Problem codes (empty = fine): participantmissing, participantcontext,
-     *     participantarchetype, participantsystemassigned, restrictionmissing, restrictioncontext,
+     *     participantarchetype, participantsystemassigned, participantnotgradeable, restrictionmissing,
+     *     restrictioncontext,
      *     restrictionarchetype, restrictionpositive, restrictionprohibit.
      */
     public static function role_model_problems(): array {
@@ -61,6 +62,11 @@ final class readiness {
             }
             if ($DB->record_exists('role_assignments', ['roleid' => $participant->id, 'contextid' => $system->id])) {
                 $problems[] = 'participantsystemassigned';
+            }
+            if (participant_role::gradebook_role_missing()) {
+                // Students are graded on this site, FlexAccess participants are not: they would be missing
+                // from the grader report, completion tracking, grade import and LTI grade services.
+                $problems[] = 'participantnotgradeable';
             }
         }
 
@@ -102,12 +108,13 @@ final class readiness {
     }
 
     /**
-     * Recreate or repair both FlexAccess roles (idempotent, deterministic).
+     * Recreate or repair both FlexAccess roles and the gradebook registration (idempotent, deterministic).
      *
      * @return void
      */
     public static function repair_role_model(): void {
         participant_role::ensure();
+        participant_role::sync_gradebook_role();
     }
 
     /**

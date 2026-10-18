@@ -25,10 +25,10 @@ partial installation does not work - a missing sibling means a missing part of t
 Requirements
 ------------
 
-This plugin requires Moodle 4.5+
+This plugin requires Moodle 4.5 LTS up to Moodle 5.3 (tested on 4.5, 5.0, 5.2 and 5.3).
 
 It also requires the other FlexAccess plugins. All four are released together and must be installed
-in the same version (currently 1.1.0 / 2026092900):
+in the same version (currently 1.2.0 / 2026101700):
 
 * **auth_flexaccess (FlexAccess authentication)** - required dependency, declared in version.php\
   https://github.com/ralferlebach/moodle-auth_flexaccess
@@ -99,6 +99,10 @@ Each access method is resolved through three levels: the site default, the categ
 Capacity is enforced under a lock, so a course with one seat left grants it exactly once even when many people arrive at the same moment. Role and cohort restrictions are evaluated on top: a deny rule always wins, and as soon as one allow rule exists, only matching users may use FlexAccess. Restrictions can be evaluated site-wide, per category and per course; for this release only the course scope has an administration page.
 
 **Pitfall:** guest access is only offered when the course really has a usable core guest enrolment. Enabling it in the FlexAccess policy alone is not enough.
+
+**Effective access.** An enrolment only counts as access when everything Moodle itself checks holds: the enrolment plugin is enabled, the course has exactly one enabled FlexAccess method, the user enrolment is active and within its start and end time, and the participant role is assigned. New enrolments start immediately (rounded the way Moodle's own participant queries expect), so a new participant appears in the participants page, the gradebook and the completion reports right away. The participant role is kept in the site's graded roles ($CFG->gradebookroles); the system status reports when it is missing and repairs it on request. Reactivation and administrative enrolment fail closed: they report why access could not be restored instead of claiming success.
+
+**LTI 1.3.** A course with a FlexAccess method can be published through enrol_lti, and FlexAccess learners can launch external tools of an LTI platform. tests/playwright/lti contains a two-site LTI 1.3 suite (platform and provider, both with FlexAccess) that checks linking, relaunch, grade return (AGS), membership sync (NRPS), embedded launches and the account merge workflow; the workflow lti-interop.yml runs it on Moodle 4.5 and 5.3.
 
 
 Theme support

@@ -50,30 +50,65 @@ final class enrol_service {
         return self::reserve_and_enrol($enrolid, static fn(): int => $userid, $now)->status;
     }
 
+    /** Instance resolution: the course's single FlexAccess instance is enabled and was reused. */
+    public const INSTANCE_EXISTING = 'existing';
+    /** Instance resolution: the course had no FlexAccess instance and one was created. */
+    public const INSTANCE_CREATED = 'created';
+    /** Instance resolution: the only FlexAccess instance is disabled (an administrative decision). */
+    public const INSTANCE_DISABLED = 'instancedisabled';
+    /** Instance resolution: the course has several FlexAccess instances (inconsistency). */
+    public const INSTANCE_MULTIPLE = 'multipleinstances';
+    /** Instance resolution/enrolment: the instance could not be created or the enrolment failed. */
+    public const FAILED = 'failed';
+    /** Administrative enrolment succeeded with an active enrolment and the participant role. */
+    public const ENROLLED = 'enrolled';
+    /** Administrative enrolment refused: the FlexAccess enrolment plugin is disabled. */
+    public const PLUGIN_DISABLED = 'plugindisabled';
+    /** Administrative enrolment refused: the FlexAccess participant role does not exist. */
+    public const ROLE_MISSING = 'rolemissing';
+
     /**
-     * Ensure a single enabled FlexAccess enrol instance exists in a course, returning its id.
+     * Resolve the FlexAccess enrolment instance of a course without ever bypassing an existing one.
+     *
+     * Exactly one FlexAccess instance per course is an invariant. A disabled instance is a deliberate
+     * administrative decision: it is neither enabled implicitly nor shadowed by a second, enabled one.
+     * Several instances are reported, never silently reused.
      *
      * @param int $courseid Course id.
-     * @return int Enrol instance id (0 if the instance could not be created).
+     * @param bool $create Whether to create the instance when the course has none.
+     * @return \stdClass ->status (existing|created|instancedisabled|multipleinstances|failed) and ->enrolid
+     *     (0 unless existing/created).
      */
-    public static function ensure_instance(int $courseid): int {
+    public static function resolve_instance(int $courseid, bool $create = true): \stdClass {
         global $DB;
-        $existing = $DB->get_record(
-            'enrol',
-            ['enrol' => 'flexaccess', 'courseid' => $courseid, 'status' => ENROL_INSTANCE_ENABLED],
-            'id',
-            IGNORE_MULTIPLE
-        );
-        if ($existing) {
-            return (int) $existing->id;
+        $instances = $DB->get_records('enrol', ['enrol' => 'flexaccess', 'courseid' => $courseid], 'id ASC', 'id, status');
+        if (count($instances) > 1) {
+            return (object) ['status' => self::INSTANCE_MULTIPLE, 'enrolid' => 0];
+        }
+        if ($instances) {
+            $instance = reset($instances);
+            if ((int) $instance->status !== ENROL_INSTANCE_ENABLED) {
+                return (object) ['status' => self::INSTANCE_DISABLED, 'enrolid' => 0];
+            }
+            return (object) ['status' => self::INSTANCE_EXISTING, 'enrolid' => (int) $instance->id];
         }
         $plugin = enrol_get_plugin('flexaccess');
-        if (!$plugin) {
-            return 0;
+        if (!$create || !$plugin) {
+            return (object) ['status' => self::FAILED, 'enrolid' => 0];
         }
-        $course = get_course($courseid);
-        $instanceid = $plugin->add_instance($course);
-        return (int) $instanceid;
+        $instanceid = (int) $plugin->add_instance(get_course($courseid));
+        return (object) ['status' => $instanceid > 0 ? self::INSTANCE_CREATED : self::FAILED, 'enrolid' => $instanceid];
+    }
+
+    /**
+     * Id of the single enabled FlexAccess enrol instance of a course, creating it when the course has none.
+     *
+     * @param int $courseid Course id.
+     * @return int Enrol instance id; 0 when the course's instance is disabled, several instances exist or
+     *     the instance could not be created (see {@see self::resolve_instance()} for the reason).
+     */
+    public static function ensure_instance(int $courseid): int {
+        return self::resolve_instance($courseid)->enrolid;
     }
 
     /**
@@ -85,20 +120,58 @@ final class enrol_service {
      * @param int $userid User to enrol.
      * @param bool $restrict Whether to apply the temporary-visitor restriction role.
      * @param int|null $now Current time.
-     * @return bool Whether the enrolment succeeded.
+     * @return bool Whether the user now holds an active FlexAccess enrolment with the participant role.
      */
     public static function admin_enrol(int $courseid, int $userid, bool $restrict = false, ?int $now = null): bool {
+        return self::admin_enrol_outcome($courseid, $userid, $restrict, $now)->status === self::ENROLLED;
+    }
+
+    /**
+     * Administrative enrolment with an explicit outcome.
+     *
+     * Fails closed - before anything is written - when the plugin is disabled, the course's instance is
+     * disabled or ambiguous, or the participant role does not exist. Success is only reported when the
+     * participant role is actually held in the course afterwards.
+     *
+     * @param int $courseid Target course id.
+     * @param int $userid User to enrol.
+     * @param bool $restrict Whether to apply the temporary-visitor restriction role.
+     * @param int|null $now Current time.
+     * @return \stdClass ->status (enrolled|plugindisabled|instancedisabled|multipleinstances|rolemissing|failed),
+     *     ->enrolid.
+     */
+    public static function admin_enrol_outcome(
+        int $courseid,
+        int $userid,
+        bool $restrict = false,
+        ?int $now = null
+    ): \stdClass {
         global $DB;
         $now = $now ?? time();
-        $enrolid = self::ensure_instance($courseid);
-        if ($enrolid === 0) {
-            return false;
+        if (!enrol_is_enabled('flexaccess')) {
+            return (object) ['status' => self::PLUGIN_DISABLED, 'enrolid' => 0];
         }
-        $instance = $DB->get_record('enrol', ['id' => $enrolid], '*', MUST_EXIST);
-        $plugin = enrol_get_plugin('flexaccess');
         $roleid = participant_role::get_id();
-        $timeend = (int) $instance->enrolperiod > 0 ? $now + (int) $instance->enrolperiod : 0;
-        $plugin->enrol_user($instance, $userid, $roleid, $now, $timeend, ENROL_USER_ACTIVE);
+        if ($roleid === 0) {
+            return (object) ['status' => self::ROLE_MISSING, 'enrolid' => 0];
+        }
+        $resolved = self::resolve_instance($courseid);
+        if ($resolved->enrolid === 0) {
+            return (object) ['status' => $resolved->status, 'enrolid' => 0];
+        }
+        $instance = $DB->get_record('enrol', ['id' => $resolved->enrolid], '*', MUST_EXIST);
+        $plugin = enrol_get_plugin('flexaccess');
+        $plugin->enrol_user(
+            $instance,
+            $userid,
+            $roleid,
+            enrol_time::immediate_start($now),
+            enrol_time::end_for_instance((int) $instance->id, $now),
+            ENROL_USER_ACTIVE
+        );
+        if (!enrolment_effective_state::has_participant_role($userid, $courseid)) {
+            return (object) ['status' => self::FAILED, 'enrolid' => (int) $instance->id];
+        }
         if ($restrict) {
             participant_role::restrict($userid);
         }
@@ -108,7 +181,7 @@ final class enrol_service {
             (int) $instance->courseid,
             \enrol_flexaccess\api::get_effective_policy((int) $instance->courseid)->participantlistaccess
         );
-        return true;
+        return (object) ['status' => self::ENROLLED, 'enrolid' => (int) $instance->id];
     }
 
     /**
@@ -145,6 +218,8 @@ final class enrol_service {
                 $userid = (int) $createuser();
                 $plugin = enrol_get_plugin('flexaccess');
                 $timeend = $enrolperiod > 0 ? $now + $enrolperiod : 0;
+                // Core-compatible start: visible in active-only populations from the first request on.
+                $timestart = enrol_time::immediate_start($now);
                 // Enrol FlexAccess visitors under the dedicated participant role so that per-course
                 // participant-list visibility can be enforced on it; fall back to the instance role
                 // only if the dedicated role is somehow absent.
@@ -152,7 +227,7 @@ final class enrol_service {
                 if ($roleid === 0) {
                     $roleid = !empty($instance->roleid) ? (int) $instance->roleid : null;
                 }
-                $plugin->enrol_user($instance, $userid, $roleid, $now, $timeend, ENROL_USER_ACTIVE);
+                $plugin->enrol_user($instance, $userid, $roleid, $timestart, $timeend, ENROL_USER_ACTIVE);
                 // Apply the site-wide restrictions for anonymous FlexAccess visitors (messaging,
                 // profile editing) via a system-context assignment of the dedicated role.
                 participant_role::restrict($userid);

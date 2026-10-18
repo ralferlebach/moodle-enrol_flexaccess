@@ -150,9 +150,9 @@ final class readiness_test extends \advanced_testcase {
         $ue = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id]);
 
         // Out of scope: a teacher of another course cannot touch it.
-        $this->assertNull(enrolment_admin::reactivate((int) $ue->id, (int) $other->id));
+        $this->assertSame(enrolment_admin::NOT_FOUND, enrolment_admin::reactivate((int) $ue->id, (int) $other->id)->outcome);
         $change = enrolment_admin::reactivate((int) $ue->id, (int) $course->id);
-        $this->assertNotNull($change);
+        $this->assertSame(enrolment_admin::REACTIVATED, $change->outcome);
         $after = $DB->get_record('user_enrolments', ['id' => $ue->id]);
         $this->assertEquals(ENROL_USER_ACTIVE, $after->status);
         // Without an enrolment period the passed end is removed, so expiry does not suspend it again.
@@ -160,7 +160,7 @@ final class readiness_test extends \advanced_testcase {
         local\enrol_expiry::process();
         $this->assertEquals(ENROL_USER_ACTIVE, $DB->get_field('user_enrolments', 'status', ['id' => $ue->id]));
         // Nothing to do for an active enrolment.
-        $this->assertNull(enrolment_admin::reactivate((int) $ue->id, (int) $course->id));
+        $this->assertSame(enrolment_admin::ALREADY_ACTIVE, enrolment_admin::reactivate((int) $ue->id, (int) $course->id)->outcome);
         $snapshot = enrolment_admin::get_user_enrolments((int) $user->id, (int) $course->id);
         $this->assertCount(1, $snapshot);
         $this->assertSame([], enrolment_admin::get_user_enrolments((int) $user->id, (int) $other->id));

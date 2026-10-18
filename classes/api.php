@@ -254,14 +254,17 @@ final class api {
     }
 
     /**
-     * Reactivate a suspended FlexAccess enrolment (explicit administrative decision).
+     * Reactivate a suspended or expired FlexAccess enrolment (explicit administrative decision).
+     *
+     * Fails closed for a disabled plugin or instance and a missing participant role, and repairs a
+     * missing participant role in the course. Check ->outcome, and ->effective for real course access.
      *
      * @param int $ueid User-enrolment id.
      * @param int|null $courseid When set, the enrolment must belong to this course.
      * @param int|null $now Current time.
-     * @return \stdClass|null Old/new status and end time, or null when not applicable.
+     * @return \stdClass See {@see local\enrolment_admin::reactivate()}.
      */
-    public static function reactivate_enrolment(int $ueid, ?int $courseid = null, ?int $now = null): ?\stdClass {
+    public static function reactivate_enrolment(int $ueid, ?int $courseid = null, ?int $now = null): \stdClass {
         return local\enrolment_admin::reactivate($ueid, $courseid, $now);
     }
 
@@ -272,10 +275,55 @@ final class api {
      * @param int $userid User id.
      * @param bool $restrict Whether the visitor restriction applies (temporary accounts).
      * @param int|null $now Current time.
-     * @return bool
+     * @return bool Whether an active enrolment with the participant role exists afterwards.
      */
     public static function reenrol_user(int $courseid, int $userid, bool $restrict, ?int $now = null): bool {
         return local\enrol_service::admin_enrol($courseid, $userid, $restrict, $now);
+    }
+
+    /**
+     * Enrol a user again with an explicit outcome (see {@see local\enrol_service::admin_enrol_outcome()}).
+     *
+     * @param int $courseid Course id.
+     * @param int $userid User id.
+     * @param bool $restrict Whether the visitor restriction applies (temporary accounts).
+     * @param int|null $now Current time.
+     * @return \stdClass ->status, ->enrolid.
+     */
+    public static function reenrol_user_outcome(int $courseid, int $userid, bool $restrict, ?int $now = null): \stdClass {
+        return local\enrol_service::admin_enrol_outcome($courseid, $userid, $restrict, $now);
+    }
+
+    /**
+     * Effective state of a user's FlexAccess enrolment in a course, evaluated with Core semantics.
+     *
+     * @param int $userid User id.
+     * @param int $courseid Course id.
+     * @param int|null $now Evaluation time.
+     * @return \stdClass See {@see local\enrolment_effective_state::evaluate()}; ->state is 'ok' only when
+     *     plugin, single instance, user enrolment, time window and participant role are all in place.
+     */
+    public static function effective_enrolment_state(int $userid, int $courseid, ?int $now = null): \stdClass {
+        return local\enrolment_effective_state::evaluate($userid, $courseid, $now);
+    }
+
+    /**
+     * Courses with more than one FlexAccess enrolment instance (invariant violation).
+     *
+     * @param int $limit Maximum rows; 0 = all.
+     * @return \stdClass[] courseid, instances.
+     */
+    public static function find_multiple_instances(int $limit = 200): array {
+        return local\enrolment_effective_state::find_multiple_instances($limit);
+    }
+
+    /**
+     * Complete number of courses with more than one FlexAccess enrolment instance.
+     *
+     * @return int
+     */
+    public static function count_multiple_instances(): int {
+        return local\enrolment_effective_state::count_multiple_instances();
     }
 
     /**
@@ -382,5 +430,14 @@ final class api {
      */
     public static function count_missing_course_roles(): int {
         return local\enrolment_admin::count_missing_course_roles();
+    }
+
+    /**
+     * LTI grades of FlexAccess participants that are stored but not visible in the gradebook.
+     *
+     * @return int
+     */
+    public static function count_invisible_lti_grades(): int {
+        return local\lti_grade_visibility::count_invisible();
     }
 }

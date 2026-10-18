@@ -47,3 +47,10 @@ tests/load/k6
 tests/load/*.tgz
 tests/load/*.jtl
 tests/load/.load-env
+
+# Playwright run artefacts (the suites themselves are versioned)
+tests/playwright/test-results/
+tests/playwright/playwright-report/
+tests/playwright/lti/test-results/
+tests/playwright/lti/playwright-report/
+tests/playwright/lti/node_modules

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 (2026101700) — 2026-10-17 — Core-konforme Einschreibungen, Gradebook-Rolle, LTI-Interoperabilität, Moodle 5.3
+- **Einschreibungen wie Moodle sie erwartet (#9, ENROL-LIFECYCLE).**
+  - **Bisher:** Neue Einschreibungen begannen mit `time()`. Moodles Teilnehmer-, Gradebook- und Abschlussabfragen runden die Zeit auf 100 Sekunden; neue Teilnehmende fehlten dort bis zu 100 Sekunden lang. Reaktivierung und Admin-Einschreibung meldeten Erfolg auch bei deaktiviertem Plugin, deaktivierter Methode oder fehlender Rolle, und neben einer deaktivierten Methode entstand eine zweite.
+  - **Jetzt:** `local\enrol_time` liefert für alle Pfade eine Startzeit wie enrol_manual. `local\enrolment_effective_state` ist die eine Regel für „wirksamer Zugang“ (Plugin, genau eine aktive Methode, Einschreibung aktiv und im Zeitfenster, Rolle vorhanden) – für einzelne Nutzer und Listen. Reaktivierung und Admin-Einschreibung scheitern ausdrücklich mit Grund (`plugindisabled`, `instancedisabled`, `rolemissing`, `multipleinstances`, …) und aktivieren nie implizit eine deaktivierte Methode.
+- **Teilnehmendenrolle im Gradebook (#8, CORE-INTEGRATION).** Die FlexAccess-Rolle wird in `$CFG->gradebookroles` aufgenommen (Installation, Upgrade, Reparatur im Systemstatus; nur hinzufügen, andere Rollen bleiben). Damit erscheinen FlexAccess-Teilnehmende im Grader Report, im täglichen Abschluss-Task, beim Notenimport und für LTI-Notenrückgabe. Systemstatus-Befund `participantnotgradeable`.
+  - Abweichung vom Issue: `completion_info::get_tracked_users()` richtet sich nach der Fähigkeit `moodle/course:isincompletionreports`, nicht nach `gradebookroles`; getestet ist der tatsächlich betroffene `completion_daily_task`.
+- **LTI 1.3 (#10, LTI-INTEROP).** FlexAccess- und LTI-Einschreibung bleiben unabhängig (Ablauf, Abmeldung, Reaktivierung, NRPS). Systemstatus unterscheidet „Note empfangen, aber unsichtbar“ von fehlgeschlagener Rückgabe (`local\lti_grade_visibility`). Neue Zwei-Site-Suite `tests/playwright/lti` (Plattform und Tool, beide mit FlexAccess, echter signierter LTI-1.3-Launch, AGS, NRPS, eingebettete Launches, Merge-Workflow) und Workflow `lti-interop.yml` mit getrennten Provider-/Consumer-Jobs für Moodle 4.5 und 5.3.
+- **Moodle 5.3 (tool #11):** Dauerfelder (`temporarylifetime`, `enrolperiod`) mit gültiger Standardeinheit, Formular- und Rundlauftest (COMPAT-006). CI: Moodle 5.3 × PHP 8.3/8.4 × PostgreSQL 17/MariaDB 11.4; Playwright auch auf 5.3 (public/-Layout).
+- Version `2026101700`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026101700`.
+
 ## 1.1.0 (2026092900) — 2026-09-29 — Kurs-Backup/-Restore und Kill-Switch (Review-Abschlussmatrix)
 - **Backup, Wiederherstellen, Duplizieren und Import behalten die FlexAccess-Methode (Abschnitt 11).**
   - **Bisher:** Moodles Standard-`restore_instance()` stellt Einschreibemethoden nicht wieder her. Beim Duplizieren oder Wiederherstellen eines Kurses verschwand FlexAccess samt Konfiguration und Einschreibungen – ohne Hinweis.

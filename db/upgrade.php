@@ -214,5 +214,11 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         }
         upgrade_plugin_savepoint(true, 2026082428, 'enrol', 'flexaccess');
     }
+    if ($oldversion < 2026101700) {
+        // Register the participant role in $CFG->gradebookroles where the site grades students, so that
+        // FlexAccess participants appear in the gradebook, completion tracking and LTI grade services.
+        \enrol_flexaccess\local\participant_role::sync_gradebook_role();
+        upgrade_plugin_savepoint(true, 2026101700, 'enrol', 'flexaccess');
+    }
     return true;
 }

@@ -1,0 +1,160 @@
+name: LTI 1.3 interoperability
+
+# Two real Moodle sites talking LTI 1.3 to each other (enrol_flexaccess #10, LTI-INTEROP):
+#   platform (consumer)  https://platform.test:8443  - FlexAccess learners launch an external tool
+#   provider (tool)      https://provider.test:8444  - FlexAccess accounts are linked to the platform
+#                                                     identity; tool_mergeusers is installed here
+# Both sites are built by tests/playwright/lti/setup-sites.sh (the same script runs locally), served
+# over HTTPS with a test CA created in the job, and seeded with a complete LTI Advantage relationship
+# (manual registration, deployment, AGS, NRPS).
+#
+# Two jobs per Moodle version, so a red run names the side that broke:
+#   lti-provider  @provider journeys: binding, relaunch, AGS grade return, refused temporary
+#                 sessions, pending credentials, FlexAccess expiry/suspension, AUTO_ONLY + approved
+#                 merge, NRPS sync after the merge
+#   lti-consumer  @consumer journeys: stable identity of a FlexAccess learner on the platform, the
+#                 returned grade in the platform gradebook, embedded launch / repeat / back
+#                 navigation (Chromium and Firefox)
+#
+# Manual and scheduled (the sites take a few minutes to build); run it before every release.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 1'
+
+jobs:
+  lti:
+    name: ${{ matrix.side }} (${{ matrix.moodle }})
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: ${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: moodle
+          POSTGRES_PASSWORD: moodle
+          POSTGRES_DB: moodle
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready" --health-interval=10s
+          --health-timeout=5s --health-retries=5
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { side: lti-provider, tag: '@provider', moodle: MOODLE_405_STABLE, php: '8.2', postgres: 'postgres:16' }
+          - { side: lti-consumer, tag: '@consumer', moodle: MOODLE_405_STABLE, php: '8.2', postgres: 'postgres:16' }
+          - { side: lti-provider, tag: '@provider', moodle: MOODLE_503_STABLE, php: '8.3', postgres: 'postgres:17' }
+          - { side: lti-consumer, tag: '@consumer', moodle: MOODLE_503_STABLE, php: '8.3', postgres: 'postgres:17' }
+
+    env:
+      WORK: ${{ github.workspace }}/lti
+      CERTS: ${{ github.workspace }}/certs
+      DBTYPE: pgsql
+      DBHOST: 127.0.0.1
+      DBPORT: 5432
+      DBUSER: moodle
+      DBPASS: moodle
+
+    steps:
+      - name: Check out plugin
+        uses: actions/checkout@v4
+        with:
+          path: plugins/moodle-enrol_flexaccess
+
+      - name: Check out the sibling plugins and tool_mergeusers
+        run: |
+          # The siblings come from the branch this workflow runs on (one coherent state), falling
+          # back to the default branch where that branch does not exist in a sibling.
+          ref="${GITHUB_REF_NAME}"
+          for p in auth mod tool; do
+            git clone --depth 1 --branch "$ref" "https://github.com/ralferlebach/moodle-${p}_flexaccess.git" \
+              "plugins/moodle-${p}_flexaccess" \
+              || git clone --depth 1 "https://github.com/ralferlebach/moodle-${p}_flexaccess.git" "plugins/moodle-${p}_flexaccess"
+          done
+          git clone --depth 1 --branch MOODLE_405_STABLE https://github.com/jpahullo/moodle-tool_mergeusers.git mergeusers
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pgsql, gd, intl, zip, soap, mbstring, curl, xml, exif, sodium
+          ini-values: max_input_vars=5000
+          coverage: none
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Check out Moodle
+        run: |
+          git clone --depth 1 --branch "${{ matrix.moodle }}" https://github.com/moodle/moodle.git moodle
+          cd moodle && composer install --no-dev --no-interaction --quiet
+
+      - name: Hostnames and test CA
+        run: |
+          echo "127.0.0.1 platform.test provider.test" | sudo tee -a /etc/hosts
+          mkdir -p "$CERTS" && cd "$CERTS"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 2 -subj "/CN=FlexAccess LTI test CA" \
+            -keyout ca.key -out ca.crt
+          for site in platform provider; do
+            openssl req -newkey rsa:2048 -nodes -subj "/CN=$site.test" -keyout "$site.key" -out "$site.csr"
+            printf "subjectAltName=DNS:%s.test\nbasicConstraints=CA:FALSE\nextendedKeyUsage=serverAuth\n" "$site" > "$site.ext"
+            openssl x509 -req -in "$site.csr" -CA ca.crt -CAkey ca.key -CAcreateserial -days 2 \
+              -extfile "$site.ext" -out "$site.crt"
+          done
+          # PHP's curl (JWKS, token, AGS and NRPS calls between the sites) trusts the system store.
+          sudo cp ca.crt /usr/local/share/ca-certificates/flexaccess-lti-test.crt
+          sudo update-ca-certificates
+
+      - name: Install Playwright and browsers
+        run: |
+          cd plugins/moodle-enrol_flexaccess/tests/playwright
+          npm ci
+          if [ "${{ matrix.side }}" = lti-consumer ]; then
+            npx playwright install --with-deps chromium firefox
+          else
+            npx playwright install --with-deps chromium
+          fi
+
+      # Sites and journeys in ONE step: the PHP servers and TLS fronts are background processes, and a
+      # process started in an earlier step does not reliably survive into the next one.
+      - name: Build both sites and run the ${{ matrix.tag }} journeys
+        run: |
+          for db in lti_platform lti_provider; do
+            PGPASSWORD=moodle psql -h 127.0.0.1 -U moodle -d moodle -qc \
+              "CREATE DATABASE $db OWNER moodle ENCODING 'UTF8' TEMPLATE template0;"
+          done
+          MOODLE_SRC="$GITHUB_WORKSPACE/moodle" PLUGINS_DIR="$GITHUB_WORKSPACE/plugins" \
+            MERGEUSERS_DIR="$GITHUB_WORKSPACE/mergeusers" \
+            plugins/moodle-enrol_flexaccess/tests/playwright/lti/setup-sites.sh
+          set -a; . "$WORK/lti.env"; set +a
+          if [ "${{ matrix.side }}" = lti-consumer ]; then
+            export LTI_BROWSERS=chromium,firefox
+          else
+            export LTI_BROWSERS=chromium
+          fi
+          cd plugins/moodle-enrol_flexaccess/tests/playwright
+          npx playwright test -c lti/lti.config.js --grep "${{ matrix.tag }}"
+
+      - name: Server logs on failure
+        if: failure()
+        run: |
+          for f in "$WORK"/*-server.log "$WORK"/*-tls.log "$WORK"/*-install.log; do
+            echo "=== $f"; tail -60 "$f" || true
+          done
+
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lti-${{ matrix.side }}-${{ matrix.moodle }}
+          path: |
+            plugins/moodle-enrol_flexaccess/tests/playwright/lti/playwright-report
+            plugins/moodle-enrol_flexaccess/tests/playwright/lti/test-results
+            lti/*.log
+          retention-days: 7
+          if-no-files-found: ignore
