@@ -23,9 +23,37 @@ on:
     - cron: '0 4 * * 1'
 
 jobs:
+  family:
+    name: "Plugin family (exact commits)"
+    runs-on: ubuntu-22.04
+    outputs:
+      lock: ${{ steps.resolve.outputs.lock }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin
+      - name: Self-test of the family resolver
+        run: python3 plugin/.github/scripts/test_flexaccess_family.py
+      - name: Pin the four plugins and tool_mergeusers to exact commits
+        id: resolve
+        # The siblings of the branch this workflow runs on, resolved ONCE to commit SHAs; every plugin
+        # must carry this plugin's version. A missing branch or another version fails (no fallback).
+        run: |
+          python3 plugin/.github/scripts/flexaccess_family.py resolve \
+            --self enrol_flexaccess --self-dir plugin --self-sha "$GITHUB_SHA" --ref "$GITHUB_REF_NAME" \
+            --wait 600 --out family-lock.json --github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY"
+      - name: Keep the tested combination
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: flexaccess-family-lock
+          path: family-lock.json
+          if-no-files-found: ignore
+
   lti:
     name: ${{ matrix.side }} (${{ matrix.moodle }})
     runs-on: ubuntu-latest
+    needs: [family]
 
     services:
       postgres:
@@ -64,17 +92,14 @@ jobs:
         with:
           path: plugins/moodle-enrol_flexaccess
 
-      - name: Check out the sibling plugins and tool_mergeusers
+      - name: Fetch exactly the pinned siblings and tool_mergeusers
+        env:
+          FAMILY_LOCK: ${{ needs.family.outputs.lock }}
         run: |
-          # The siblings come from the branch this workflow runs on (one coherent state), falling
-          # back to the default branch where that branch does not exist in a sibling.
-          ref="${GITHUB_REF_NAME}"
-          for p in auth mod tool; do
-            git clone --depth 1 --branch "$ref" "https://github.com/ralferlebach/moodle-${p}_flexaccess.git" \
-              "plugins/moodle-${p}_flexaccess" \
-              || git clone --depth 1 "https://github.com/ralferlebach/moodle-${p}_flexaccess.git" "plugins/moodle-${p}_flexaccess"
-          done
-          git clone --depth 1 --branch MOODLE_405_STABLE https://github.com/jpahullo/moodle-tool_mergeusers.git mergeusers
+          # The commits pinned by the "family" job (tool_flexaccess #12): no branch, no fallback.
+          python3 plugins/moodle-enrol_flexaccess/.github/scripts/flexaccess_family.py fetch \
+            --lock-json "$FAMILY_LOCK" --self enrol_flexaccess --dest plugins --with-mergeusers
+          ls plugins
 
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
@@ -129,8 +154,8 @@ jobs:
               "CREATE DATABASE $db OWNER moodle ENCODING 'UTF8' TEMPLATE template0;"
           done
           MOODLE_SRC="$GITHUB_WORKSPACE/moodle" PLUGINS_DIR="$GITHUB_WORKSPACE/plugins" \
-            MERGEUSERS_DIR="$GITHUB_WORKSPACE/mergeusers" \
-            plugins/moodle-enrol_flexaccess/tests/playwright/lti/setup-sites.sh
+            MERGEUSERS_DIR="$GITHUB_WORKSPACE/plugins/moodle-tool_mergeusers" \
+            bash plugins/moodle-enrol_flexaccess/tests/playwright/lti/setup-sites.sh
           set -a; . "$WORK/lti.env"; set +a
           if [ "${{ matrix.side }}" = lti-consumer ]; then
             export LTI_BROWSERS=chromium,firefox

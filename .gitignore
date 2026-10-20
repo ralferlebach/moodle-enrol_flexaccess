@@ -54,3 +54,7 @@ tests/playwright/playwright-report/
 tests/playwright/lti/test-results/
 tests/playwright/lti/playwright-report/
 tests/playwright/lti/node_modules
+
+# Python bytecode of the CI helper scripts
+__pycache__/
+*.pyc

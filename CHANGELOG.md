@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 (2026101800) — 2026-10-18 — Zeitsemantik wie Moodle Core, CI auf exakte Commits
+- **Wirksamer Zustand mit Moodles Zeitsemantik (#11, ENROL-CORE).**
+  - **Bisher:** `classify()` verglich das Zeitfenster mit der exakten Uhrzeit. Moodles Teilnehmerlisten, Gradebook, Abschluss und LTI-Notendienst (`get_enrolled_sql()` mit `onlyactive`) runden die Zeit auf 100 Sekunden und vergleichen strikt (`timestart < R < timeend`). Eine Einschreibung konnte als „ok“ gelten, obwohl Core sie in diesen Listen nicht führte.
+  - **Jetzt:** Beide Core-Semantiken werden ausgewertet: Zugang (`is_enrolled()`, exakt) und Population (gerundet, strikt). „ok“ gilt nur, wenn beide die Einschreibung akzeptieren; `->access`, `->population` und `->corenow` weisen sie getrennt aus. Einzel- und Sammelauswertung nutzen dieselbe Regel.
+  - Reaktivierung verlängert ein Ende, das im Rundungsfenster liegt, damit die Person sofort in Core-Listen erscheint. Ein Start im Fenster wird ehrlich als „nicht begonnen“ gemeldet.
+  - Tests: feste Grenzfälle um die 50-Sekunden-Schwelle, Vergleich mit `get_enrolled_users(..., onlyactive)` und `is_enrolled()` bei echter Zeit, Reaktivierung im Fenster; Recovery-Integrationstest in tool.
+- Versionsmatrix im README. Playwright- und Lastworkflows, die Zwei-Site-LTI-Suite und die moodle-plugin-ci-Pipelines installieren die Geschwister genau gepinnt (tool #12); `setup-sites.sh` wird mit `bash` gestartet (Ausführungsrecht geht beim Web-Upload verloren) und gibt bei einem Startfehler die Serverprotokolle korrekt aus (`tail -n`).
+- Version `2026101800`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026101800`.
+
 ## 1.2.0 (2026101700) — 2026-10-17 — Core-konforme Einschreibungen, Gradebook-Rolle, LTI-Interoperabilität, Moodle 5.3
 - **Einschreibungen wie Moodle sie erwartet (#9, ENROL-LIFECYCLE).**
   - **Bisher:** Neue Einschreibungen begannen mit `time()`. Moodles Teilnehmer-, Gradebook- und Abschlussabfragen runden die Zeit auf 100 Sekunden; neue Teilnehmende fehlten dort bis zu 100 Sekunden lang. Reaktivierung und Admin-Einschreibung meldeten Erfolg auch bei deaktiviertem Plugin, deaktivierter Methode oder fehlender Rolle, und neben einer deaktivierten Methode entstand eine zweite.

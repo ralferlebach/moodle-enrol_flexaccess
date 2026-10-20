@@ -28,10 +28,20 @@ namespace enrol_flexaccess\local;
  * Read-only, central evaluation of whether a FlexAccess enrolment really gives course access.
  *
  * Core treats a user enrolment as active only when the enrolment plugin is enabled, the instance is
- * enabled, the user enrolment is active and the current time lies inside [timestart, timeend). On top
- * of that, FlexAccess course capabilities come from the participant role in the course context. All
- * these conditions are evaluated here together, so that no caller has to recombine individual fields
- * (and get it subtly wrong). Nothing is written.
+ * enabled, the user enrolment is active and the current time lies inside its time window. On top of
+ * that, FlexAccess course capabilities come from the participant role in the course context. All these
+ * conditions are evaluated here together, so that no caller has to recombine individual fields (and get
+ * it subtly wrong). Nothing is written.
+ *
+ * Core uses two time semantics, and both are evaluated (enrol_flexaccess #11):
+ *  - access: is_enrolled(..., onlyactive) / require_login() compare the exact time,
+ *    timestart <= now < timeend (timeend 0 = open-ended);
+ *  - population: get_enrolled_sql()/get_enrolled_join() with onlyactive - participants page, gradebook,
+ *    completion, LTI grade service - round the time to 100 seconds (R = round(now, -2)) and compare
+ *    strictly, timestart < R < timeend.
+ * The window can differ by up to a minute and a half between the two. The overall state is "ok" only
+ * when BOTH accept the enrolment, so no caller reports access that Core does not grant everywhere;
+ * ->access and ->population keep the two results apart.
  *
  * @package    enrol_flexaccess
  */
@@ -74,9 +84,10 @@ final class enrolment_effective_state {
      * @param int $courseid Course id.
      * @param int|null $now Evaluation time.
      * @return \stdClass ->state (one of the constants), ->problems (string[] all applicable problems in
-     *     priority order; empty when ok), ->instancecount, ->enrolid (0 if none), ->instanceenabled
-     *     (bool|null), ->ueid (0 if none), ->uestatus (int|null), ->timestart, ->timeend, ->hasrole,
-     *     ->pluginenabled.
+     *     priority order; empty when ok), ->access / ->population (the time window under each Core
+     *     semantics: '' when inside, otherwise NOT_STARTED or EXPIRED), ->corenow (round(now, -2)),
+     *     ->instancecount, ->enrolid (0 if none), ->instanceenabled (bool|null), ->ueid (0 if none),
+     *     ->uestatus (int|null), ->timestart, ->timeend, ->hasrole, ->pluginenabled.
      */
     public static function evaluate(int $userid, int $courseid, ?int $now = null): \stdClass {
         global $DB;
@@ -95,6 +106,9 @@ final class enrolment_effective_state {
             'timestart' => 0,
             'timeend' => 0,
             'hasrole' => false,
+            'access' => '',
+            'population' => '',
+            'corenow' => self::core_now($now),
         ];
         $instances = $DB->get_records('enrol', ['enrol' => 'flexaccess', 'courseid' => $courseid], 'id ASC', 'id, status');
         $result->instancecount = count($instances);
@@ -135,6 +149,10 @@ final class enrolment_effective_state {
             $now
         );
         $result->state = $result->problems ? $result->problems[0] : self::OK;
+        if ($ue !== null) {
+            $result->access = self::time_window($ue, $now, false);
+            $result->population = self::time_window($ue, $now, true);
+        }
         return $result;
     }
 
@@ -176,11 +194,11 @@ final class enrolment_effective_state {
             if ((int) $ue->status !== ENROL_USER_ACTIVE) {
                 $problems[] = self::USER_ENROLMENT_SUSPENDED;
             }
-            if ((int) $ue->timestart > $now) {
-                $problems[] = self::NOT_STARTED;
-            }
-            if ((int) $ue->timeend > 0 && (int) $ue->timeend <= $now) {
-                $problems[] = self::EXPIRED;
+            // Both Core semantics must accept the window (see the class comment).
+            foreach ([self::time_window($ue, $now, false), self::time_window($ue, $now, true)] as $window) {
+                if ($window !== '') {
+                    $problems[] = $window;
+                }
             }
             if (!$hasrole) {
                 $problems[] = self::PARTICIPANT_ROLE_MISSING;
@@ -190,6 +208,41 @@ final class enrolment_effective_state {
             self::PRIORITY,
             static fn(string $code): bool => in_array($code, $problems, true)
         ));
+    }
+
+    /**
+     * The time Core's enrolled-users queries compare against: rounded to 100 seconds.
+     *
+     * @param int $now Exact time.
+     * @return int round($now, -2), as in get_enrolled_join().
+     */
+    public static function core_now(int $now): int {
+        return (int) round($now, -2);
+    }
+
+    /**
+     * Whether a user enrolment's time window is open under one of Core's two semantics.
+     *
+     * @param \stdClass $ue User enrolment (timestart, timeend).
+     * @param int $now Exact time.
+     * @param bool $population true: get_enrolled_sql() semantics (rounded, strict: timestart < R < timeend);
+     *     false: is_enrolled() semantics (exact: timestart <= now < timeend).
+     * @return string '' when open, otherwise NOT_STARTED or EXPIRED.
+     */
+    public static function time_window(\stdClass $ue, int $now, bool $population): string {
+        $start = (int) $ue->timestart;
+        $end = (int) $ue->timeend;
+        if ($population) {
+            $core = self::core_now($now);
+            if ($start >= $core) {
+                return self::NOT_STARTED;
+            }
+            return $end > 0 && $end <= $core ? self::EXPIRED : '';
+        }
+        if ($start > $now) {
+            return self::NOT_STARTED;
+        }
+        return $end > 0 && $end <= $now ? self::EXPIRED : '';
     }
 
     /**

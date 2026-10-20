@@ -68,18 +68,13 @@ jobs:
           mkdir -p moodle/enrol && cp -a plugin moodle/enrol/flexaccess
           rm -rf moodle/enrol/flexaccess/.git
           # enrol_flexaccess has hard version.php dependencies on the sister plugins, so the site
-          # cannot install with enrol alone. Pin SIBLING_REF to the matching release tag/SHA for a
-          # reproducible RC build (defaults to main).
+          # cannot install with enrol alone. The siblings are pinned to exact commits (tool_flexaccess
+          # #12): resolved once from SIBLING_REF (default: main), all at this plugin's version, no fallback.
           SIBLING_REF="${SIBLING_REF:-main}"
-          for pair in "auth:auth/flexaccess" "mod:mod/flexaccess" "tool:admin/tool/flexaccess"; do
-            sib="${pair%%:*}"; dest="${pair##*:}"
-            git clone --depth 1 --branch "$SIBLING_REF" \
-              "https://github.com/ralferlebach/moodle-${sib}_flexaccess.git" "/tmp/sib_${sib}" \
-              || git clone --depth 1 "https://github.com/ralferlebach/moodle-${sib}_flexaccess.git" "/tmp/sib_${sib}"
-            mkdir -p "$(dirname "moodle/${dest}")"
-            cp -a "/tmp/sib_${sib}" "moodle/${dest}"
-            rm -rf "moodle/${dest}/.git"
-          done
+          python3 plugin/.github/scripts/flexaccess_family.py resolve --self enrol_flexaccess --self-dir plugin \
+            --self-sha "$GITHUB_SHA" --ref "$SIBLING_REF" --out family-lock.json --summary "$GITHUB_STEP_SUMMARY"
+          python3 plugin/.github/scripts/flexaccess_family.py fetch --lock-file family-lock.json \
+            --self enrol_flexaccess --layout moodle --dest moodle
           mkdir -p /tmp/moodledata
           cd moodle
           php admin/cli/install.php \

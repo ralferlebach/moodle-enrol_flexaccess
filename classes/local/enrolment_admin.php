@@ -65,7 +65,11 @@ final class enrolment_admin {
                 'timestart' => (int) $row->timestart,
                 'timeend' => (int) $row->timeend,
                 'expiryaction' => ($config && $config->expiryaction === 'unenrol') ? 'unenrol' : 'suspend',
-                'expired' => (int) $row->timeend > 0 && (int) $row->timeend <= $now,
+                // Ended under either Core semantics (exact access check or the rounded enrolled-users lists).
+                'expired' => in_array(enrolment_effective_state::EXPIRED, [
+                    enrolment_effective_state::time_window($row, $now, false),
+                    enrolment_effective_state::time_window($row, $now, true),
+                ], true),
             ];
         }
         return $out;
@@ -123,7 +127,7 @@ final class enrolment_admin {
                 'status' => (int) $row->status,
                 'timestart' => (int) $row->timestart,
                 'timeend' => (int) $row->timeend,
-                'expired' => (int) $row->timeend > 0 && (int) $row->timeend <= $now,
+                'expired' => in_array(enrolment_effective_state::EXPIRED, $problems, true),
                 'hasrole' => (int) $row->hasrole === 1,
                 'instanceenabled' => (int) $row->instancestatus === ENROL_INSTANCE_ENABLED,
                 'instancecount' => (int) $row->instancecount,
@@ -229,12 +233,18 @@ final class enrolment_admin {
             return $result;
         }
 
-        $active = (int) $row->status === ENROL_USER_ACTIVE && ((int) $row->timeend === 0 || (int) $row->timeend > $now);
+        // Ended under either Core semantics (exact access check or the rounded enrolled-users queries,
+        // enrol_flexaccess #11): an end inside the rounding window would leave the user out of Core's lists.
+        $ended = in_array(enrolment_effective_state::EXPIRED, [
+            enrolment_effective_state::time_window($row, $now, false),
+            enrolment_effective_state::time_window($row, $now, true),
+        ], true);
+        $active = (int) $row->status === ENROL_USER_ACTIVE && !$ended;
         $transaction = $DB->start_delegated_transaction();
         if (!$active) {
             $instance = $DB->get_record('enrol', ['id' => $row->enrolid], '*', MUST_EXIST);
             $timeend = (int) $row->timeend;
-            if ($timeend > 0 && $timeend <= $now) {
+            if ($ended) {
                 $timeend = enrol_time::end_for_instance((int) $instance->id, $now);
             }
             enrol_get_plugin('flexaccess')->update_user_enrol($instance, $result->userid, ENROL_USER_ACTIVE, null, $timeend);

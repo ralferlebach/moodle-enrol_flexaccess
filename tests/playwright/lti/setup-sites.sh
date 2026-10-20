@@ -55,7 +55,7 @@ build_site () {
       --dbtype="$DBTYPE" --dbhost="$DBHOST" --dbport="$DBPORT" --dbname="$db" --dbuser="$DBUSER" --dbpass="$DBPASS" \
       --prefix=mdl_ --wwwroot="https://$name.test:$port" --dataroot="$data" \
       --fullname="LTI $name" --shortname="$name" --adminpass='Admin!23' --adminemail="admin@$name.test" \
-      > "$WORK/$name-install.log" 2>&1) || { tail -30 "$WORK/$name-install.log"; exit 1; }
+      > "$WORK/$name-install.log" 2>&1) || { tail -n 30 "$WORK/$name-install.log"; exit 1; }
   # Served over HTTPS by the TLS front; server-to-server calls (JWKS, AGS, NRPS, token) go to the
   # other local site, which Moodle's default curl security would block.
   php -r '
@@ -107,7 +107,7 @@ for site in "platform.test:8443" "provider.test:8444"; do
   done
   if [ "$ready" != "1" ]; then
     echo "https://$site not reachable (last status $code)"
-    tail -30 "$WORK"/*-server.log
+    tail -n 30 "$WORK"/*-server.log
     exit 1
   fi
 done

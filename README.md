@@ -28,7 +28,7 @@ Requirements
 This plugin requires Moodle 4.5 LTS up to Moodle 5.3 (tested on 4.5, 5.0, 5.2 and 5.3).
 
 It also requires the other FlexAccess plugins. All four are released together and must be installed
-in the same version (currently 1.2.0 / 2026101700):
+in the same version (currently 1.2.0 / 2026101800):
 
 * **auth_flexaccess (FlexAccess authentication)** - required dependency, declared in version.php\
   https://github.com/ralferlebach/moodle-auth_flexaccess
@@ -101,6 +101,17 @@ Capacity is enforced under a lock, so a course with one seat left grants it exac
 **Pitfall:** guest access is only offered when the course really has a usable core guest enrolment. Enabling it in the FlexAccess policy alone is not enough.
 
 **Effective access.** An enrolment only counts as access when everything Moodle itself checks holds: the enrolment plugin is enabled, the course has exactly one enabled FlexAccess method, the user enrolment is active and within its start and end time, and the participant role is assigned. New enrolments start immediately (rounded the way Moodle's own participant queries expect), so a new participant appears in the participants page, the gradebook and the completion reports right away. The participant role is kept in the site's graded roles ($CFG->gradebookroles); the system status reports when it is missing and repairs it on request. Reactivation and administrative enrolment fail closed: they report why access could not be restored instead of claiming success.
+
+Moodle checks time windows in two ways: the access check (is_enrolled, used when a user opens the course) compares the exact time, while the lists of enrolled users (participants, gradebook, completion, LTI grade service) round the time to 100 seconds and compare strictly. FlexAccess reports an enrolment as effective only when both accept it, so "access restored" in recovery means that the user is in the course and in every list at once. A reactivation renews an end that falls inside the rounding window.
+
+Version matrix of the CI (main pipeline; the release gate covers one cell per version and database):
+
+| Moodle | PHP | Database |
+|---|---|---|
+| 4.5 LTS | 8.1, 8.2, 8.3 | PostgreSQL 16, MariaDB 10.11 |
+| 5.0 | 8.2, 8.3, 8.4 | PostgreSQL 16, MariaDB 10.11 |
+| 5.2 | 8.3, 8.4 | PostgreSQL 16, MariaDB 10.11 |
+| 5.3 | 8.3, 8.4 | PostgreSQL 17, MariaDB 11.4 |
 
 **LTI 1.3.** A course with a FlexAccess method can be published through enrol_lti, and FlexAccess learners can launch external tools of an LTI platform. tests/playwright/lti contains a two-site LTI 1.3 suite (platform and provider, both with FlexAccess) that checks linking, relaunch, grade return (AGS), membership sync (NRPS), embedded launches and the account merge workflow; the workflow lti-interop.yml runs it on Moodle 4.5 and 5.3.
 
