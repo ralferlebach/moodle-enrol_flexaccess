@@ -264,6 +264,9 @@ test.describe.serial('LTI 1.3 between two FlexAccess sites', () => {
     await open(admin, `${PROVIDER}/admin/tool/flexaccess/ltiidentities.php`);
     await expect(admin.locator('body')).toContainText('Probable duplicates');
     await admin.getByRole('link', { name: 'Review merge' }).first().click();
+    // The approval names the independent ownership proof (auth_flexaccess #13); an e-mail address is none.
+    await admin.getByLabel('Ownership proof').selectOption('reauthentication');
+    await admin.getByLabel('Evidence').fill('Alex logged in with both accounts in front of the administrator.');
     await admin.getByRole('checkbox', { name: /belong to the same person/ }).check();
     await admin.getByRole('button', { name: 'Approve merge' }).click();
     await expect(admin.locator('body')).toContainText('Merge approved');

@@ -33,6 +33,14 @@ use enrol_flexaccess\local\capacity_service;
  * @covers \enrol_flexaccess\local\capacity_service
  */
 final class capacity_service_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
+    }
+
     /**
      * The pure predicate treats 0/negative maximum as unlimited.
      */
@@ -58,7 +66,7 @@ final class capacity_service_test extends \advanced_testcase {
         $instanceid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
         $instance = $DB->get_record('enrol', ['id' => $instanceid], '*', MUST_EXIST);
 
-        $now = time();
+        $now = $this->clock->time();
 
         // Two plain active enrolments.
         for ($i = 0; $i < 2; $i++) {

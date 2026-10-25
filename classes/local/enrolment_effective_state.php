@@ -91,7 +91,7 @@ final class enrolment_effective_state {
      */
     public static function evaluate(int $userid, int $courseid, ?int $now = null): \stdClass {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $result = (object) [
             'state' => self::OK,
             'problems' => [],

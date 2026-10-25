@@ -107,7 +107,7 @@ final class restriction_service_test extends \advanced_testcase {
         /** @var \enrol_flexaccess_plugin $plugin */
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        $DB->set_field('enrol_flexaccess_instance', 'allowtemporary', 1, ['enrolid' => $enrolid]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, ['allowtemporary' => 1]);
 
         $cohort = $this->getDataGenerator()->create_cohort();
         $blocked = $this->getDataGenerator()->create_user();

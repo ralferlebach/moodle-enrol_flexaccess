@@ -54,14 +54,8 @@ final class access_key_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course();
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        instance_config::save($enrolid, ['allowtemporary' => 1, 'temporarylifetime' => DAYSECS]);
-        $DB->set_field('enrol_flexaccess_instance', 'temporaryaccesskeymode', 'course', ['enrolid' => $enrolid]);
-        $DB->set_field(
-            'enrol_flexaccess_instance',
-            'temporaryaccesskeyhash',
-            password_hash($key, PASSWORD_DEFAULT),
-            ['enrolid' => $enrolid]
-        );
+        instance_config::save($enrolid, ['allowtemporary' => 1, 'temporarylifetime' => DAYSECS,
+            'temporaryaccesskeymode' => 'course', 'temporaryaccesskey' => $key]);
         return $course;
     }
 

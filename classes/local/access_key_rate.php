@@ -53,7 +53,7 @@ final class access_key_rate {
      * @return bool
      */
     public static function is_blocked(string $identifier, ?int $now = null): bool {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $entry = self::cache()->get($identifier);
         if (!is_array($entry)) {
             return false;
@@ -74,7 +74,7 @@ final class access_key_rate {
      * @return void
      */
     public static function record_failure(string $identifier, ?int $now = null): void {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $cache = self::cache();
         $entry = $cache->get($identifier);
         if (!is_array($entry) || $now - (int) $entry['since'] > self::WINDOW) {

@@ -220,5 +220,21 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         \enrol_flexaccess\local\participant_role::sync_gradebook_role();
         upgrade_plugin_savepoint(true, 2026101700, 'enrol', 'flexaccess');
     }
+    if ($oldversion < 2026102100) {
+        // The edit form shows the enrolment period from the core enrol row (set_data), while FlexAccess
+        // works with its own copy. Bring the core row in line so that opening and saving the form cannot
+        // replace the effective period (issue #12); instance_config keeps both equal from now on.
+        $rows = $DB->get_records_sql(
+            "SELECT e.id, fi.enrolperiod
+               FROM {enrol} e
+               JOIN {enrol_flexaccess_instance} fi ON fi.enrolid = e.id
+              WHERE e.enrol = :enrol AND COALESCE(e.enrolperiod, -1) <> fi.enrolperiod",
+            ['enrol' => 'flexaccess']
+        );
+        foreach ($rows as $row) {
+            $DB->set_field('enrol', 'enrolperiod', (int) $row->enrolperiod, ['id' => $row->id]);
+        }
+        upgrade_plugin_savepoint(true, 2026102100, 'enrol', 'flexaccess');
+    }
     return true;
 }

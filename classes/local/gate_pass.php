@@ -57,7 +57,7 @@ final class gate_pass {
      */
     public static function issue(int $courseid, string $purpose, string $secret, ?int $now = null): void {
         global $SESSION;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $passes = self::all();
         $passes[self::slot($courseid, $purpose)] = [
             'courseid' => $courseid,
@@ -79,7 +79,7 @@ final class gate_pass {
      * @return bool
      */
     public static function is_valid(int $courseid, string $purpose, string $secret, ?int $now = null): bool {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $pass = self::all()[self::slot($courseid, $purpose)] ?? null;
         if (!is_array($pass) || $secret === '') {
             return false;

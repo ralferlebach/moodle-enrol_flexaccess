@@ -112,7 +112,7 @@ final class category_policy {
         policy_assembler::purge_cache();
 
         $existing = self::load($categoryid);
-        $normalised['timemodified'] = time();
+        $normalised['timemodified'] = \core\di::get(\core\clock::class)->time();
         if ($existing) {
             $normalised['id'] = $existing->id;
             $normalised['categoryid'] = $categoryid;

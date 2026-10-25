@@ -46,7 +46,7 @@ final class enrol_time {
      * @return int
      */
     public static function immediate_start(?int $now = null): int {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         return intdiv($now, 100) * 100 - 1;
     }
 
@@ -60,7 +60,7 @@ final class enrol_time {
      * @return int
      */
     public static function end_for_instance(int $enrolid, ?int $now = null): int {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $config = instance_config::load($enrolid);
         $period = $config ? (int) $config->enrolperiod : 0;
         return $period > 0 ? $now + $period : 0;

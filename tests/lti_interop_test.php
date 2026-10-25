@@ -33,6 +33,9 @@ use enrol_flexaccess\local\participant_role;
  * @covers \enrol_flexaccess\local\lti_grade_visibility
  */
 final class lti_interop_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
     /** @var \stdClass Course. */
     private \stdClass $course;
 
@@ -47,6 +50,7 @@ final class lti_interop_test extends \advanced_testcase {
      */
     protected function setUp(): void {
         parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
         $this->resetAfterTest();
         set_config('enrol_plugins_enabled', 'manual,flexaccess,lti');
         $this->course = $this->getDataGenerator()->create_course();
@@ -103,7 +107,7 @@ final class lti_interop_test extends \advanced_testcase {
      * FlexAccess expiry suspends only the FlexAccess enrolment; the LTI access stays.
      */
     public function test_flexaccess_expiry_leaves_lti_enrolment(): void {
-        $userid = $this->dual(time() - 60);
+        $userid = $this->dual($this->clock->time() - 60);
         enrol_expiry::process();
         $this->assertSame(ENROL_USER_SUSPENDED, $this->ue_status($userid, 'flexaccess'));
         $this->assertSame(ENROL_USER_ACTIVE, $this->ue_status($userid, 'lti'));
@@ -117,7 +121,7 @@ final class lti_interop_test extends \advanced_testcase {
      */
     public function test_lti_unenrol_leaves_flexaccess_enrolment(): void {
         global $DB;
-        $end = time() + WEEKSECS;
+        $end = $this->clock->time() + WEEKSECS;
         $userid = $this->dual($end);
         $instance = $DB->get_record('enrol', ['id' => $this->tool->enrolid]);
         enrol_get_plugin('lti')->unenrol_user($instance, $userid);

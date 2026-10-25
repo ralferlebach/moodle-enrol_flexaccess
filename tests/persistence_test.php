@@ -29,6 +29,9 @@ use auth_flexaccess\local\account_state;
  * @covers \auth_flexaccess\api
  */
 final class persistence_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
     /**
      * Skip when the auth_flexaccess sibling plugin is not installed (per-plugin CI).
      *
@@ -36,6 +39,7 @@ final class persistence_test extends \advanced_testcase {
      */
     protected function setUp(): void {
         parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
         // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
         $this->resetAfterTest();
         set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
@@ -146,7 +150,7 @@ final class persistence_test extends \advanced_testcase {
         );
         // The verification mail goes through the queue; the worker delivers it.
         $this->assertSame(0, $sink->count());
-        \auth_flexaccess\local\mail_worker::run(time());
+        \auth_flexaccess\local\mail_worker::run($this->clock->time());
         $messages = $sink->get_messages();
         $sink->close();
 
@@ -208,7 +212,7 @@ final class persistence_test extends \advanced_testcase {
 
         $sink = $this->redirectEmails();
         \auth_flexaccess\api::request_persistence($userid, 'late@example.com', 'La', 'Te', 'Str0ng-Pass!23');
-        \auth_flexaccess\local\mail_worker::run(time());
+        \auth_flexaccess\local\mail_worker::run($this->clock->time());
         $messages = $sink->get_messages();
         $sink->close();
         preg_match('/token=([A-Za-z0-9]+)/', quoted_printable_decode($messages[0]->body), $m);

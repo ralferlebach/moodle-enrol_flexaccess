@@ -392,15 +392,20 @@ class enrol_flexaccess_plugin extends enrol_plugin {
         $mform->setType('quickreggatedomains', PARAM_TEXT);
         $mform->hideIf('quickreggatedomains', 'quickreggatemode', 'neq', 'domain');
 
-        // Populate the extended fields from stored configuration when editing an existing instance.
+        // Marks a submission of this form: update_instance() then treats the data as the complete set of
+        // fields shown here (instance_config::from_form()) instead of an API patch.
+        $mform->addElement('hidden', 'flexaccessform', 1);
+        $mform->setType('flexaccessform', PARAM_INT);
+        $mform->setConstant('flexaccessform', 1);
+
+        // Populate every extended field from the stored configuration when editing an existing instance,
+        // so that saving the form unchanged writes back exactly what is stored (issue #12). The secrets
+        // stay empty: an empty field keeps the stored hash.
         if (!empty($instance->id)) {
             $config = \enrol_flexaccess\local\instance_config::load((int) $instance->id);
             if ($config) {
-                foreach (
-                    ['allowtemporary', 'allowquick', 'allowguest', 'allownormallogin', 'allowmagiclogin',
-                        'temporarylifetime', 'enrolperiod', 'expiryaction', 'temporaryaccesskeymode',
-                        'participantlistaccess', 'quickreggatemode', 'quickreggatedomains'] as $field
-                ) {
+                $secrets = ['temporaryaccesskey', 'quickreggatepassword'];
+                foreach (array_diff(\enrol_flexaccess\local\instance_config::FORM_FIELDS, $secrets) as $field) {
                     if (isset($config->$field)) {
                         $mform->setDefault($field, $config->$field);
                     }
@@ -420,8 +425,10 @@ class enrol_flexaccess_plugin extends enrol_plugin {
      */
     public function edit_instance_validation($data, $files, $instance, $context): array {
         $errors = [];
-        $from = (int) ($data['availablefrom'] ?? 0);
-        $until = (int) ($data['availableuntil'] ?? 0);
+        // Validate what will be saved: a submitted time that shows like the stored one keeps it.
+        $patch = instance_config::from_form((int) ($instance->id ?? 0), $data);
+        $from = (int) ($patch['availablefrom'] ?? 0);
+        $until = (int) ($patch['availableuntil'] ?? 0);
         if (!access_window::is_valid_range($from, $until)) {
             $errors['availableuntil'] = get_string('errorwindowrange', 'enrol_flexaccess');
         }
@@ -434,26 +441,47 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     /**
      * Add a new instance and persist its extended FlexAccess configuration.
      *
+     * Both rows are created in one transaction; invalid configuration creates neither. Fields not given
+     * get the database defaults (see instance_config).
+     *
      * @param stdClass $course Course record.
      * @param array|null $fields Instance fields from the form.
      * @return int New enrol instance id.
      */
     public function add_instance($course, ?array $fields = null): int {
+        global $DB;
+        $patch = !empty($fields['flexaccessform']) ? instance_config::from_form(0, $fields) : (array) $fields;
+        // Reject invalid configuration before anything is written, then create both rows together.
+        instance_config::validate(0, $patch);
+        $transaction = $DB->start_delegated_transaction();
         $instanceid = parent::add_instance($course, $fields);
-        instance_config::save($instanceid, (array) $fields);
+        instance_config::save($instanceid, $patch);
+        $transaction->allow_commit();
         return $instanceid;
     }
 
     /**
      * Update an instance and persist its extended FlexAccess configuration.
      *
+     * From the edit form all shown fields are replaced; from code the data is a patch and fields that
+     * are not given keep their stored values (see instance_config). Invalid data changes nothing.
+     *
      * @param stdClass $instance Existing enrol instance.
      * @param stdClass $data Submitted data.
      * @return bool
      */
     public function update_instance($instance, $data): bool {
-        instance_config::save((int) $instance->id, (array) $data);
-        return parent::update_instance($instance, $data);
+        global $DB;
+        $enrolid = (int) $instance->id;
+        $patch = !empty($data->flexaccessform) ? instance_config::from_form($enrolid, (array) $data) : (array) $data;
+        // Reject invalid configuration before anything is written. The core row is written first: the
+        // FlexAccess save then mirrors the enrolment period into it (see instance_config).
+        instance_config::validate($enrolid, $patch);
+        $transaction = $DB->start_delegated_transaction();
+        $result = parent::update_instance($instance, $data);
+        instance_config::save($enrolid, $patch);
+        $transaction->allow_commit();
+        return $result;
     }
 
     /**

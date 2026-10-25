@@ -69,7 +69,20 @@ if (!in_array('flexaccess', $enabledenrols, true)) {
 }
 \cache::make('enrol_flexaccess', 'policy')->purge();
 
+// A course of its own for the edit-form round trip (issues #12/#13): that journey changes the access
+// window and capacity, which must not affect the journeys on the main course.
+$formcourse = create_course((object) [
+    'fullname' => 'Form round trip course',
+    'shortname' => uniqid('FAPWFORM', true),
+    'category' => $category->id,
+    'visible' => 1,
+]);
+$formenrolid = $plugin->add_instance($formcourse, ['status' => ENROL_INSTANCE_ENABLED]);
+\enrol_flexaccess\local\instance_config::save($formenrolid, ['allowtemporary' => 1, 'enrolperiod' => 3 * DAYSECS]);
+
 echo "export FLEXACCESS_BASE_URL='" . $CFG->wwwroot . "'\n";
+echo "export FLEXACCESS_FORM_COURSE_ID='" . $formcourse->id . "'\n";
+echo "export FLEXACCESS_FORM_ENROL_ID='" . $formenrolid . "'\n";
 echo "export FLEXACCESS_COURSE_ID='" . $course->id . "'\n";
 echo "export FLEXACCESS_COURSE_NAME='" . $coursename . "'\n";
 // A manager account for the authenticated accessibility checks of the plugin's own administration

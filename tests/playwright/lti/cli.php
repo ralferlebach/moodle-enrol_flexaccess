@@ -79,7 +79,7 @@ switch ($command) {
         break;
     case 'expireflexaccess':
         $row = $ue((int) $args[0], (int) $args[1], 'flexaccess');
-        $DB->set_field('user_enrolments', 'timeend', time() - 60, ['id' => $row->id]);
+        $DB->set_field('user_enrolments', 'timeend', \core\di::get(\core\clock::class)->time() - 60, ['id' => $row->id]);
         \enrol_flexaccess\local\enrol_expiry::process();
         $out = 'expired';
         break;
@@ -109,12 +109,18 @@ switch ($command) {
         ob_start();
         $task->execute();
         // Tasks like sync_grades and sync_members only queue ad-hoc tasks: run those as cron would.
-        \core\cron::run_adhoc_tasks(time(), 0, false);
+        \core\cron::run_adhoc_tasks(\core\di::get(\core\clock::class)->time(), 0, false);
         $log = ob_get_clean();
         $out = ['ran' => $args[0], 'log' => substr((string) $log, -2000)];
         break;
     case 'approve':
-        $out = \auth_flexaccess\api::approve_merge((int) $args[0], (int) $args[1], true);
+        $out = \auth_flexaccess\api::approve_merge(
+            (int) $args[0],
+            (int) $args[1],
+            true,
+            'reauthentication',
+            'The learner logged in with both accounts during the two-site E2E journey.'
+        );
         break;
     case 'merge':
         // An administrator's merge with tool_mergeusers: keep args[0], remove args[1].

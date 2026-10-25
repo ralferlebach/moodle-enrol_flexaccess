@@ -77,8 +77,7 @@ class behat_enrol_flexaccess extends behat_base {
 
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        $DB->set_field('enrol_flexaccess_instance', 'allowtemporary', 1, ['enrolid' => $enrolid]);
-        $DB->set_field('enrol_flexaccess_instance', 'temporarylifetime', DAYSECS, ['enrolid' => $enrolid]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, ['allowtemporary' => 1, 'temporarylifetime' => DAYSECS]);
 
         $result = \enrol_flexaccess\local\access_controller::grant_temporary_access($courseid);
         if ($result->status !== 'granted') {
@@ -309,14 +308,9 @@ class behat_enrol_flexaccess extends behat_base {
         \enrol_flexaccess\local\instance_config::save($enrolid, [
             'allowtemporary' => 1,
             'temporarylifetime' => DAYSECS,
+            'temporaryaccesskeymode' => 'course',
+            'temporaryaccesskey' => $key,
         ]);
-        $DB->set_field('enrol_flexaccess_instance', 'temporaryaccesskeymode', 'course', ['enrolid' => $enrolid]);
-        $DB->set_field(
-            'enrol_flexaccess_instance',
-            'temporaryaccesskeyhash',
-            password_hash($key, PASSWORD_DEFAULT),
-            ['enrolid' => $enrolid]
-        );
     }
 
     /**
@@ -340,7 +334,7 @@ class behat_enrol_flexaccess extends behat_base {
      * @return void
      */
     public function i_open_a_flexaccess_verification_link_for(string $email): void {
-        $userid = \auth_flexaccess\api::create_temporary_user(time() + 3600);
+        $userid = \auth_flexaccess\api::create_temporary_user(\core\di::get(\core\clock::class)->time() + 3600);
         \auth_flexaccess\api::request_persistence($userid, $email, 'Verify', 'Person', 'Str0ng-Pass!23');
         $token = \auth_flexaccess\local\token_service::issue($userid, 'persistence', 900);
         $this->execute('behat_general::i_visit', [new \moodle_url('/auth/flexaccess/persist.php', ['token' => $token])]);

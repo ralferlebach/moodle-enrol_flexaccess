@@ -109,7 +109,7 @@ final class gradebook_role_test extends \advanced_testcase {
 
         $after = participant_role::gradebook_roleids();
         $this->assertSame(array_merge($before, [participant_role::get_id()]), $after, 'Order and other ids kept.');
-        $this->assertSame(2026101700, (int) get_config('enrol_flexaccess', 'version'));
+        $this->assertGreaterThanOrEqual(2026101700, (int) get_config('enrol_flexaccess', 'version'));
         $this->assertNotContains('participantnotgradeable', readiness::role_model_problems());
     }
 

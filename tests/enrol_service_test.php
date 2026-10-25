@@ -44,7 +44,6 @@ final class enrol_service_test extends \advanced_testcase {
         /** @var \enrol_flexaccess_plugin $plugin */
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED, 'maxparticipants' => 2]);
-        $DB->set_field('enrol_flexaccess_instance', 'maxparticipants', 2, ['enrolid' => $enrolid]);
 
         $u1 = $this->getDataGenerator()->create_user();
         $u2 = $this->getDataGenerator()->create_user();
@@ -67,7 +66,6 @@ final class enrol_service_test extends \advanced_testcase {
         /** @var \enrol_flexaccess_plugin $plugin */
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED, 'maxparticipants' => 1]);
-        $DB->set_field('enrol_flexaccess_instance', 'maxparticipants', 1, ['enrolid' => $enrolid]);
 
         // Fill the single slot.
         $first = $this->getDataGenerator()->create_user();
@@ -145,7 +143,7 @@ final class enrol_service_test extends \advanced_testcase {
         /** @var \enrol_flexaccess_plugin $plugin */
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        $DB->set_field('enrol_flexaccess_instance', 'enrolperiod', 3600, ['enrolid' => $enrolid]);
+        \enrol_flexaccess\local\instance_config::save($enrolid, ['enrolperiod' => 3600]);
         $now = 1000000;
         $user = $this->getDataGenerator()->create_user();
 

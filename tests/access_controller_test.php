@@ -65,15 +65,8 @@ final class access_controller_test extends \advanced_testcase {
         /** @var \enrol_flexaccess_plugin $plugin */
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        $DB->set_field('enrol_flexaccess_instance', 'allowtemporary', 1, ['enrolid' => $enrolid]);
-        $DB->set_field('enrol_flexaccess_instance', 'temporarylifetime', DAYSECS, ['enrolid' => $enrolid]);
-        if ($max > 0) {
-            $DB->set_field('enrol_flexaccess_instance', 'maxparticipants', $max, ['enrolid' => $enrolid]);
-        }
-        if ($from > 0 || $until > 0) {
-            $DB->set_field('enrol_flexaccess_instance', 'availablefrom', $from, ['enrolid' => $enrolid]);
-            $DB->set_field('enrol_flexaccess_instance', 'availableuntil', $until, ['enrolid' => $enrolid]);
-        }
+        \enrol_flexaccess\local\instance_config::save($enrolid, ['allowtemporary' => 1, 'temporarylifetime' => DAYSECS,
+            'maxparticipants' => $max, 'availablefrom' => $from, 'availableuntil' => $until]);
         return $course;
     }
 

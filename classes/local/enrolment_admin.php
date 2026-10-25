@@ -39,7 +39,7 @@ final class enrolment_admin {
      */
     public static function get_user_enrolments(int $userid, ?int $courseid = null, ?int $now = null): array {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $params = ['userid' => $userid];
         $where = '';
         if ($courseid !== null) {
@@ -85,7 +85,7 @@ final class enrolment_admin {
      */
     public static function get_enrolments_for_users(array $userids, ?int $now = null): array {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $userids = array_values(array_unique(array_filter(array_map('intval', $userids))));
         $out = array_fill_keys($userids, []);
         if (!$userids) {
@@ -190,7 +190,7 @@ final class enrolment_admin {
      */
     public static function reactivate(int $ueid, ?int $courseid = null, ?int $now = null): \stdClass {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $result = (object) [
             'outcome' => self::NOT_FOUND,
             'ueid' => $ueid,
@@ -278,7 +278,7 @@ final class enrolment_admin {
      */
     public static function transfer(int $fromuserid, int $touserid, bool $permanent = false, ?int $now = null): \stdClass {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $plugin = enrol_get_plugin('flexaccess');
         $result = (object) ['transferred' => 0, 'merged' => 0];
         if (!$plugin || $fromuserid === $touserid) {
@@ -310,25 +310,66 @@ final class enrolment_admin {
                 );
                 $result->transferred++;
             } else {
-                $ends = [(int) $existing->timeend, $timeend];
-                $mergedend = in_array(0, $ends, true) ? 0 : max($ends);
-                $mergedstatus = ((int) $existing->status === ENROL_USER_ACTIVE || $status === ENROL_USER_ACTIVE)
-                    ? ENROL_USER_ACTIVE : ENROL_USER_SUSPENDED;
-                // Calling enrol_user() on an existing enrolment updates it in place and (idempotently) makes
-                // sure the FlexAccess course role is held exactly once by the surviving identity.
-                $plugin->enrol_user(
-                    $instance,
-                    $touserid,
-                    $roleid,
-                    min((int) $existing->timestart, (int) $source->timestart),
-                    $mergedend,
-                    $mergedstatus
-                );
+                self::merge_into($instance, $existing, (object) [
+                    'timestart' => (int) $source->timestart,
+                    'timeend' => $timeend,
+                    'status' => $status,
+                ]);
                 $result->merged++;
             }
             $plugin->unenrol_user($instance, $fromuserid);
         }
         return $result;
+    }
+
+    /**
+     * Merge the values of a merged-away identity's enrolment into the survivor's enrolment of the same instance.
+     *
+     * Both belong to the same person, so the survivor keeps the union of the two entitlements: active when
+     * either was active, the earlier start, the later end ("no end" wins only when one of them had none) - never
+     * more than either had. Used by {@see self::transfer()} and, for enrolments a generic merge tool already
+     * removed from the source, with the values recorded before that merge.
+     *
+     * @param \stdClass $instance FlexAccess enrol instance.
+     * @param \stdClass $existing The survivor's user_enrolments row.
+     * @param \stdClass $source timestart, timeend, status of the source's enrolment.
+     * @return void
+     */
+    public static function merge_into(\stdClass $instance, \stdClass $existing, \stdClass $source): void {
+        $plugin = enrol_get_plugin('flexaccess');
+        $ends = [(int) $existing->timeend, (int) $source->timeend];
+        $mergedend = in_array(0, $ends, true) ? 0 : max($ends);
+        $mergedstatus = ((int) $existing->status === ENROL_USER_ACTIVE || (int) $source->status === ENROL_USER_ACTIVE)
+            ? ENROL_USER_ACTIVE : ENROL_USER_SUSPENDED;
+        // Calling enrol_user() on an existing enrolment updates it in place and (idempotently) makes
+        // sure the FlexAccess course role is held exactly once by the surviving identity.
+        $plugin->enrol_user(
+            $instance,
+            (int) $existing->userid,
+            participant_role::get_id() ?: null,
+            min((int) $existing->timestart, (int) $source->timestart),
+            $mergedend,
+            $mergedstatus
+        );
+    }
+
+    /**
+     * Apply the values of a source enrolment recorded before a generic merge removed it (auth_flexaccess #13).
+     *
+     * @param int $touserid Survivor.
+     * @param int $enrolid FlexAccess instance.
+     * @param \stdClass $source Recorded timestart, timeend, status.
+     * @return bool Whether the survivor's enrolment was merged.
+     */
+    public static function merge_recorded(int $touserid, int $enrolid, \stdClass $source): bool {
+        global $DB;
+        $instance = $DB->get_record('enrol', ['id' => $enrolid, 'enrol' => 'flexaccess']);
+        $existing = $instance ? $DB->get_record('user_enrolments', ['enrolid' => $enrolid, 'userid' => $touserid]) : null;
+        if (!$instance || !$existing) {
+            return false;
+        }
+        self::merge_into($instance, $existing, $source);
+        return true;
     }
 
     /**

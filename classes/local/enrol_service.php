@@ -147,7 +147,7 @@ final class enrol_service {
         ?int $now = null
     ): \stdClass {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         if (!enrol_is_enabled('flexaccess')) {
             return (object) ['status' => self::PLUGIN_DISABLED, 'enrolid' => 0];
         }
@@ -199,7 +199,7 @@ final class enrol_service {
      */
     public static function reserve_and_enrol(int $enrolid, callable $createuser, ?int $now = null): \stdClass {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $instance = $DB->get_record('enrol', ['id' => $enrolid, 'enrol' => 'flexaccess'], '*', IGNORE_MISSING);
         if (!$instance || (int) $instance->status !== ENROL_INSTANCE_ENABLED) {
             return (object) ['status' => 'notenabled', 'userid' => 0];

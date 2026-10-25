@@ -64,7 +64,7 @@ final class capacity_service {
      */
     public static function count_active_enrolments(int $enrolid, ?int $now = null): int {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $sql = "SELECT COUNT(ue.id)
                   FROM {user_enrolments} ue
                  WHERE ue.enrolid = :enrolid

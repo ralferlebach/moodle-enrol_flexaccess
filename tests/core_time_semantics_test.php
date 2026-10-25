@@ -34,6 +34,14 @@ use enrol_flexaccess\local\enrolment_effective_state as state;
  * @covers \enrol_flexaccess\local\enrolment_admin
  */
 final class core_time_semantics_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
+    }
+
     /**
      * Fixed-time cases around the rounding threshold (the examples of the issue and the strict bounds).
      *
@@ -129,9 +137,11 @@ final class core_time_semantics_test extends \advanced_testcase {
               WHERE ue.userid = :u AND e.courseid = :c AND e.enrol = 'flexaccess'",
             ['u' => $userid, 'c' => $course->id]
         );
-        // Core reads the clock itself; repeat if the 100-second rounding changed during the comparison.
+        // Core reads the wall clock itself: align the frozen clock with it, and repeat if the second changed
+        // during the comparison (Core rounds to 100 seconds).
         for ($attempt = 0; $attempt < 3; $attempt++) {
-            $now = time();
+            $this->clock->set_to($this->core_wall_time());
+            $now = $this->clock->time();
             $refs = ['zero' => 0, 'now' => $now, 'R' => state::core_now($now)];
             $start = $startrel === 'zero' ? 0 : $refs[$startrel] + $startoffset;
             $end = $endrel === 'zero' ? 0 : $refs[$endrel] + $endoffset;
@@ -141,7 +151,7 @@ final class core_time_semantics_test extends \advanced_testcase {
             $population = array_key_exists($userid, get_enrolled_users($context, '', 0, 'u.id', null, 0, 0, true));
             $access = is_enrolled($context, $userid, '', true);
             $bulk = enrolment_admin::get_enrolments_for_users([$userid], $now)[$userid][0]->effective;
-            if (time() === $now) {
+            if ($this->core_wall_time() === $now) {
                 break;
             }
         }
@@ -188,5 +198,15 @@ final class core_time_semantics_test extends \advanced_testcase {
         $this->assertSame(state::NOT_STARTED, $evaluated->state);
         $this->assertSame('', $evaluated->access, 'is_enrolled() would accept it');
         $this->assertSame(state::NOT_STARTED, $evaluated->population);
+    }
+
+    /**
+     * The second Moodle core reads for its enrolment windows (`round(time(), -2)` in the enrolled-users queries,
+     * `time()` in is_enrolled()): Core does not use the Clock API there, so the comparison needs the wall clock.
+     *
+     * @return int
+     */
+    private function core_wall_time(): int {
+        return time(); // Core's own time source (clock-exception).
     }
 }

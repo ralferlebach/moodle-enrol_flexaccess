@@ -42,6 +42,6 @@ final class expire_enrolments extends \core\task\scheduled_task {
      * Execute task.
      */
     public function execute(): void {
-        \enrol_flexaccess\local\enrol_expiry::process(time());
+        \enrol_flexaccess\local\enrol_expiry::process(\core\di::get(\core\clock::class)->time());
     }
 }

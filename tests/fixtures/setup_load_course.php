@@ -38,7 +38,7 @@ $category = \core_course_category::get_default();
 
 $course = create_course((object) [
     'fullname' => 'FlexAccess Load Test',
-    'shortname' => 'FALT' . time(),
+    'shortname' => 'FALT' . \core\di::get(\core\clock::class)->time(),
     'category' => $category->id,
     'visible' => 1,
 ]);

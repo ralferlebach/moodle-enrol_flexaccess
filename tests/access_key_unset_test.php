@@ -54,8 +54,8 @@ final class access_key_unset_test extends \advanced_testcase {
         $plugin = enrol_get_plugin('flexaccess');
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
         instance_config::save($enrolid, ['allowtemporary' => 1, 'temporarylifetime' => DAYSECS]);
-        // Course-key mode selected, but no key hash was ever entered.
-        $DB->set_field('enrol_flexaccess_instance', 'temporaryaccesskeymode', 'course', ['enrolid' => $enrolid]);
+        // Course-key mode selected, but no key was ever entered.
+        instance_config::save($enrolid, ['temporaryaccesskeymode' => 'course']);
         \cache::make('enrol_flexaccess', 'policy')->purge();
         return [(int) $course->id, (int) $enrolid];
     }
@@ -73,12 +73,7 @@ final class access_key_unset_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest();
         [$courseid, $enrolid] = $this->course_mode_instance_without_key();
-        $DB->set_field(
-            'enrol_flexaccess_instance',
-            'temporaryaccesskeyhash',
-            password_hash('OPEN-SESAME', PASSWORD_DEFAULT),
-            ['enrolid' => $enrolid]
-        );
+        instance_config::save($enrolid, ['temporaryaccesskey' => 'OPEN-SESAME']);
         \cache::make('enrol_flexaccess', 'policy')->purge();
 
         $this->assertTrue(\enrol_flexaccess\api::requires_temporary_access_key($courseid));

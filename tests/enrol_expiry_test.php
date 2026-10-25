@@ -28,6 +28,14 @@ use enrol_flexaccess\local\instance_config;
  * @covers \enrol_flexaccess\local\enrol_expiry
  */
 final class enrol_expiry_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
+    }
+
     /**
      * Create a course with a FlexAccess instance and enrol a user with a given end time.
      *
@@ -43,7 +51,7 @@ final class enrol_expiry_test extends \advanced_testcase {
         $enrolid = $plugin->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
         instance_config::save($enrolid, ['allowtemporary' => 1, 'expiryaction' => $expiryaction]);
         $instance = $GLOBALS['DB']->get_record('enrol', ['id' => $enrolid], '*', MUST_EXIST);
-        $plugin->enrol_user($instance, (int) $user->id, null, time() - DAYSECS, $timeend, ENROL_USER_ACTIVE);
+        $plugin->enrol_user($instance, (int) $user->id, null, $this->clock->time() - DAYSECS, $timeend, ENROL_USER_ACTIVE);
         return [$course, $user, (int) $enrolid];
     }
 
@@ -55,7 +63,7 @@ final class enrol_expiry_test extends \advanced_testcase {
     public function test_expiry_suspends(): void {
         global $DB;
         $this->resetAfterTest();
-        $now = time();
+        $now = $this->clock->time();
         [$course, $user, $enrolid] = $this->enrolled_user('suspend', $now - 60);
 
         $this->assertSame(1, enrol_expiry::process($now));
@@ -73,7 +81,7 @@ final class enrol_expiry_test extends \advanced_testcase {
     public function test_expiry_unenrols(): void {
         global $DB;
         $this->resetAfterTest();
-        $now = time();
+        $now = $this->clock->time();
         [$course, $user, $enrolid] = $this->enrolled_user('unenrol', $now - 60);
 
         $this->assertSame(1, enrol_expiry::process($now));
@@ -88,7 +96,7 @@ final class enrol_expiry_test extends \advanced_testcase {
     public function test_active_enrolments_are_untouched(): void {
         global $DB;
         $this->resetAfterTest();
-        $now = time();
+        $now = $this->clock->time();
         [, $future, $futureenrol] = $this->enrolled_user('unenrol', $now + WEEKSECS);
         [, $noend, $noendenrol] = $this->enrolled_user('unenrol', 0);
 

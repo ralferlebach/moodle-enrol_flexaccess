@@ -40,6 +40,9 @@ use enrol_flexaccess\local\participant_role;
  * @covers \enrol_flexaccess\local\enrolment_effective_state
  */
 final class enrolment_lifecycle_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
     /** @var \stdClass Course. */
     private \stdClass $course;
 
@@ -51,6 +54,7 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
      */
     protected function setUp(): void {
         parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
         $this->resetAfterTest();
         set_config('enrol_plugins_enabled', 'manual,flexaccess');
         $this->course = $this->getDataGenerator()->create_course();
@@ -144,11 +148,11 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         global $DB;
         $user = $this->getDataGenerator()->create_user();
         $instance = $this->instance();
-        $this->plugin->enrol_user($instance, (int) $user->id, participant_role::get_id(), time() + 1000);
+        $this->plugin->enrol_user($instance, (int) $user->id, participant_role::get_id(), $this->clock->time() + 1000);
         $this->assertNotContains((int) $user->id, $this->core_active_userids());
         $this->assertTrue(api::reenrol_user((int) $this->course->id, (int) $user->id, false));
         $ue = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id], '*', MUST_EXIST);
-        $this->assertLessThan(round(time(), -2), (int) $ue->timestart);
+        $this->assertLessThan(round($this->clock->time(), -2), (int) $ue->timestart);
         $this->assertContains((int) $user->id, $this->core_active_userids());
     }
 
@@ -321,8 +325,8 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         global $DB;
         $user = $this->getDataGenerator()->create_user();
         $instance = $this->instance();
-        $DB->set_field('enrol_flexaccess_instance', 'enrolperiod', DAYSECS, ['enrolid' => $instance->id]);
-        $now = time();
+        \enrol_flexaccess\local\instance_config::save((int) $instance->id, ['enrolperiod' => DAYSECS]);
+        $now = $this->clock->time();
         $this->plugin->enrol_user($instance, (int) $user->id, participant_role::get_id(), $now - 3 * DAYSECS, $now - DAYSECS);
         $this->assertSame(state::EXPIRED, api::effective_enrolment_state((int) $user->id, (int) $this->course->id)->state);
         $ueid = (int) $DB->get_field('user_enrolments', 'id', ['userid' => $user->id]);
@@ -344,7 +348,7 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         $this->assertSame(state::USER_ENROLMENT_MISSING, api::effective_enrolment_state((int) $user->id, $courseid)->state);
 
         $instance = $this->instance();
-        $now = time();
+        $now = $this->clock->time();
         $this->plugin->enrol_user($instance, (int) $user->id, participant_role::get_id(), $now + HOURSECS, 0);
         $this->assertSame(state::NOT_STARTED, api::effective_enrolment_state((int) $user->id, $courseid, $now)->state);
 
@@ -385,9 +389,10 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         global $DB;
         $user = $this->getDataGenerator()->create_user();
         $instance = $this->instance();
-        $DB->set_field('enrol_flexaccess_instance', 'enrolperiod', 2 * DAYSECS, ['enrolid' => $instance->id]);
+        \enrol_flexaccess\local\instance_config::save((int) $instance->id, ['enrolperiod' => 2 * DAYSECS]);
+        // A core enrolment period that differs (e.g. set by other code) must not be what counts.
         $DB->set_field('enrol', 'enrolperiod', 0, ['id' => $instance->id]);
-        $now = time();
+        $now = $this->clock->time();
         $this->assertTrue(enrol_service::admin_enrol((int) $this->course->id, (int) $user->id, false, $now));
         $this->assertSame(
             $now + 2 * DAYSECS,

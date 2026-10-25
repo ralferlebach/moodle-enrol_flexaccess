@@ -114,7 +114,7 @@ final class access_controller {
         ?string $accesskey = null,
         ?string $clientip = null
     ): \stdClass {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
 
         if (!access_gate::is_flexaccess_open($policy, $now)) {
@@ -188,7 +188,7 @@ final class access_controller {
         ?int $now = null,
         bool $trustedgate = false
     ): \stdClass {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
 
         if (!access_gate::is_flexaccess_open($policy, $now)) {
@@ -309,7 +309,7 @@ final class access_controller {
         string $clientip,
         ?int $now = null
     ): string {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $policy = \enrol_flexaccess\api::get_effective_policy($courseid);
         if (!access_gate::is_flexaccess_open($policy, $now)) {
             return 'closed';

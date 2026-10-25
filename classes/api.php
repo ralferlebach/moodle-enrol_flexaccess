@@ -66,7 +66,7 @@ final class api {
      * @return bool
      */
     public static function offers_anonymous_entry(int $courseid, ?int $now = null): bool {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         if (!self::is_target_enabled($courseid)) {
             return false;
         }
@@ -87,7 +87,7 @@ final class api {
      * @return bool
      */
     public static function offers_guest_access(int $courseid, ?int $now = null): bool {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         if (!self::is_target_enabled($courseid)) {
             return false;
         }
@@ -155,7 +155,7 @@ final class api {
      * @return bool
      */
     public static function offers_quick_registration(int $courseid, ?int $now = null): bool {
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         if (!self::is_target_enabled($courseid)) {
             return false;
         }
@@ -342,6 +342,18 @@ final class api {
         ?int $now = null
     ): \stdClass {
         return local\enrolment_admin::transfer($fromuserid, $touserid, $permanent, $now);
+    }
+
+    /**
+     * Merge a source enrolment recorded before a generic merge tool removed it into the survivor's enrolment.
+     *
+     * @param int $touserid Survivor.
+     * @param int $enrolid FlexAccess instance.
+     * @param \stdClass $source timestart, timeend, status as recorded.
+     * @return bool Whether the survivor's enrolment was merged.
+     */
+    public static function merge_recorded_enrolment(int $touserid, int $enrolid, \stdClass $source): bool {
+        return local\enrolment_admin::merge_recorded($touserid, $enrolid, $source);
     }
 
     /**

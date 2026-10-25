@@ -35,7 +35,7 @@ require_once($CFG->dirroot . '/course/lib.php');
 $freeseats = max(1, (int) getenv('FREE_SEATS') ?: 1);
 $capacity = max($freeseats + 1, (int) getenv('CAPACITY') ?: 20);
 
-$now = time();
+$now = \core\di::get(\core\clock::class)->time();
 $course = create_course((object) [
     'fullname' => 'FlexAccess capacity ' . $now,
     'shortname' => 'flexcap' . $now,

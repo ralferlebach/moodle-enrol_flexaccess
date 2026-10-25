@@ -30,7 +30,7 @@ define('CLI_SCRIPT', true);
 require(__DIR__ . '/../../../../config.php');
 require_once($CFG->dirroot . '/course/lib.php');
 
-$now = time();
+$now = \core\di::get(\core\clock::class)->time();
 $course = create_course((object) [
     'fullname' => 'FlexAccess load ' . $now,
     'shortname' => 'flexload' . $now,

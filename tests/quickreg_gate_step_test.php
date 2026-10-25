@@ -32,6 +32,9 @@ use enrol_flexaccess\local\quickreg_gate;
  * @covers \enrol_flexaccess\local\gate_pass
  */
 final class quickreg_gate_step_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
     /** Course access password used in the tests. */
     private const SECRET = 'open-sesame';
 
@@ -43,6 +46,7 @@ final class quickreg_gate_step_test extends \advanced_testcase {
     protected function setUp(): void {
         global $DB;
         parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
         if (!$DB->get_manager()->table_exists('auth_flexaccess_account')) {
             $this->markTestSkipped('Requires the auth_flexaccess sibling plugin to be installed.');
         }
@@ -154,7 +158,7 @@ final class quickreg_gate_step_test extends \advanced_testcase {
         $course = $this->course();
         $other = $this->course();
         $hash = (string) get_config('enrol_flexaccess', 'quickreggatepasswordhash');
-        $now = time();
+        $now = $this->clock->time();
         access_controller::check_quickreg_gate((int) $course->id, self::SECRET, '10.0.0.3', $now);
 
         // Replay in another course is rejected.

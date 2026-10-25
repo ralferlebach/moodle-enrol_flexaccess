@@ -42,27 +42,18 @@ class restore_enrol_flexaccess_plugin extends restore_enrol_plugin {
      * @return void
      */
     public function process_enrol_flexaccess_config($data): void {
-        global $DB;
         $data = (object) $data;
         $enrolid = (int) $this->get_new_parentid('enrol');
         $created = (int) $this->get_mappingid('enrol_flexaccess_created', (int) $this->get_old_parentid('enrol'));
         if ($enrolid <= 0 || $created !== $enrolid) {
             return;
         }
-        unset($data->id);
-        $data->enrolid = $enrolid;
+        unset($data->id, $data->enrolid, $data->timemodified);
         $role = !empty($data->roleid) ? $this->get_mappingid('role', (int) $data->roleid) : false;
         $data->roleid = $role ? (int) $role : \enrol_flexaccess\local\participant_role::get_id();
         $group = !empty($data->groupid) ? $this->get_mappingid('group', (int) $data->groupid) : false;
         $data->groupid = $group ? (int) $group : 0;
-        $data->timemodified = time();
-        $existing = $DB->get_field('enrol_flexaccess_instance', 'id', ['enrolid' => $enrolid]);
-        if ($existing) {
-            $data->id = (int) $existing;
-            $DB->update_record('enrol_flexaccess_instance', $data);
-        } else {
-            $DB->insert_record('enrol_flexaccess_instance', $data);
-        }
-        \cache::make('enrol_flexaccess', 'policy')->purge();
+        // Same write path as every other caller: validated, mirrored into the core row, cache purged.
+        \enrol_flexaccess\local\instance_config::restore_row($enrolid, $data);
     }
 }

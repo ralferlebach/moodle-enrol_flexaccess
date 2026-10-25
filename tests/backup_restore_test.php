@@ -81,10 +81,8 @@ final class backup_restore_test extends \advanced_testcase {
         set_config('enrol_plugins_enabled', 'manual,flexaccess');
         $course = $this->getDataGenerator()->create_course();
         $enrolid = enrol_get_plugin('flexaccess')->add_instance($course, ['status' => ENROL_INSTANCE_ENABLED]);
-        instance_config::save($enrolid, ['allowtemporary' => 1, 'allowquick' => 1, 'maxparticipants' => 30]);
-        $DB->set_field('enrol_flexaccess_instance', 'quickreggatemode', 'password', ['enrolid' => $enrolid]);
-        $hash = local\quickreg_gate::hash('secret');
-        $DB->set_field('enrol_flexaccess_instance', 'quickreggatepasswordhash', $hash, ['enrolid' => $enrolid]);
+        instance_config::save($enrolid, ['allowtemporary' => 1, 'allowquick' => 1, 'maxparticipants' => 30,
+            'quickreggatemode' => 'password', 'quickreggatepassword' => 'secret']);
         $user = $this->getDataGenerator()->create_user();
         $this->assertTrue(local\enrol_service::admin_enrol((int) $course->id, (int) $user->id));
         return [$course, $user];

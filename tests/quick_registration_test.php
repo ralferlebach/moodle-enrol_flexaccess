@@ -28,6 +28,9 @@ use enrol_flexaccess\local\instance_config;
  * @covers \enrol_flexaccess\local\access_controller
  */
 final class quick_registration_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
     /**
      * Skip when the auth_flexaccess sibling plugin is not installed (per-plugin CI).
      *
@@ -35,6 +38,7 @@ final class quick_registration_test extends \advanced_testcase {
      */
     protected function setUp(): void {
         parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
         // FlexAccess entry flows run only while enrolment and authentication plugins are enabled.
         $this->resetAfterTest();
         set_config('enrol_plugins_enabled', get_config('core', 'enrol_plugins_enabled') . ',flexaccess');
@@ -85,7 +89,7 @@ final class quick_registration_test extends \advanced_testcase {
         ));
 
         // Follow the activation link: the provisional account becomes a full, loginnable account.
-        \auth_flexaccess\local\mail_worker::run(time());
+        \auth_flexaccess\local\mail_worker::run($this->clock->time());
         $decoded = quoted_printable_decode($sink->get_messages()[0]->body);
         $sink->close();
         preg_match('/token=([A-Za-z0-9]+)/', $decoded, $m);

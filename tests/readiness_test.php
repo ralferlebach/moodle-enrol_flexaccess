@@ -31,6 +31,14 @@ use enrol_flexaccess\local\readiness;
  * @covers \enrol_flexaccess_plugin
  */
 final class readiness_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
+    }
+
     /**
      * Issue enrol#5: the access-list action uses a core list icon, not the users icon.
      *
@@ -96,8 +104,7 @@ final class readiness_test extends \advanced_testcase {
         set_config('enrol_plugins_enabled', 'manual,flexaccess');
         $course = $this->getDataGenerator()->create_course();
         $enrolid = local\enrol_service::ensure_instance((int) $course->id);
-        $DB->set_field('enrol_flexaccess_instance', 'allowtemporary', 1, ['enrolid' => $enrolid]);
-        $DB->set_field('enrol_flexaccess_instance', 'allowmagiclogin', 1, ['enrolid' => $enrolid]);
+        local\instance_config::save($enrolid, ['allowtemporary' => 1, 'allowmagiclogin' => 1]);
         set_config('allowtemporary', 0, 'enrol_flexaccess');
         set_config('allowmagiclogin', 1, 'enrol_flexaccess');
         set_config('allowmagiclogin', 0, 'auth_flexaccess');
@@ -146,7 +153,8 @@ final class readiness_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         local\enrol_service::admin_enrol((int) $course->id, (int) $user->id);
         $instance = $DB->get_record('enrol', ['courseid' => $course->id, 'enrol' => 'flexaccess']);
-        enrol_get_plugin('flexaccess')->update_user_enrol($instance, (int) $user->id, ENROL_USER_SUSPENDED, null, time() - 10);
+        $ended = $this->clock->time() - 10;
+        enrol_get_plugin('flexaccess')->update_user_enrol($instance, (int) $user->id, ENROL_USER_SUSPENDED, null, $ended);
         $ue = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id]);
 
         // Out of scope: a teacher of another course cannot touch it.

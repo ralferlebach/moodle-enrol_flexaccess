@@ -37,7 +37,7 @@ final class enrol_expiry {
      */
     public static function process(?int $now = null, int $limit = 1000): int {
         global $DB;
-        $now = $now ?? time();
+        $now = $now ?? \core\di::get(\core\clock::class)->time();
         $plugin = enrol_get_plugin('flexaccess');
         if (!$plugin) {
             return 0;

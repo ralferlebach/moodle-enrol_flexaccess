@@ -29,6 +29,14 @@ use enrol_flexaccess\local\instance_config;
  * @covers \enrol_flexaccess\local\access_controller
  */
 final class kill_switch_test extends \advanced_testcase {
+    /** @var \frozen_clock The scenario's frozen Moodle clock: every reference time of a test reads it. */
+    private \frozen_clock $clock;
+
+    protected function setUp(): void {
+        parent::setUp();
+        $this->clock = $this->mock_clock_with_frozen();
+    }
+
     /**
      * Counts of everything an entry flow could create.
      *
@@ -91,7 +99,7 @@ final class kill_switch_test extends \advanced_testcase {
         $this->assertSame('closed', access_controller::check_quickreg_gate((int) $course->id, 'x', '10.0.0.1'));
         $this->assertSame($before, $this->footprint());
         // Nothing is offered on the entry page either.
-        $offer = local\access_gate::offerable(api::get_effective_policy((int) $course->id), time(), 0);
+        $offer = local\access_gate::offerable(api::get_effective_policy((int) $course->id), $this->clock->time(), 0);
         $this->assertFalse($offer->temporary || $offer->quick || $offer->guest || $offer->normallogin);
     }
 }
