@@ -482,7 +482,12 @@ test.describe.serial('LTI 1.3 between two FlexAccess sites', () => {
 
   test('@consumer recovering the platform access keeps the platform identity', async ({ browser }) => {
     // enrol_flexaccess #10 AK 5: the recovery reactivates the enrolment of the same platform user.
+    // Self-contained: the release gate runs the @consumer and @provider journeys on separate site pairs, so this
+    // journey only relies on the earlier @consumer journeys (Iris launched and got a grade there).
     const local = cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_IRIS_ID);
+    expect(local).toBeGreaterThan(0);
+    const grade = cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_IRIS_ID);
+    expect(grade).not.toBeNull();
     const recovered = cli('platform', 'recover', E.LTI_PLATFORM_IRIS_ID, E.LTI_PLATFORM_COURSE_ID);
     expect(recovered.expired).toBe(1);
     expect(recovered.overall).toBe('effective_access_restored');
@@ -493,7 +498,8 @@ test.describe.serial('LTI 1.3 between two FlexAccess sites', () => {
     await launch(page, E.LTI_PLATFORM_AUTO_CMID);
     await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
     expect(cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_IRIS_ID)).toBe(local);
-    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_IRIS_ID)).toBe(77);
+    // The platform gradebook still holds the same grade for the same user.
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_IRIS_ID)).toBe(grade);
     await context.close();
   });
 

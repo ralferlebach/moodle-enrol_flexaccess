@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0 (2026102600) — 2026-10-26 — LTI-Journeys unabhängig von der Job-Aufteilung
+- **Zwei-Site-LTI-Suite, Release-Gate rot (CI-Lauf vom 26.10.2026):** Die neue Journey „@consumer recovering the platform access keeps the platform identity“ erwartete die Note 77, die nur die @provider-Journey „second deployment“ setzt. Das Gate führt @consumer- und @provider-Journeys aber in getrennten Jobs mit je eigenen Sites aus; im Consumer-Job stand die Note noch auf 72 (4.5 und 5.3, je 1 von 5 rot). Die Journey vergleicht jetzt mit der Note vor der Wiederherstellung und hängt nur noch von den @consumer-Journeys ab. Nur Testcode.
+- Version `2026102600`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026102600`.
+
 ## 1.2.0 (2026102502) — 2026-10-25 — Deinstallation entfernt nur FlexAccess-Rollenzuweisungen, LTI-Spezialfälle
 - **Herkunft der Teilnehmerrolle (#15, P1).**
   - **Bisher:** `db/uninstall.php` entfernte die Rolle `flexaccessparticipant` komponentenlos (`role_unassign()` ohne Komponente) je FlexAccess-Einschreibung. Eine zusätzlich von Hand vergebene Teilnehmerrolle im selben Kurs ging dabei mit verloren.
