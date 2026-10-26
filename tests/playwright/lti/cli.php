@@ -32,6 +32,7 @@ define('CLI_SCRIPT', true);
 require(__DIR__ . '/../../../../../config.php');
 require_once($CFG->libdir . '/gradelib.php');
 require_once($CFG->dirroot . '/auth/lti/auth.php');
+require_once($CFG->libdir . '/completionlib.php');
 
 [$command, $args] = [$argv[1] ?? '', array_slice($argv, 2)];
 \core\session\manager::set_user(get_admin());
@@ -96,6 +97,8 @@ switch ($command) {
         $result = grade_update('mod/assign', $assign->course, 'mod', 'assign', $assign->id, 0, [
             (int) $args[1] => (object) ['userid' => (int) $args[1], 'rawgrade' => (float) $args[2]],
         ]);
+        // The course total as the gradebook shows it (course resources return the course grade).
+        grade_regrade_final_grades($assign->course);
         $out = $result === GRADE_UPDATE_OK ? 'ok' : 'failed';
         break;
     case 'lineitemgrade':
@@ -108,8 +111,13 @@ switch ($command) {
         $task = \core\task\manager::get_scheduled_task($args[0]);
         ob_start();
         $task->execute();
-        // Tasks like sync_grades and sync_members only queue ad-hoc tasks: run those as cron would.
-        \core\cron::run_adhoc_tasks(\core\di::get(\core\clock::class)->time(), 0, false);
+        // Tasks like sync_grades and sync_members only queue ad-hoc tasks: run those as cron would. With 'later',
+        // the cron run comes after the retry delay of failed ad-hoc tasks has passed (a delayed cron run).
+        $now = \core\di::get(\core\clock::class)->time();
+        if (($args[1] ?? '') === 'later') {
+            $DB->set_field_select('task_adhoc', 'nextruntime', $now - 1, 'faildelay > 0 AND nextruntime >= ?', [$now]);
+        }
+        \core\cron::run_adhoc_tasks($now, 0, false);
         $log = ob_get_clean();
         $out = ['ran' => $args[0], 'log' => substr((string) $log, -2000)];
         break;
@@ -155,6 +163,59 @@ switch ($command) {
         // Change the learner provisioning mode of a published resource, as a teacher would.
         $DB->set_field('enrol_lti_tools', 'provisioningmodelearner', (int) $args[1], ['id' => (int) $args[0]]);
         $out = 'ok';
+        break;
+    case 'complete':
+        // The learner marks the (manually completed) activity as done.
+        $cm = get_coursemodule_from_id(false, (int) $args[0], 0, false, MUST_EXIST);
+        (new completion_info(get_course($cm->course)))->update_state($cm, COMPLETION_COMPLETE, (int) $args[1]);
+        $out = (int) (new completion_info(get_course($cm->course)))->get_data($cm, false, (int) $args[1])->completionstate;
+        break;
+    case 'completioncron':
+        // Course completion is aggregated by its scheduled task, as cron would; a delayed run is just a later one.
+        ob_start();
+        \core\task\manager::get_scheduled_task('\\core\\task\\completion_regular_task')->execute();
+        ob_end_clean();
+        $out = (bool) (new completion_info(get_course((int) $args[0])))->is_course_complete((int) $args[1]);
+        break;
+    case 'ags':
+        // Make the platform's token endpoint unreachable for the provider ('broken') or restore it ('ok'):
+        // grade delivery fails like during a platform outage.
+        $key = 'flexaccess_e2e_tokenurl';
+        foreach ($DB->get_records('enrol_lti_app_registration') as $reg) {
+            if ($args[0] === 'broken') {
+                set_config($key . $reg->id, $reg->accesstokenurl, 'enrol_flexaccess');
+                $unreachable = 'https://platform.test:8443/unreachable';
+                $DB->set_field('enrol_lti_app_registration', 'accesstokenurl', $unreachable, ['id' => $reg->id]);
+            } else if ($saved = get_config('enrol_flexaccess', $key . $reg->id)) {
+                $DB->set_field('enrol_lti_app_registration', 'accesstokenurl', $saved, ['id' => $reg->id]);
+                unset_config($key . $reg->id, 'enrol_flexaccess');
+            }
+        }
+        $out = $args[0];
+        break;
+    case 'retries':
+        // Grade deliveries that failed and wait for Core's retry (ad-hoc task with a fail delay).
+        $out = $DB->count_records_select('task_adhoc', 'classname = ? AND faildelay > 0', [
+            '\\enrol_lti\\local\\ltiadvantage\\task\\sync_tool_grades',
+        ]);
+        break;
+    case 'lastgrade':
+        // What the provider recorded as delivered for a learner of a published resource (0: nothing yet).
+        $row = $DB->get_record('enrol_lti_users', ['toolid' => (int) $args[0], 'userid' => (int) $args[1]]);
+        $out = $row && $row->lastgrade !== null ? (float) $row->lastgrade : null;
+        break;
+    case 'recover':
+        // The FlexAccess enrolment of a learner expires and an administrator recovers it (tool_flexaccess).
+        $row = $ue((int) $args[0], (int) $args[1], 'flexaccess');
+        $DB->set_field('user_enrolments', 'timeend', \core\di::get(\core\clock::class)->time() - 60, ['id' => $row->id]);
+        \enrol_flexaccess\local\enrol_expiry::process();
+        $expired = (int) $ue((int) $args[0], (int) $args[1], 'flexaccess')->status;
+        $result = \tool_flexaccess\local\recovery::recover((int) $args[0], (int) $args[1], ['reactivate' => [(int) $row->id]]);
+        $out = [
+            'expired' => $expired,
+            'overall' => $result->overall,
+            'status' => (int) $ue((int) $args[0], (int) $args[1], 'flexaccess')->status,
+        ];
         break;
     case 'canlogin':
         $out = \auth_flexaccess\local\login_guard::evaluate((int) $args[0], 'password');

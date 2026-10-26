@@ -47,29 +47,35 @@ $env = static function (string $name): string {
 flexaccess_lti_seed_site_settings();
 set_config('enrol_plugins_enabled', 'manual,guest,self,cohort,flexaccess');
 
-$typeid = lti_add_type((object) [
-    'state' => LTI_TOOL_STATE_CONFIGURED,
-    'course' => SITEID,
-    'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
-], (object) [
-    'lti_typename' => 'FlexAccess provider',
-    'lti_toolurl' => $env('LTI_PROVIDER_LAUNCH_URL'),
-    'lti_ltiversion' => LTI_VERSION_1P3,
-    'lti_keytype' => LTI_JWK_KEYSET,
-    'lti_publickeyset' => $env('LTI_PROVIDER_JWKS_URL'),
-    'lti_initiatelogin' => $env('LTI_PROVIDER_LOGIN_URL'),
-    'lti_redirectionuris' => $env('LTI_PROVIDER_LAUNCH_URL'),
-    'lti_launchcontainer' => LTI_LAUNCH_CONTAINER_WINDOW,
-    'lti_sendname' => LTI_SETTING_ALWAYS,
-    'lti_sendemailaddr' => LTI_SETTING_ALWAYS,
-    'lti_acceptgrades' => LTI_SETTING_ALWAYS,
-    'lti_coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
-    'lti_contentitem' => 0,
-    'ltiservice_gradesynchronization' => 2,
-    'ltiservice_memberships' => 1,
-    'ltiservice_toolsettings' => 0,
-]);
+$addtype = static function (string $name, string $loginurl) use ($env): int {
+    return lti_add_type((object) [
+        'state' => LTI_TOOL_STATE_CONFIGURED,
+        'course' => SITEID,
+        'coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+    ], (object) [
+        'lti_typename' => $name,
+        'lti_toolurl' => $env('LTI_PROVIDER_LAUNCH_URL'),
+        'lti_ltiversion' => LTI_VERSION_1P3,
+        'lti_keytype' => LTI_JWK_KEYSET,
+        'lti_publickeyset' => $env('LTI_PROVIDER_JWKS_URL'),
+        'lti_initiatelogin' => $loginurl,
+        'lti_redirectionuris' => $env('LTI_PROVIDER_LAUNCH_URL'),
+        'lti_launchcontainer' => LTI_LAUNCH_CONTAINER_WINDOW,
+        'lti_sendname' => LTI_SETTING_ALWAYS,
+        'lti_sendemailaddr' => LTI_SETTING_ALWAYS,
+        'lti_acceptgrades' => LTI_SETTING_ALWAYS,
+        'lti_coursevisible' => LTI_COURSEVISIBLE_ACTIVITYCHOOSER,
+        'lti_contentitem' => 0,
+        'ltiservice_gradesynchronization' => 2,
+        'ltiservice_memberships' => 1,
+        'ltiservice_toolsettings' => 0,
+    ]);
+};
+$typeid = $addtype('FlexAccess provider', $env('LTI_PROVIDER_LOGIN_URL'));
 $type = $DB->get_record('lti_types', ['id' => $typeid], '*', MUST_EXIST);
+// A second tool deployment of the same provider (own client id and deployment id).
+$typeid2 = $addtype('FlexAccess provider (second deployment)', $env('LTI_PROVIDER_LOGIN_URL_2'));
+$type2 = $DB->get_record('lti_types', ['id' => $typeid2], '*', MUST_EXIST);
 
 if ($DB->record_exists('course', ['shortname' => 'PLATFORM'])) {
     cli_error('Already seeded: run on a fresh site.');
@@ -84,7 +90,8 @@ $flexenrolid = enrol_get_plugin('flexaccess')->add_instance($course, ['status' =
 \enrol_flexaccess\local\instance_config::save($flexenrolid, ['allowtemporary' => 1, 'allowquick' => 1]);
 \cache::make('enrol_flexaccess', 'policy')->purge();
 
-$activity = static function (string $name, string $uuid) use ($course, $typeid, $env): stdClass {
+$activity = static function (string $name, string $uuid, int $type = 0) use ($course, $typeid, $env): stdClass {
+    $typeid = $type ?: $typeid;
     return create_module((object) [
         'modulename' => 'lti',
         'course' => $course->id,
@@ -107,6 +114,10 @@ $auto = $activity('Provider resource (automatic account)', $env('LTI_PROVIDER_AU
 // The same resource embedded in the course page (iframe launch, third-party cookie context).
 $embedded = $activity('Provider resource (embedded)', $env('LTI_PROVIDER_AUTO_UUID'));
 $DB->set_field('lti', 'launchcontainer', LTI_LAUNCH_CONTAINER_EMBED_NO_BLOCKS, ['id' => $embedded->instance]);
+$actcompl = $activity('Provider activity (grade on completion)', $env('LTI_PROVIDER_ACTCOMPL_UUID'));
+$wholecourse = $activity('Provider course', $env('LTI_PROVIDER_COURSE_UUID'));
+$coursecompl = $activity('Provider course (grade on completion)', $env('LTI_PROVIDER_COURSECOMPL_UUID'));
+$deployment2 = $activity('Provider resource (second deployment)', $env('LTI_PROVIDER_AUTO_UUID'), $typeid2);
 
 $learners = [];
 $names = ['robin' => 'Robin', 'tara' => 'Tara', 'alex' => 'Alex', 'sam' => 'Sam', 'pat' => 'Pat', 'iris' => 'Iris'];
@@ -133,6 +144,16 @@ flexaccess_lti_seed_export([
     'LTI_PLATFORM_LEARNER_PASS' => 'Platform-Pass!1',
     'LTI_PLATFORM_LEARNER_ID' => $learner,
     'LTI_PLATFORM_EMBED_CMID' => $embedded->coursemodule,
+    'LTI_PLATFORM_CLIENTID_2' => $type2->clientid,
+    'LTI_PLATFORM_DEPLOYMENTID_2' => $typeid2,
+    'LTI_PLATFORM_ACTCOMPL_CMID' => $actcompl->coursemodule,
+    'LTI_PLATFORM_ACTCOMPL_LTIID' => $actcompl->instance,
+    'LTI_PLATFORM_WHOLECOURSE_CMID' => $wholecourse->coursemodule,
+    'LTI_PLATFORM_WHOLECOURSE_LTIID' => $wholecourse->instance,
+    'LTI_PLATFORM_COURSECOMPL_CMID' => $coursecompl->coursemodule,
+    'LTI_PLATFORM_COURSECOMPL_LTIID' => $coursecompl->instance,
+    'LTI_PLATFORM_DEPLOY2_CMID' => $deployment2->coursemodule,
+    'LTI_PLATFORM_DEPLOY2_LTIID' => $deployment2->instance,
     'LTI_PLATFORM_PASS' => 'Platform-Pass!1',
     'LTI_PLATFORM_TARA_ID' => $learners['tara'],
     'LTI_PLATFORM_ALEX_ID' => $learners['alex'],

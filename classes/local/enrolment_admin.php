@@ -252,8 +252,14 @@ final class enrolment_admin {
             $result->newtimeend = $timeend;
         }
         if (!enrolment_effective_state::has_participant_role($result->userid, $result->courseid)) {
-            // Assigned exactly as enrol_user() assigns it (the plugin's roles are not protected).
-            role_assign($roleid, $result->userid, \context_course::instance($result->courseid)->id);
+            // Assigned exactly as enrol_user() assigns it: protected, with component and instance (enrol #15).
+            role_assign(
+                $roleid,
+                $result->userid,
+                \context_course::instance($result->courseid)->id,
+                'enrol_flexaccess',
+                (int) $row->enrolid
+            );
             $result->rolerepaired = true;
         }
         $transaction->allow_commit();
@@ -391,8 +397,8 @@ final class enrolment_admin {
               LEFT JOIN {role_assignments} ra ON ra.userid = ue.userid AND ra.contextid = ctx.id
                                               AND ra.roleid = :roleid
                   WHERE ra.id IS NULL",
-                // Roles of this plugin are not protected, so enrol_user() assigns them without a
-                // component; the participant role in the course context is what must be present.
+                // Any assignment of the participant role in the course context counts (with the component
+                // since 2026102502, without it from older releases or by hand).
                 ['courselevel' => CONTEXT_COURSE, 'roleid' => $roleid],
                 0,
                 $limit

@@ -135,7 +135,12 @@ final class readiness_test extends \advanced_testcase {
         $this->assertTrue(local\enrol_service::admin_enrol((int) $course->id, (int) $user->id));
         $this->assertSame([], enrolment_admin::find_role_mismatches()['missingrole']);
         // Removing the role makes it a real finding.
-        role_unassign(participant_role::get_id(), (int) $user->id, \context_course::instance((int) $course->id)->id);
+        role_unassign_all([
+            'roleid' => participant_role::get_id(),
+            'userid' => (int) $user->id,
+            'contextid' => \context_course::instance((int) $course->id)->id,
+            'component' => 'enrol_flexaccess',
+        ]);
         $this->assertCount(1, enrolment_admin::find_role_mismatches()['missingrole']);
     }
 

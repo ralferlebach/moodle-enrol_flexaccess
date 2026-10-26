@@ -25,7 +25,7 @@
 
 const { test, expect } = require('@playwright/test');
 const { execFileSync } = require('child_process');
-const { loginAs, open, submitForm } = require('./helpers');
+const { loginAs, open, submitForm, freshSession } = require('./helpers');
 
 const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS || 'Admin!23';
@@ -104,6 +104,8 @@ async function visitorOffered(browser) {
 
 test('the instance form keeps window and capacity across save and reopen', async ({ page, browser }) => {
   test.skip(!COURSE_ID || !ENROL_ID, 'FLEXACCESS_FORM_COURSE_ID not provided by the seed step');
+  // Its own precondition, whatever earlier journeys (or repetitions) stored: window open, no capacity limit.
+  execFileSync('php', ['probe.php', 'openwindow', String(ENROL_ID)], { cwd: __dirname, encoding: 'utf8' });
   const seeded = probe();
   expect(await visitorOffered(browser)).toBe(true);
   await loginAs(page, ADMIN_USER, ADMIN_PASS);
@@ -165,7 +167,7 @@ test('the instance form keeps window and capacity across save and reopen', async
  */
 async function loginInZone(page, zone) {
   execFileSync('php', ['probe.php', 'timezone', zone], { cwd: __dirname, encoding: 'utf8' });
-  await page.context().clearCookies();
+  await freshSession(page);
   await loginAs(page, ADMIN_USER, ADMIN_PASS);
 }
 

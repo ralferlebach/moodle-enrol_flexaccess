@@ -21,7 +21,7 @@
  */
 
 const { test, expect } = require('@playwright/test');
-const { loginAs, fillPasswordUnmask, open, submitForm, chooseCourse } = require('./helpers');
+const { loginAs, fillPasswordUnmask, open, submitForm, chooseCourse, freshSession } = require('./helpers');
 
 const ADMIN_USER = process.env.FLEXACCESS_ADMIN_USER || 'admin';
 const ADMIN_PASS = process.env.FLEXACCESS_ADMIN_PASS || 'Admin!23';
@@ -51,7 +51,7 @@ test('the enrolment method is installed and listed', async ({ page }) => {
 test('the course policy reaches the entry page', async ({ page, context }) => {
   test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
   // The fixture enables temporary access and quick registration, so both have to be on offer.
-  await context.clearCookies();
+  await freshSession(page);
   await page.goto(`/auth/flexaccess/access.php?courseid=${COURSE_ID}`);
   await expect(page.locator('body')).toContainText(COURSE_NAME);
   await expect(page.getByRole('button', { name: /Continue/i }).first()).toBeVisible();

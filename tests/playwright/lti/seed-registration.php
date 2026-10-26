@@ -40,22 +40,25 @@ $env = static function (string $name): string {
 };
 
 $repository = new application_registration_repository();
-$draft = $repository->find_by_uniqueid($env('LTI_PROVIDER_REGISTRATION'));
-if (!$draft) {
-    cli_error('Run seed-provider.php first.');
-}
-$registration = $repository->save(application_registration::create(
-    $draft->get_name(),
-    $draft->get_uniqueid(),
-    new moodle_url($env('LTI_PLATFORM_ISSUER')),
-    $env('LTI_PLATFORM_CLIENTID'),
-    new moodle_url($env('LTI_PLATFORM_AUTH_URL')),
-    new moodle_url($env('LTI_PLATFORM_JWKS_URL')),
-    new moodle_url($env('LTI_PLATFORM_TOKEN_URL')),
-    $draft->get_id()
-));
 $deployments = new deployment_repository();
-if (!$deployments->find_by_registration($registration->get_id(), $env('LTI_PLATFORM_DEPLOYMENTID'))) {
-    $deployments->save($registration->add_tool_deployment('FlexAccess platform', $env('LTI_PLATFORM_DEPLOYMENTID')));
+// Both registrations of the platform, each with its tool deployment (the second for enrol_flexaccess #10 DoD 13).
+foreach (['' => 'FlexAccess platform', '_2' => 'FlexAccess platform, second deployment'] as $suffix => $label) {
+    $draft = $repository->find_by_uniqueid($env('LTI_PROVIDER_REGISTRATION' . $suffix));
+    if (!$draft) {
+        cli_error('Run seed-provider.php first.');
+    }
+    $registration = $repository->save(application_registration::create(
+        $draft->get_name(),
+        $draft->get_uniqueid(),
+        new moodle_url($env('LTI_PLATFORM_ISSUER')),
+        $env('LTI_PLATFORM_CLIENTID' . $suffix),
+        new moodle_url($env('LTI_PLATFORM_AUTH_URL')),
+        new moodle_url($env('LTI_PLATFORM_JWKS_URL')),
+        new moodle_url($env('LTI_PLATFORM_TOKEN_URL')),
+        $draft->get_id()
+    ));
+    if (!$deployments->find_by_registration($registration->get_id(), $env('LTI_PLATFORM_DEPLOYMENTID' . $suffix))) {
+        $deployments->save($registration->add_tool_deployment($label, $env('LTI_PLATFORM_DEPLOYMENTID' . $suffix)));
+    }
 }
 echo "export LTI_REGISTRATION_COMPLETE='1'\n";

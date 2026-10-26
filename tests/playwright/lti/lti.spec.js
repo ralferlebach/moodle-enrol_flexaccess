@@ -390,4 +390,139 @@ test.describe.serial('LTI 1.3 between two FlexAccess sites', () => {
     cli('provider', 'provisioning', E.LTI_PROVIDER_AUTO_TOOLID, 1);
     await context.close();
   });
+
+  test('@provider AGS: activity and course resources, with and without waiting for completion; a failed delivery is retried', async ({ browser }) => {
+    // enrol_flexaccess #10 AK 11, AK 13, DoD 12: the FlexAccess learner bound in the first journey.
+    const robin = Number(E.LTI_PROVIDER_DURABLE_ID);
+    const learner = E.LTI_PLATFORM_LEARNER_ID;
+    const users = cli('provider', 'countauth', 'lti');
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, PLATFORM, 'robin.platform', E.LTI_PLATFORM_PASS);
+    for (const cmid of [E.LTI_PLATFORM_ACTCOMPL_CMID, E.LTI_PLATFORM_WHOLECOURSE_CMID, E.LTI_PLATFORM_COURSECOMPL_CMID]) {
+      await launch(page, cmid);
+      await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
+    }
+    // One local account for all resources: the bound FlexAccess account, no new LTI user.
+    expect(cli('provider', 'binding', PLATFORM, learner)).toBe(robin);
+    expect(cli('provider', 'countauth', 'lti')).toBe(users);
+    await context.close();
+
+    expect(cli('provider', 'setgrade', E.LTI_PROVIDER_ASSIGN_ID, robin, 70)).toBe('ok');
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    // Course resource without waiting: the course grade is returned at once.
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_WHOLECOURSE_LTIID, learner)).toBe(70);
+    // Both "on completion" resources wait: nothing is returned before the completion.
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_ACTCOMPL_LTIID, learner)).toBeNull();
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_COURSECOMPL_LTIID, learner)).toBeNull();
+    // (enrol_lti records the last delivered grade; 0 = nothing delivered yet.)
+    expect(cli('provider', 'lastgrade', E.LTI_PROVIDER_ACTCOMPL_TOOLID, robin)).toBe(0);
+    // Neither the activity nor the course is complete yet (course completion aggregated as cron would).
+    expect(cli('provider', 'completioncron', E.LTI_PROVIDER_COURSE_ID, robin)).toBe(false);
+
+    // The activity is complete now, but the platform cannot be reached: the delivery fails and is not
+    // recorded as delivered ...
+    expect(cli('provider', 'complete', E.LTI_PROVIDER_ASSIGN_CMID, robin)).toBe(1);
+    cli('provider', 'ags', 'broken');
+    try {
+      cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    } finally {
+      cli('provider', 'ags', 'ok');
+    }
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_ACTCOMPL_LTIID, learner)).toBeNull();
+    expect(cli('provider', 'lastgrade', E.LTI_PROVIDER_ACTCOMPL_TOOLID, robin)).toBe(0);
+    // ... and waits for Core's retry: a cron run before the retry delay changes nothing ...
+    expect(cli('provider', 'retries')).toBeGreaterThan(0);
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_ACTCOMPL_LTIID, learner)).toBeNull();
+    // ... and the cron run after the retry delay delivers it, exactly once.
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades', 'later');
+    expect(cli('provider', 'retries')).toBe(0);
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_ACTCOMPL_LTIID, learner)).toBe(70);
+    expect(cli('provider', 'lastgrade', E.LTI_PROVIDER_ACTCOMPL_TOOLID, robin)).toBe(70);
+
+    // With the activity, the course is complete (its only criterion), so the course resource "on completion"
+    // returns the course grade now; further cron runs send nothing twice.
+    expect(cli('provider', 'completioncron', E.LTI_PROVIDER_COURSE_ID, robin)).toBe(true);
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_COURSECOMPL_LTIID, learner)).toBe(70);
+    expect(cli('provider', 'lastgrade', E.LTI_PROVIDER_COURSECOMPL_TOOLID, robin)).toBe(70);
+    expect(cli('provider', 'retries')).toBe(0);
+
+    // Visible to teachers in the platform gradebook, for the same learner.
+    const admin = await (await browser.newContext()).newPage();
+    await login(admin, PLATFORM, 'admin', 'Admin!23');
+    await open(admin, `${PLATFORM}/grade/report/grader/index.php?id=${E.LTI_PLATFORM_COURSE_ID}`);
+    await expect(admin.locator('tr', { hasText: 'Robin Platform' }).first()).toContainText('70.00');
+  });
+
+  test('@provider the same resource through a second deployment resolves to the same learner; e-mail plays no role', async ({ browser }) => {
+    // enrol_flexaccess #10 DoD 13: (iss, sub) decides, not the deployment and not the e-mail address.
+    const users = cli('provider', 'countauth', 'lti');
+    const robin = Number(E.LTI_PROVIDER_DURABLE_ID);
+    const iris = cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_IRIS_ID);
+    expect(iris).toBeGreaterThan(0);
+    for (const [username, platformid, local] of [['robin.platform', E.LTI_PLATFORM_LEARNER_ID, robin], ['iris.platform', E.LTI_PLATFORM_IRIS_ID, iris]]) {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      await login(page, PLATFORM, username, E.LTI_PLATFORM_PASS);
+      await launch(page, E.LTI_PLATFORM_DEPLOY2_CMID);
+      await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
+      await expect(page.locator('body')).not.toContainText('I have an existing account');
+      expect(cli('provider', 'binding', PLATFORM, platformid)).toBe(local);
+      await context.close();
+    }
+    expect(cli('provider', 'countauth', 'lti')).toBe(users);
+    // The grade reaches the activity of each deployment the learner launched from.
+    expect(cli('provider', 'setgrade', E.LTI_PROVIDER_ASSIGN_ID, iris, 77)).toBe('ok');
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_DEPLOY2_LTIID, E.LTI_PLATFORM_IRIS_ID)).toBe(77);
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_IRIS_ID)).toBe(77);
+  });
+
+  test('@consumer recovering the platform access keeps the platform identity', async ({ browser }) => {
+    // enrol_flexaccess #10 AK 5: the recovery reactivates the enrolment of the same platform user.
+    const local = cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_IRIS_ID);
+    const recovered = cli('platform', 'recover', E.LTI_PLATFORM_IRIS_ID, E.LTI_PLATFORM_COURSE_ID);
+    expect(recovered.expired).toBe(1);
+    expect(recovered.overall).toBe('effective_access_restored');
+    expect(recovered.status).toBe(0);
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await login(page, PLATFORM, 'iris.platform', E.LTI_PLATFORM_PASS);
+    await launch(page, E.LTI_PLATFORM_AUTO_CMID);
+    await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
+    expect(cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_IRIS_ID)).toBe(local);
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_IRIS_ID)).toBe(77);
+    await context.close();
+  });
+
+  test('@provider a learner pre-provisioned by NRPS before the first launch, after the switch to prompting', async ({ browser }) => {
+    // auth_flexaccess #12 DoD 6: Pat never launched the automatic resource; the NRPS sync created the account.
+    const pre = cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_PAT_ID);
+    expect(pre).toBeGreaterThan(0);
+    expect(pre).not.toBe(Number(E.LTI_PROVIDER_PAT_ID));
+    const pat = cli('provider', 'user', E.LTI_PROVIDER_PAT_ID);
+    const users = cli('provider', 'countauth', 'lti');
+    cli('provider', 'provisioning', E.LTI_PROVIDER_AUTO_TOOLID, 3);
+    try {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      await login(page, PLATFORM, 'pat.platform', E.LTI_PLATFORM_PASS);
+      await launch(page, E.LTI_PLATFORM_AUTO_CMID);
+      // The pre-provisioned binding decides: no prompt, no new account, and the FlexAccess account with
+      // the same e-mail address (still waiting for its password) is neither linked nor changed.
+      await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
+      await expect(page.locator('body')).not.toContainText('I have an existing account');
+      expect(cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_PAT_ID)).toBe(pre);
+      expect(cli('provider', 'countauth', 'lti')).toBe(users);
+      expect(cli('provider', 'user', E.LTI_PROVIDER_PAT_ID)).toEqual(pat);
+      // A relaunch stays the same.
+      await launch(page, E.LTI_PLATFORM_AUTO_CMID);
+      expect(cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_PAT_ID)).toBe(pre);
+      await context.close();
+    } finally {
+      cli('provider', 'provisioning', E.LTI_PROVIDER_AUTO_TOOLID, 1);
+    }
+  });
 });

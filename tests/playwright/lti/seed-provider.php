@@ -80,20 +80,45 @@ $assign = create_module((object) [
     'blindmarking' => 0,
     'markingworkflow' => 0,
     'requiresubmissionstatement' => 0,
+    // Manual completion, so that a journey decides when the activity is complete (gradesynccompletion).
+    'completion' => COMPLETION_TRACKING_MANUAL,
+]);
+// The course is complete when the assignment is (gradesynccompletion of the course resource).
+require_once($CFG->dirroot . '/completion/criteria/completion_criteria_activity.php');
+$DB->insert_record('course_completion_criteria', (object) [
+    'course' => $course->id,
+    'criteriatype' => COMPLETION_CRITERIA_TYPE_ACTIVITY,
+    'module' => 'assign',
+    'moduleinstance' => $assign->coursemodule,
+]);
+$DB->insert_record('course_completion_aggr_methd', (object) [
+    'course' => $course->id, 'criteriatype' => null, 'method' => COMPLETION_AGGREGATION_ALL, 'value' => null,
 ]);
 
 $roles = $DB->get_records_menu('role', null, '', 'shortname, id');
-$publish = static function (string $name, int $mode) use ($course, $assign, $roles): stdClass {
+$publish = static function (
+    string $name,
+    int $mode,
+    bool $wholecourse = false,
+    int $oncompletion = 0
+) use (
+    $course,
+    $assign,
+    $roles
+): stdClass {
     global $DB;
     $instanceid = enrol_get_plugin('lti')->add_instance($course, [
         'name' => $name,
         'ltiversion' => 'LTI-1p3',
-        'contextid' => context_module::instance($assign->coursemodule)->id,
+        // An activity resource (the assignment) or a course resource (the course grade).
+        'contextid' => $wholecourse
+            ? context_course::instance($course->id)->id
+            : context_module::instance($assign->coursemodule)->id,
         'status' => ENROL_INSTANCE_ENABLED,
         'roleinstructor' => $roles['editingteacher'],
         'rolelearner' => $roles['student'],
         'gradesync' => 1,
-        'gradesynccompletion' => 0,
+        'gradesynccompletion' => $oncompletion,
         'membersync' => 1,
         'membersyncmode' => 1,
         'provisioningmodelearner' => $mode,
@@ -114,6 +139,11 @@ $publish = static function (string $name, int $mode) use ($course, $assign, $rol
 require_once($CFG->dirroot . '/auth/lti/auth.php');
 $prompt = $publish('Prompt for existing account', \auth_plugin_lti::PROVISIONING_MODE_PROMPT_EXISTING_ONLY);
 $auto = $publish('Automatic accounts', \auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY);
+// The grade-return matrix (enrol_flexaccess #10 AK 11, DoD 12): activity and course resources, with and
+// without waiting for completion. The two resources above are activity resources without waiting.
+$actcompl = $publish('Activity, grade on completion', \auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY, false, 1);
+$wholecourse = $publish('Course', \auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY, true, 0);
+$coursecompl = $publish('Course, grade on completion', \auth_plugin_lti::PROVISIONING_MODE_AUTO_ONLY, true, 1);
 
 // Permanent FlexAccess accounts of people who also learn on the platform (one per journey).
 $people = [];
@@ -133,6 +163,11 @@ $repository = new application_registration_repository();
 if (!$registration = $repository->find_by_uniqueid($uniqueid)) {
     $registration = $repository->save(application_registration::create_draft('FlexAccess test platform', $uniqueid));
 }
+// A second registration of the same platform: its second tool deployment (enrol_flexaccess #10 DoD 13).
+$uniqueid2 = 'flexaccess-platform-2';
+if (!$repository->find_by_uniqueid($uniqueid2)) {
+    $repository->save(application_registration::create_draft('FlexAccess test platform, second deployment', $uniqueid2));
+}
 
 flexaccess_lti_seed_export([
     'LTI_PROVIDER_COURSE_ID' => $course->id,
@@ -142,6 +177,14 @@ flexaccess_lti_seed_export([
     'LTI_PROVIDER_AUTO_UUID' => $auto->uuid,
     'LTI_PROVIDER_PROMPT_TOOLID' => $prompt->id,
     'LTI_PROVIDER_AUTO_TOOLID' => $auto->id,
+    'LTI_PROVIDER_ACTCOMPL_UUID' => $actcompl->uuid,
+    'LTI_PROVIDER_ACTCOMPL_TOOLID' => $actcompl->id,
+    'LTI_PROVIDER_COURSE_TOOLID' => $wholecourse->id,
+    'LTI_PROVIDER_COURSECOMPL_TOOLID' => $coursecompl->id,
+    'LTI_PROVIDER_COURSE_UUID' => $wholecourse->uuid,
+    'LTI_PROVIDER_COURSECOMPL_UUID' => $coursecompl->uuid,
+    'LTI_PROVIDER_REGISTRATION_2' => $uniqueid2,
+    'LTI_PROVIDER_LOGIN_URL_2' => (new moodle_url('/enrol/lti/login.php', ['id' => $uniqueid2]))->out(false),
     'LTI_PROVIDER_REGISTRATION' => $uniqueid,
     'LTI_PROVIDER_LOGIN_URL' => (new moodle_url('/enrol/lti/login.php', ['id' => $uniqueid]))->out(false),
     'LTI_PROVIDER_LAUNCH_URL' => (new moodle_url('/enrol/lti/launch.php'))->out(false),

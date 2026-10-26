@@ -6,6 +6,10 @@ name: Load test (k6)
 on:
   workflow_dispatch:
     inputs:
+      sibling_ref:
+        description: '[selfcontained] Branch of the sister plugins (default: the branch this workflow runs on)'
+        required: false
+        default: ''
       mode:
         description: 'selfcontained (build+seed here) or external (your own site)'
         type: choice
@@ -69,10 +73,14 @@ jobs:
           rm -rf moodle/enrol/flexaccess/.git
           # enrol_flexaccess has hard version.php dependencies on the sister plugins, so the site
           # cannot install with enrol alone. The siblings are pinned to exact commits (tool_flexaccess
-          # #12): resolved once from SIBLING_REF (default: main), all at this plugin's version, no fallback.
-          SIBLING_REF="${SIBLING_REF:-main}"
+          # #12): resolved once from SIBLING_REF - by default the branch this workflow runs on, as in the
+          # Playwright workflows (uploads land on the same branch in all four repositories; "main" can still
+          # hold an older family) - all at this plugin's version, no fallback. Siblings still being uploaded
+          # are awaited for up to 10 minutes.
+          SIBLING_REF="${{ github.event.inputs.sibling_ref }}"
+          SIBLING_REF="${SIBLING_REF:-$GITHUB_REF_NAME}"
           python3 plugin/.github/scripts/flexaccess_family.py resolve --self enrol_flexaccess --self-dir plugin \
-            --self-sha "$GITHUB_SHA" --ref "$SIBLING_REF" --out family-lock.json --summary "$GITHUB_STEP_SUMMARY"
+            --self-sha "$GITHUB_SHA" --ref "$SIBLING_REF" --wait 600 --out family-lock.json --summary "$GITHUB_STEP_SUMMARY"
           python3 plugin/.github/scripts/flexaccess_family.py fetch --lock-file family-lock.json \
             --self enrol_flexaccess --layout moodle --dest moodle
           mkdir -p /tmp/moodledata

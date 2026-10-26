@@ -17,13 +17,14 @@
 /**
  * Uninstall hook of enrol_flexaccess: remove what FlexAccess created outside its own tables.
  *
- * Core removes FlexAccess enrolments and role assignments that carry the enrol_flexaccess component.
- * FlexAccess, however, grants its course role through enrol_user() without a component (its roles are
- * not protected), so those assignments would survive the uninstall without any enrolment. This hook
- * runs before core's clean-up, while the enrolments still exist, and removes exactly the course-role
- * assignments that belong to FlexAccess enrolments. It then deletes the two FlexAccess roles - the
- * participant role only if nothing outside FlexAccess still uses it, so an administrator's own use of
- * that role is never silently revoked.
+ * Since 2026102502 FlexAccess assigns its course role with the component enrol_flexaccess and the instance id
+ * (protected roles, enrol_flexaccess #15), so its assignments are provably its own. This hook removes exactly
+ * those - before core's clean-up, while the enrolments still exist - and never an assignment without that
+ * component: a participant role an administrator assigned by hand, in the same course or anywhere else, stays.
+ * Assignments without component from releases before 2026102502 that the upgrade could not attribute to
+ * FlexAccess (the person had another enrolment in the course) are kept for the same reason. The participant
+ * role itself is deleted only when no assignment of it remains; the restriction role is internal to
+ * FlexAccess and always deleted.
  *
  * @package    enrol_flexaccess
  * @copyright  2026 Ralf Erlebach
@@ -41,17 +42,15 @@ function xmldb_enrol_flexaccess_uninstall() {
     $restriction = (int) $DB->get_field('role', 'id', ['shortname' => 'flexaccessrestricted']);
 
     if ($participant > 0) {
-        // Course-role assignments that exist because of a FlexAccess enrolment.
-        $rs = $DB->get_recordset_sql(
-            "SELECT DISTINCT ue.userid, ctx.id AS contextid
-               FROM {user_enrolments} ue
-               JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'flexaccess'
-               JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :courselevel",
-            ['courselevel' => CONTEXT_COURSE]
+        // Only the assignments FlexAccess made (component enrol_flexaccess), in any context.
+        $rs = $DB->get_recordset(
+            'role_assignments',
+            ['roleid' => $participant, 'component' => 'enrol_flexaccess'],
+            'id',
+            'id, userid, contextid, itemid'
         );
-        foreach ($rs as $row) {
-            role_unassign($participant, (int) $row->userid, (int) $row->contextid);
-            role_unassign($participant, (int) $row->userid, (int) $row->contextid, 'enrol_flexaccess');
+        foreach ($rs as $ra) {
+            role_unassign($participant, (int) $ra->userid, (int) $ra->contextid, 'enrol_flexaccess', (int) $ra->itemid);
         }
         $rs->close();
         if (!$DB->record_exists('role_assignments', ['roleid' => $participant])) {

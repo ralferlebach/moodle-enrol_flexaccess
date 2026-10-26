@@ -236,5 +236,40 @@ function xmldb_enrol_flexaccess_upgrade($oldversion): bool {
         }
         upgrade_plugin_savepoint(true, 2026102100, 'enrol', 'flexaccess');
     }
+
+    if ($oldversion < 2026102502) {
+        // Provenance of the participant role (enrol_flexaccess #15): releases before 2026102502 assigned it without
+        // component, indistinguishable from an administrator's own assignment. Every FlexAccess enrolment gets the
+        // assignment with component and instance; the old one without component is removed only where it can only
+        // stem from FlexAccess - the person has no other enrolment in the course. Otherwise it is kept (it may be
+        // an administrator's), so no right is silently lost.
+        $participantid = (int) $DB->get_field('role', 'id', ['shortname' => 'flexaccessparticipant']);
+        if ($participantid > 0) {
+            $rs = $DB->get_recordset_sql(
+                "SELECT ue.userid, e.id AS enrolid, ctx.id AS contextid,
+                        (SELECT COUNT(1) FROM {user_enrolments} oue
+                           JOIN {enrol} oe ON oe.id = oue.enrolid
+                          WHERE oue.userid = ue.userid AND oe.courseid = e.courseid AND oe.enrol <> 'flexaccess') AS others,
+                        (SELECT COUNT(1) FROM {role_assignments} ra
+                          WHERE ra.userid = ue.userid AND ra.contextid = ctx.id AND ra.roleid = :rid1
+                            AND ra.component = '') AS legacy
+                   FROM {user_enrolments} ue
+                   JOIN {enrol} e ON e.id = ue.enrolid AND e.enrol = 'flexaccess'
+                   JOIN {context} ctx ON ctx.instanceid = e.courseid AND ctx.contextlevel = :courselevel",
+                ['courselevel' => CONTEXT_COURSE, 'rid1' => $participantid]
+            );
+            foreach ($rs as $row) {
+                if ((int) $row->legacy === 0) {
+                    continue;
+                }
+                role_assign($participantid, (int) $row->userid, (int) $row->contextid, 'enrol_flexaccess', (int) $row->enrolid);
+                if ((int) $row->others === 0) {
+                    role_unassign($participantid, (int) $row->userid, (int) $row->contextid);
+                }
+            }
+            $rs->close();
+        }
+        upgrade_plugin_savepoint(true, 2026102502, 'enrol', 'flexaccess');
+    }
     return true;
 }

@@ -246,7 +246,12 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         $studentid = (int) $DB->get_field('role', 'id', ['shortname' => 'student']);
         $this->getDataGenerator()->enrol_user((int) $user->id, (int) $this->course->id, 'student', 'manual');
         $this->plugin->enrol_user($instance, (int) $user->id, participant_role::get_id(), 0, 0, ENROL_USER_SUSPENDED);
-        role_unassign(participant_role::get_id(), (int) $user->id, $context->id);
+        role_unassign_all([
+            'roleid' => participant_role::get_id(),
+            'userid' => (int) $user->id,
+            'contextid' => $context->id,
+            'component' => 'enrol_flexaccess',
+        ]);
         $ue = $DB->get_record('user_enrolments', ['enrolid' => $instance->id, 'userid' => $user->id]);
         $this->assertSame(
             state::USER_ENROLMENT_SUSPENDED,
@@ -272,7 +277,12 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
         $user = $this->getDataGenerator()->create_user();
         $this->assertTrue(enrol_service::admin_enrol((int) $this->course->id, (int) $user->id));
         $context = \context_course::instance((int) $this->course->id);
-        role_unassign(participant_role::get_id(), (int) $user->id, $context->id);
+        role_unassign_all([
+            'roleid' => participant_role::get_id(),
+            'userid' => (int) $user->id,
+            'contextid' => $context->id,
+            'component' => 'enrol_flexaccess',
+        ]);
         $this->assertSame(
             state::PARTICIPANT_ROLE_MISSING,
             api::effective_enrolment_state((int) $user->id, (int) $this->course->id)->state
@@ -312,7 +322,12 @@ final class enrolment_lifecycle_test extends \advanced_testcase {
     public function test_missing_course_role_is_not_ok(): void {
         $user = $this->getDataGenerator()->create_user();
         $this->assertTrue(enrol_service::admin_enrol((int) $this->course->id, (int) $user->id));
-        role_unassign(participant_role::get_id(), (int) $user->id, \context_course::instance((int) $this->course->id)->id);
+        role_unassign_all([
+            'roleid' => participant_role::get_id(),
+            'userid' => (int) $user->id,
+            'contextid' => \context_course::instance((int) $this->course->id)->id,
+            'component' => 'enrol_flexaccess',
+        ]);
         $state = api::effective_enrolment_state((int) $user->id, (int) $this->course->id);
         $this->assertSame(state::PARTICIPANT_ROLE_MISSING, $state->state);
         $this->assertSame(1, api::count_missing_course_roles());

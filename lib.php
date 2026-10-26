@@ -157,10 +157,15 @@ class enrol_flexaccess_plugin extends enrol_plugin {
     /**
      * Whether assigned roles are protected.
      *
+     * Protected since 2026102502 (enrol_flexaccess #15): enrol_user() assigns the participant role with the
+     * component enrol_flexaccess and the instance id, so every assignment FlexAccess makes is provably its own.
+     * Unenrolment and uninstall remove exactly those; a participant role an administrator assigned by hand
+     * (without component) is never touched.
+     *
      * @return bool
      */
     public function roles_protected(): bool {
-        return false;
+        return true;
     }
 
     /**

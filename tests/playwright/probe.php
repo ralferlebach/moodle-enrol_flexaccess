@@ -17,7 +17,7 @@
 /**
  * Server-side probe for the browser journeys (test sites only): the stored state a journey produced.
  *
- * Usage: php probe.php instance <enrolid> | timezone <zone>
+ * Usage: php probe.php instance <enrolid> | timezone <zone> | openwindow <enrolid>
  * Prints one JSON object: the extension row, the core enrolment period, the bounds as the site
  * administrator sees them (Y-m-d H:i in their time zone) and the effective course policy; or sets the
  * administrator's time zone (effective with the next login).
@@ -40,8 +40,18 @@ if ($command === 'timezone' && !empty($args[0])) {
     echo json_encode(['timezone' => $args[0]]), "\n";
     exit(0);
 }
+if ($command === 'openwindow' && !empty($args[0])) {
+    // A journey's precondition, independent of what earlier journeys left: open window, no capacity limit.
+    \enrol_flexaccess\local\instance_config::save((int) $args[0], [
+        'availablefrom' => 0,
+        'availableuntil' => 0,
+        'maxparticipants' => 0,
+    ]);
+    echo json_encode(['openwindow' => (int) $args[0]]), "\n";
+    exit(0);
+}
 if ($command !== 'instance' || empty($args[0])) {
-    cli_error('Usage: php probe.php instance <enrolid> | timezone <zone>');
+    cli_error('Usage: php probe.php instance <enrolid> | timezone <zone> | openwindow <enrolid>');
 }
 $enrolid = (int) $args[0];
 $row = \enrol_flexaccess\local\instance_config::load($enrolid);
