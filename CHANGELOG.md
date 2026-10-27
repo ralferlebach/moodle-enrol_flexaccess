@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0 (2026102601) — 2026-10-26 — Versions-Gleichschritt
+- Keine funktionale Änderung; Versions-Gleichschritt mit der FlexAccess-Familie.
+- Version `2026102601`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026102601`.
+
 ## 1.2.0 (2026102600) — 2026-10-26 — LTI-Journeys unabhängig von der Job-Aufteilung
 - **Zwei-Site-LTI-Suite, Release-Gate rot (CI-Lauf vom 26.10.2026):** Die neue Journey „@consumer recovering the platform access keeps the platform identity“ erwartete die Note 77, die nur die @provider-Journey „second deployment“ setzt. Das Gate führt @consumer- und @provider-Journeys aber in getrennten Jobs mit je eigenen Sites aus; im Consumer-Job stand die Note noch auf 72 (4.5 und 5.3, je 1 von 5 rot). Die Journey vergleicht jetzt mit der Note vor der Wiederherstellung und hängt nur noch von den @consumer-Journeys ab. Nur Testcode.
 - Version `2026102600`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026102600`.
