@@ -531,4 +531,82 @@ test.describe.serial('LTI 1.3 between two FlexAccess sites', () => {
       cli('provider', 'provisioning', E.LTI_PROVIDER_AUTO_TOOLID, 1);
     }
   });
+
+  test('@provider a launch in flight while the merge commits resolves to the survivor; the removed account\'s session ends', async ({ browser }) => {
+    // auth_flexaccess #13 / enrol_flexaccess #10 AK 13: the OIDC launch has started (login initiation and
+    // authentication on the platform done), the id_token is still on its way while the administrator's merge
+    // commits. The launch must land on the surviving account, not create a new one, and not revive the
+    // removed one; a session that still belongs to the removed account must no longer act as it.
+    const kim = Number(E.LTI_PROVIDER_KIM_ID);
+    const sessionOf = async (context) => {
+      const cookie = (await context.cookies(PROVIDER)).find((c) => /^MoodleSession/.test(c.name));
+      return cookie ? cli('provider', 'sessionuser', cookie.value) : 0;
+    };
+
+    // 1. First launch from the automatic resource: a separate auth_lti account (or the one an NRPS sync
+    //    created before), signed in on the provider.
+    const first = await browser.newContext();
+    const before = await first.newPage();
+    await login(before, PLATFORM, 'kim.platform', E.LTI_PLATFORM_PASS);
+    await launch(before, E.LTI_PLATFORM_AUTO_CMID);
+    await expect(before).toHaveURL(/\/enrol\/lti\/launch\.php/);
+    const duplicate = cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_KIM_ID);
+    expect(duplicate).toBeGreaterThan(0);
+    expect(duplicate).not.toBe(kim);
+    expect(await sessionOf(first)).toBe(duplicate);
+    expect(cli('provider', 'approve', duplicate, kim)).toBeTruthy();
+
+    // 2. Second launch: hold the id_token POST at the provider until the merge has committed.
+    const second = await browser.newContext();
+    const page = await second.newPage();
+    await login(page, PLATFORM, 'kim.platform', E.LTI_PLATFORM_PASS);
+    let release;
+    const held = new Promise((resolve) => {
+      release = resolve;
+    });
+    let arrived = false;
+    await page.route(`${PROVIDER}/enrol/lti/launch.php*`, async (route) => {
+      if (route.request().method() === 'POST') {
+        arrived = true;
+        await held;
+      }
+      await route.continue();
+    });
+    const users = cli('provider', 'countauth', 'lti');
+    const inflight = launch(page, E.LTI_PLATFORM_AUTO_CMID);
+    await expect.poll(() => arrived, { timeout: 30000 }).toBe(true);
+
+    const merged = cli('provider', 'merge', kim, duplicate);
+    expect(merged.success).toBe(true);
+    expect(merged.registry.status).toBe('reconciled');
+    release();
+    await inflight;
+    await page.unroute(`${PROVIDER}/enrol/lti/launch.php*`);
+
+    // The launch that was in flight lands on the surviving FlexAccess account; no new account is created, and
+    // the removed account (suspended by tool_mergeusers) is not revived.
+    await expect(page).toHaveURL(/\/enrol\/lti\/launch\.php/);
+    expect(await sessionOf(second)).toBe(kim);
+    expect(cli('provider', 'binding', PLATFORM, E.LTI_PLATFORM_KIM_ID)).toBe(kim);
+    expect(cli('provider', 'countauth', 'lti')).toBe(users);
+    expect(Number(cli('provider', 'user', duplicate).user.suspended)).toBe(1);
+
+    // AGS after the merge: the survivor's grade reaches Kim on the platform and nobody else.
+    expect(cli('provider', 'setgrade', E.LTI_PROVIDER_ASSIGN_ID, kim, 64)).toBe('ok');
+    cli('provider', 'task', '\\enrol_lti\\local\\ltiadvantage\\task\\sync_grades');
+    expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, E.LTI_PLATFORM_KIM_ID)).toBe(64);
+    for (const other of [E.LTI_PLATFORM_ALEX_ID, E.LTI_PLATFORM_LEARNER_ID, E.LTI_PLATFORM_IRIS_ID, E.LTI_PLATFORM_PAT_ID]) {
+      expect(cli('platform', 'lineitemgrade', E.LTI_PLATFORM_AUTO_LTIID, other), `platform user ${other}`).not.toBe(64);
+    }
+
+    // The session of the removed account ended with the merge - it was neither kept nor moved onto the survivor:
+    // the next request of that browser is anonymous: no course, but the sign-in or FlexAccess access page.
+    expect(await sessionOf(first)).toBe(0);
+    const response = await open(before, `${PROVIDER}/course/view.php?id=${E.LTI_PROVIDER_COURSE_ID}`);
+    expect(response.status()).toBeLessThan(500);
+    await expect(before).toHaveURL(/\/login\/index\.php|\/auth\/flexaccess\/access\.php/);
+    expect(await sessionOf(first)).toBe(0);
+    await first.close();
+    await second.close();
+  });
 });

@@ -147,7 +147,7 @@ $coursecompl = $publish('Course, grade on completion', \auth_plugin_lti::PROVISI
 
 // Permanent FlexAccess accounts of people who also learn on the platform (one per journey).
 $people = [];
-foreach (['robin' => 'Robin', 'alex' => 'Alex', 'sam' => 'Sam', 'pat' => 'Pat'] as $key => $first) {
+foreach (['robin' => 'Robin', 'alex' => 'Alex', 'sam' => 'Sam', 'pat' => 'Pat', 'kim' => 'Kim'] as $key => $first) {
     $email = $key . '@example.org';
     $people[$key] = flexaccess_lti_seed_durable_user($key . '.provider', $first, 'Provider', $email, 'Provider-Pass!1');
     \enrol_flexaccess\local\enrol_service::admin_enrol((int) $course->id, $people[$key]);
@@ -195,4 +195,5 @@ flexaccess_lti_seed_export([
     'LTI_PROVIDER_ALEX_ID' => $people['alex'],
     'LTI_PROVIDER_SAM_ID' => $people['sam'],
     'LTI_PROVIDER_PAT_ID' => $people['pat'],
+    'LTI_PROVIDER_KIM_ID' => $people['kim'],
 ]);

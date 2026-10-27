@@ -120,7 +120,7 @@ $coursecompl = $activity('Provider course (grade on completion)', $env('LTI_PROV
 $deployment2 = $activity('Provider resource (second deployment)', $env('LTI_PROVIDER_AUTO_UUID'), $typeid2);
 
 $learners = [];
-$names = ['robin' => 'Robin', 'tara' => 'Tara', 'alex' => 'Alex', 'sam' => 'Sam', 'pat' => 'Pat', 'iris' => 'Iris'];
+$names = ['robin' => 'Robin', 'tara' => 'Tara', 'alex' => 'Alex', 'sam' => 'Sam', 'pat' => 'Pat', 'iris' => 'Iris', 'kim' => 'Kim'];
 foreach ($names as $key => $first) {
     $email = $key . '@example.org';
     $learners[$key] = flexaccess_lti_seed_durable_user($key . '.platform', $first, 'Platform', $email, 'Platform-Pass!1');
@@ -160,4 +160,5 @@ flexaccess_lti_seed_export([
     'LTI_PLATFORM_SAM_ID' => $learners['sam'],
     'LTI_PLATFORM_PAT_ID' => $learners['pat'],
     'LTI_PLATFORM_IRIS_ID' => $learners['iris'],
+    'LTI_PLATFORM_KIM_ID' => $learners['kim'],
 ]);

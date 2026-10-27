@@ -217,6 +217,10 @@ switch ($command) {
             'status' => (int) $ue((int) $args[0], (int) $args[1], 'flexaccess')->status,
         ];
         break;
+    case 'sessionuser':
+        // The user a browser session belongs to (0: the session no longer exists or is not signed in).
+        $out = (int) $DB->get_field('sessions', 'userid', ['sid' => $args[0]]);
+        break;
     case 'canlogin':
         $out = \auth_flexaccess\local\login_guard::evaluate((int) $args[0], 'password');
         break;

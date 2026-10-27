@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 (2026102700) — 2026-10-27 — LTI-Launch während der Zusammenführung, Logo
+- Zwei-Site-LTI (`tests/playwright/lti/lti.spec.js`): neue Provider-Journey „a launch in flight while the merge commits …“ – der OIDC-Launch läuft (id_token unterwegs), während die Zusammenführung committet: Er landet beim behaltenen Konto, legt kein neues an, belebt das entfernte nicht; die Browsersitzung des entfernten Kontos ist beendet; die AGS-Note des Überlebenden erreicht genau diese Person auf der Plattform und niemanden sonst. Dazu Testperson „Kim“ auf beiden Sites und der CLI-Befehl `sessionuser`. Nur Testcode.
+- Plugin-Logo wie mit 2026102601 hochgeladen übernommen.
+- Version `2026102700`, Release `1.2.0`.
+
 ## 1.2.0 (2026102601) — 2026-10-26 — Versions-Gleichschritt
 - Keine funktionale Änderung; Versions-Gleichschritt mit der FlexAccess-Familie.
 - Version `2026102601`, Release `1.2.0`, `MATURITY_STABLE`, `supported` [405, 503]. Abhängigkeit `auth_flexaccess` ≥ `2026102601`.
