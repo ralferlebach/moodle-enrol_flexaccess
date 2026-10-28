@@ -105,7 +105,7 @@ Capacity is enforced under a lock, so a course with one seat left grants it exac
 
 Moodle checks time windows in two ways: the access check (is_enrolled, used when a user opens the course) compares the exact time, while the lists of enrolled users (participants, gradebook, completion, LTI grade service) round the time to 100 seconds and compare strictly. FlexAccess reports an enrolment as effective only when both accept it, so "access restored" in recovery means that the user is in the course and in every list at once. A reactivation renews an end that falls inside the rounding window.
 
-Version matrix of the CI (main pipeline; the release gate covers one cell per version and database):
+Version matrix of the CI (main pipeline):
 
 | Moodle | PHP | Database |
 |---|---|---|

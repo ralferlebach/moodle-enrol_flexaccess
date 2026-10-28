@@ -1,6 +1,7 @@
 # Changelog
 
 ## 1.2.0 (2026102700) — 2026-10-27 — LTI-Launch während der Zusammenführung, Logo
+- **Familien-Resolver vereinfacht** (Release-Gate in tool_flexaccess entfernt, 27.10.2026): `.github/scripts/flexaccess_family.py` kennt nur noch `resolve` und `fetch` und ruft Git ohne Hintergrundwartung auf (git ≥ 2.47 löste sonst beim Aufräumen `Directory not empty: 'objects'` aus); in allen vier Repositories identisch. Keine Änderung an Plugin-Code, Version unverändert.
 - Zwei-Site-LTI (`tests/playwright/lti/lti.spec.js`): neue Provider-Journey „a launch in flight while the merge commits …“ – der OIDC-Launch läuft (id_token unterwegs), während die Zusammenführung committet: Er landet beim behaltenen Konto, legt kein neues an, belebt das entfernte nicht; die Browsersitzung des entfernten Kontos ist beendet; die AGS-Note des Überlebenden erreicht genau diese Person auf der Plattform und niemanden sonst. Dazu Testperson „Kim“ auf beiden Sites und der CLI-Befehl `sessionuser`. Nur Testcode.
 - Plugin-Logo wie mit 2026102601 hochgeladen übernommen.
 - Version `2026102700`, Release `1.2.0`.
