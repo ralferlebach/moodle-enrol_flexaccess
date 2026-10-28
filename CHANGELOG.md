@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0 (2026102800) — 2026-10-28 — Rollen-Einschränkungen wieder einstellbar, LTI-Interop bei jedem Push
+- **Fehler behoben: Rollen-Einschränkungen ließen sich nicht anlegen.** Die Seite „Rollen- und Kohortenbeschränkungen“ lud die Rollen als reines Namensmenü und las daraus Objekte; die Rollenauswahl enthielt deshalb nur einen leeren Eintrag (seit 0.9.46), eine Rollen-Einschränkung konnte nicht angelegt werden, und vorhandene wurden als „fehlende Referenz“ angezeigt. Gefunden beim Aufbau der NVDA-Journeys (tool_flexaccess #11). Playwright `enrol-journeys.spec.js` „role and cohort restrictions can be administered per course“ prüft jetzt die Rollenauswahl, das Anlegen (Zeile mit Rolle und Wirkung) und das Löschen (vorher nur, dass die Seite lädt; gegen den alten Stand rot).
+- Workflow „LTI 1.3 interoperability“ läuft zusätzlich bei jedem Push auf `development` (tool_flexaccess #11: die Zwei-Site-Journeys müssen auf der aktuellen Familie gelaufen sein).
+- Version `2026102800`, Release `1.2.0`.
+
 ## 1.2.0 (2026102700) — 2026-10-27 — LTI-Launch während der Zusammenführung, Logo
 - **Familien-Resolver vereinfacht** (Release-Gate in tool_flexaccess entfernt, 27.10.2026): `.github/scripts/flexaccess_family.py` kennt nur noch `resolve` und `fetch` und ruft Git ohne Hintergrundwartung auf (git ≥ 2.47 löste sonst beim Aufräumen `Directory not empty: 'objects'` aus); in allen vier Repositories identisch. Keine Änderung an Plugin-Code, Version unverändert.
 - Zwei-Site-LTI (`tests/playwright/lti/lti.spec.js`): neue Provider-Journey „a launch in flight while the merge commits …“ – der OIDC-Launch läuft (id_token unterwegs), während die Zusammenführung committet: Er landet beim behaltenen Konto, legt kein neues an, belebt das entfernte nicht; die Browsersitzung des entfernten Kontos ist beendet; die AGS-Note des Überlebenden erreicht genau diese Person auf der Plattform und niemanden sonst. Dazu Testperson „Kim“ auf beiden Sites und der CLI-Befehl `sessionuser`. Nur Testcode.

@@ -16,8 +16,12 @@ name: LTI 1.3 interoperability
 #                 returned grade in the platform gradebook, embedded launch / repeat / back
 #                 navigation (Chromium and Firefox)
 #
-# Manual and scheduled (the sites take a few minutes to build); run it before every release.
+# On every push to development (tool_flexaccess #11: the journeys must have run on the current family), and
+# manual and scheduled. The siblings are resolved from the same branch; while they are still being uploaded the
+# resolution waits up to ten minutes for all four to carry the same version.
 on:
+  push:
+    branches: [development]
   workflow_dispatch:
   schedule:
     - cron: '0 4 * * 1'

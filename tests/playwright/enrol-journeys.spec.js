@@ -65,10 +65,33 @@ test('the enrolment instance can be configured in the course', async ({ page }) 
 });
 
 test('role and cohort restrictions can be administered per course', async ({ page }) => {
-  test.skip(!COURSE_ID, 'FLEXACCESS_COURSE_ID not provided by the seed step');
+  // Runs on the course of the instance form journeys, so the restriction never affects the entry journeys.
+  const course = process.env.FLEXACCESS_FORM_COURSE_ID;
+  test.skip(!course, 'FLEXACCESS_FORM_COURSE_ID not provided by the seed step');
   await loginAs(page, ADMIN_USER, ADMIN_PASS);
-  await open(page, `/enrol/flexaccess/restrictions.php?courseid=${COURSE_ID}`);
-  await expect(page.locator('body')).toContainText(/restriction|beschr/i);
+  await open(page, `/enrol/flexaccess/restrictions.php?courseid=${course}`);
+  // The role selector offers the site's roles by name (until 2026102800 it offered a single empty entry, so no
+  // role restriction could be added and existing ones were listed as missing).
+  const role = page.getByLabel('Role', { exact: true });
+  const names = (await role.locator('option').allTextContents()).map((t) => t.trim());
+  expect(names).toContain('Student');
+  expect(names.every((n) => n !== '')).toBe(true);
+  await page.getByLabel('Type', { exact: true }).selectOption('role');
+  await role.selectOption({ label: 'Student' });
+  await page.getByLabel('Effect', { exact: true }).selectOption('deny');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  const row = page.locator('#region-main table tr', { hasText: 'Student' });
+  await expect(row).toHaveCount(1);
+  await expect(row).toContainText('Role');
+  await expect(row).toContainText('Deny');
+  await expect(page.locator('#region-main table')).not.toContainText(/missing|fehlt/i);
+  // Removing it (with the confirmation Moodle shows for the button) leaves the course without restrictions.
+  await row.getByRole('button', { name: 'Delete' }).click();
+  const deleted = page.getByText('Restriction deleted.');
+  const confirm = page.getByRole('dialog').getByRole('button', { name: /^(Yes|Delete|Continue)$/ });
+  await Promise.race([confirm.click({ timeout: 5000 }).catch(() => null), deleted.waitFor()]);
+  await expect(deleted).toBeVisible();
+  await expect(page.locator('#region-main table')).toHaveCount(0);
 });
 
 test('a new FlexAccess participant is immediately in the gradebook and active participants', async ({ page, browser }) => {

@@ -77,7 +77,7 @@ if ($action === 'add') {
 }
 
 // Reference data for rendering names and for the add form.
-$roles = role_fix_names(get_all_roles($context), $context, ROLENAME_ALIAS, true);
+$roles = role_fix_names(get_all_roles($context), $context, ROLENAME_ALIAS);
 $cohorts = [];
 foreach (cohort_get_available_cohorts($context, COHORT_ALL, 0, 0) as $cohort) {
     $cohorts[$cohort->id] = $cohort->name;
